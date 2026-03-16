@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay Me — Card Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --surface2: #f1efe8;
+      --border: rgba(0, 0, 0, 0.12);
+      --border2: rgba(0, 0, 0, 0.22);
+      --text: #1a1917;
+      --text2: #5f5e5a;
+      --text3: #888780;
+      --accent: #185fa5;
+      --accent-light: #e6f1fb;
+      --accent-text: #0c447c;
+      --success: #3b6d11;
+      --success-bg: #eaf3de;
+      --danger: #a32d2d;
+      --danger-bg: #fcebeb;
+      --warn: #854f0b;
+      --warn-bg: #faeeda;
+      --gold: #854f0b;
+      --gold-bg: #faeeda;
+      --card-red: #a32d2d;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      --fs: 1.5;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: calc(16px * var(--fs));
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #lobby {
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo h1 {
+      font-size: calc(3.5rem * var(--fs));
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .logo .sub {
+      font-size: calc(1rem * var(--fs));
+      color: var(--text2);
+      font-style: italic;
+      margin-top: 0.25rem;
+    }
+
+    .lobby-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .lobby-card h2 {
+      font-size: calc(1.1rem * var(--fs));
+      margin-bottom: 1.25rem;
+      color: var(--text2);
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: calc(0.8rem * var(--fs));
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm);
+      font-size: calc(0.95rem * var(--fs));
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: calc(1rem * var(--fs));
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover {
+      opacity: 0.85;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--surface);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 0.5px solid var(--border2);
+    }
+
+    .divider {
+      text-align: center;
+      color: var(--text3);
+      margin: 1rem 0;
+      font-size: calc(0.85rem * var(--fs));
+    }
+
+    .room-code-display {
+      font-size: calc(2.2rem * var(--fs));
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-align: center;
+      padding: 1rem;
+      background: var(--accent-light);
+      color: var(--accent-text);
+      border-radius: var(--radius-sm);
+      margin: 0.75rem 0;
+      font-family: monospace;
+    }
+
+    .players-list {
+      margin: 1rem 0;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      border-bottom: 0.5px solid var(--border);
+      font-size: calc(0.9rem * var(--fs));
+    }
+
+    .player-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .player-dot.host {
+      background: var(--accent);
+    }
+
+    .waiting-msg {
+      font-size: calc(0.85rem * var(--fs));
+      color: var(--text3);
+      text-align: center;
+      font-style: italic;
+      margin: 0.75rem 0;
+    }
+
+    #game {
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .game-header {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .game-header .hand-info {
+      font-size: calc(0.85rem * var(--fs));
+      color: var(--text2);
+    }
+
+    .game-header .hand-info strong {
+      color: var(--text);
+      font-size: calc(1rem * var(--fs));
+    }
+
+    .wild-badge {
+      background: var(--warn-bg);
+      color: var(--warn);
+      font-size: calc(0.75rem * var(--fs));
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .scores-bar {
+      background: var(--surface2);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0.4rem 1rem;
+      overflow-x: auto;
+      display: flex;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .score-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      font-size: calc(0.8rem * var(--fs));
+    }
+
+    .score-chip .sname {
+      font-weight: 600;
+    }
+
+    .score-chip .sval {
+      color: var(--text2);
+    }
+
+    .score-chip.current-turn .sname {
+      color: var(--accent);
+    }
+
+    .score-chip.me .sname::after {
+      content: ' (you)';
+      font-weight: 400;
+      color: var(--text3);
+    }
+
+    .game-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .opponents-area {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .opponent-hand {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-size: calc(0.8rem * var(--fs));
+    }
+
+    .opponent-hand .oname {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: var(--text2);
+    }
+
+    .opponent-cards {
+      display: flex;
+      gap: 2px;
+    }
+
+    .card-back {
+      width: 28px;
+      height: 40px;
+      background: var(--accent);
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    .table-area {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .table-label {
+      font-size: calc(0.75rem * var(--fs));
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      margin-bottom: 0.6rem;
+    }
+
+    .piles {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .pile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .pile-label {
+      font-size: calc(0.7rem * var(--fs));
+      color: var(--text3);
+    }
+
+    .card {
+      width: 78px;
+      height: 114px;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: calc(0.8rem * var(--fs));
+      font-weight: 700;
+      user-select: none;
+      position: relative;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .card.clickable {
+      cursor: pointer;
+    }
+
+    .card.clickable:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.13);
+    }
+
+    .card.red {
+      color: var(--card-red);
+    }
+
+    .card.black {
+      color: var(--text);
+    }
+
+    .card.selected {
+      outline: 3px solid var(--accent);
+      transform: translateY(-8px);
+    }
+
+    .card.wild-card {
+      background: var(--warn-bg);
+    }
+
+    .card.no-hover:hover {
+      transform: none;
+      box-shadow: var(--shadow);
+      cursor: default;
+    }
+
+    .card.drag-over {
+      outline: 3px dashed var(--accent);
+      opacity: 0.7;
+    }
+
+    .card.dragging {
+      opacity: 0.35;
+      transform: scale(0.95);
+    }
+
+    .card-corner {
+      position: absolute;
+      top: 5px;
+      left: 6px;
+      font-size: calc(0.65rem * var(--fs));
+      line-height: 1.1;
+    }
+
+    .card-corner.br {
+      top: auto;
+      left: auto;
+      bottom: 5px;
+      right: 6px;
+      transform: rotate(180deg);
+    }
+
+    .card-center {
+      font-size: calc(1.4rem * var(--fs));
+    }
+
+    .card-nat-pin {
+      position: absolute;
+      bottom: 24px;
+      right: 4px;
+      font-size: calc(0.5rem * var(--fs));
+      color: #fff;
+      border-radius: 3px;
+      padding: 1px 3px;
+      line-height: 1.2;
+    }
+
+    .stock-pile {
+      width: 78px;
+      height: 114px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.1s;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .stock-pile:hover {
+      transform: translateY(-3px);
+    }
+
+    .my-hand-area {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .my-hand-cards {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      min-height: 120px;
+    }
+
+    .hand-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .action-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: calc(0.82rem * var(--fs));
+      font-family: inherit;
+      cursor: pointer;
+      border: 0.5px solid var(--border2);
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: var(--surface2);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .action-btn.danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .turn-indicator {
+      font-size: calc(0.8rem * var(--fs));
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .turn-indicator.my-turn {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .turn-indicator.waiting {
+      background: var(--surface2);
+      color: var(--text3);
+    }
+
+    .msg-area {
+      font-size: calc(0.82rem * var(--fs));
+      color: var(--text2);
+      min-height: 1.8rem;
+      font-style: italic;
+    }
+
+    .msg-area.good {
+      color: var(--success);
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    .msg-area.bad {
+      color: var(--danger);
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    #layoff {
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .layoff-header {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .layoff-header h2 {
+      font-size: calc(1.1rem * var(--fs));
+      font-weight: 600;
+    }
+
+    .layoff-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .layoff-status {
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.9rem;
+      font-size: calc(0.85rem * var(--fs));
+      color: var(--accent-text);
+      font-weight: 500;
+    }
+
+    .caller-melds-section {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .caller-melds-section .section-title {
+      font-size: calc(0.75rem * var(--fs));
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      margin-bottom: 0.75rem;
+    }
+
+    .meld-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .meld-index {
+      font-size: calc(0.7rem * var(--fs));
+      color: var(--text3);
+      min-width: 52px;
+      padding-top: 4px;
+    }
+
+    .meld-cards-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .player-layoff-section {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .player-layoff-section.active-player {
+      border-color: var(--accent);
+      border-width: 1.5px;
+    }
+
+    .player-layoff-section .plname {
+      font-size: calc(0.85rem * var(--fs));
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .active-badge {
+      background: var(--accent-light);
+      color: var(--accent-text);
+      font-size: calc(0.7rem * var(--fs));
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .done-badge {
+      background: var(--success-bg);
+      color: var(--success);
+      font-size: calc(0.7rem * var(--fs));
+      padding: 1px 7px;
+      border-radius: 20px;
+    }
+
+    .player-cards-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-height: 40px;
+    }
+
+    .layoff-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pay-me-toast {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: calc(0.9rem * var(--fs));
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .pay-me-toast .toast-msg {
+      flex: 1;
+    }
+
+    .pay-me-toast .toast-close {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: calc(0.82rem * var(--fs));
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      font-size: calc(1.3rem * var(--fs));
+      margin-bottom: 0.25rem;
+    }
+
+    .modal .subtitle {
+      font-size: calc(0.875rem * var(--fs));
+      color: var(--text2);
+      margin-bottom: 1.25rem;
+      font-style: italic;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .meld-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .meld-group-label {
+      font-size: calc(0.75rem * var(--fs));
+      color: var(--text3);
+      margin-bottom: 0.3rem;
+    }
+
+    .meld-cards {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .discard-zone {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      background: var(--danger-bg);
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--danger);
+      font-size: calc(0.8rem * var(--fs));
+      color: var(--danger);
+    }
+
+    .pin-hint {
+      font-size: calc(0.75rem * var(--fs));
+      color: var(--text3);
+      margin-bottom: 0.5rem;
+      font-style: italic;
+    }
+
+    .scorecard {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: calc(0.82rem * var(--fs));
+      margin-top: 0.5rem;
+    }
+
+    .scorecard th {
+      padding: 0.4rem 0.5rem;
+      font-size: calc(0.7rem * var(--fs));
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .scorecard th.player-col {
+      text-align: left;
+      min-width: 90px;
+    }
+
+    .scorecard td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 0.5px solid var(--border);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .scorecard td.player-col {
+      text-align: left;
+      font-weight: 600;
+      font-size: calc(0.8rem * var(--fs));
+    }
+
+    .scorecard td.total-col {
+      font-weight: 700;
+      background: var(--surface2);
+    }
+
+    .scorecard td.wins-col {
+      font-weight: 700;
+      color: var(--gold);
+      background: var(--gold-bg);
+    }
+
+    .scorecard .dollar {
+      color: var(--gold);
+      font-weight: 700;
+      font-size: calc(0.95rem * var(--fs));
+    }
+
+    .scorecard tr.lowest-total td {
+      color: var(--success);
+    }
+
+    .scorecard tr.lowest-total td.player-col::after {
+      content: ' ★';
+      color: var(--success);
+    }
+
+    .section-label {
+      font-size: calc(0.75rem * var(--fs));
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      margin: 1.25rem 0 0.4rem;
+    }
+
+    .overflow-scroll {
+      overflow-x: auto;
+    }
+
+    .help-btn {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: calc(0.9rem * var(--fs));
+      color: var(--text2);
+      box-shadow: var(--shadow);
+      z-index: 50;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="lobby" class="screen active">
+    <div class="logo">
+      <h1>Pay Me</h1>
+      <div class="sub">Contract Rummy · 2–8 Players</div>
+    </div>
+    <div class="lobby-card" id="lobby-home">
+      <h2>Start or join a game</h2>
+      <div class="field"><label>Your name</label><input type="text" id="player-name" placeholder="Enter your name"
+          maxlength="20"></div>
+      <button class="btn btn-primary" onclick="hostGame()">Create new game</button>
+      <div class="divider">— or —</div>
+      <div class="field"><label>Room code</label><input type="text" id="join-code" placeholder="4-letter code"
+          maxlength="4" style="text-transform:uppercase;letter-spacing:0.15em"></div>
+      <button class="btn btn-secondary" onclick="joinGame()">Join game</button>
+    </div>
+    <div class="lobby-card" id="lobby-waiting" style="display:none">
+      <h2 id="waiting-title">Waiting for players...</h2>
+      <div class="field"><label>Room code</label></div>
+      <div class="room-code-display" id="room-code-show"></div>
+      <div class="players-list" id="players-list"></div>
+      <div class="waiting-msg" id="waiting-msg"></div>
+      <button class="btn btn-primary" id="start-btn" style="display:none" onclick="startGame()">Start game</button>
+      <button class="btn btn-secondary" style="margin-top:0.5rem" onclick="leaveGame()">Leave</button>
+    </div>
+  </div>
+  <div id="game" class="screen">
+    <div class="game-header">
+      <div class="hand-info">Hand <strong id="hdr-hand">1</strong> of 11 · <span id="hdr-cards">3</span> cards</div>
+      <div style="display:flex;gap:0.5rem;align-items:center"><span class="wild-badge" id="hdr-wild"></span><button
+          class="action-btn" onclick="showScores()" style="padding:4px 9px;">Scores</button></div>
+    </div>
+    <div class="scores-bar" id="scores-bar"></div>
+    <div class="game-area">
+      <div class="opponents-area" id="opponents-area"></div>
+      <div class="table-area">
+        <div class="table-label">Table</div>
+        <div class="piles">
+          <div class="pile">
+            <div class="stock-pile" onclick="drawFromStock()"><svg width="32" height="32" viewBox="0 0 24 24"
+                fill="none" stroke="white" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg></div>
+            <div class="pile-label">Stock</div>
+          </div>
+          <div class="pile">
+            <div id="discard-pile"
+              style="width:78px;height:114px;border-radius:8px;border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:calc(0.72rem * var(--fs));cursor:pointer;"
+              onclick="drawFromDiscard()"><span>discard</span></div>
+            <div class="pile-label">Discard</div>
+          </div>
+        </div>
+      </div>
+      <div class="my-hand-area">
+        <div class="table-label">Your hand <span id="hand-count-label"></span> <span
+            style="font-size:calc(0.65rem * var(--fs));color:var(--text3);font-weight:400;font-style:italic;">drag to
+            reorder</span></div>
+        <div class="my-hand-cards" id="my-hand"></div>
+        <div class="hand-actions">
+          <span class="turn-indicator waiting" id="turn-indicator">Waiting</span>
+          <button class="action-btn" id="btn-discard" disabled onclick="discardSelected()">Discard</button>
+          <button class="action-btn danger" id="btn-pay-me" disabled onclick="declarePay()">Pay Me!</button>
+        </div>
+        <div class="msg-area" id="msg-area"></div>
+      </div>
+    </div>
+  </div>
+  <div id="layoff" class="screen">
+    <div class="layoff-header">
+      <h2>Lay-off phase</h2><button class="action-btn" onclick="showScores()" style="padding:4px 9px;">Scores</button>
+    </div>
+    <div class="layoff-body">
+      <div class="layoff-status" id="layoff-status"></div>
+      <div class="caller-melds-section">
+        <div class="section-title" id="caller-melds-title">Caller's melds</div>
+        <div id="caller-melds-display"></div>
+      </div>
+      <div id="all-players-layoff"></div>
+      <div style="padding-bottom:1rem"></div>
+    </div>
+  </div>
+  <div id="pay-me-toast" class="pay-me-toast" style="display:none"><span class="toast-msg" id="toast-msg"></span><button
+      class="toast-close" onclick="dismissToast()">Dismiss</button></div>
+  <div id="modal-end-hand" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <h2 id="end-hand-title">Hand complete</h2>
+      <div class="subtitle" id="end-hand-sub"></div>
+      <div id="end-hand-content"></div>
+      <div class="modal-actions"><button class="btn btn-primary" id="end-hand-btn" onclick="nextHand()">Next
+          hand</button></div>
+    </div>
+  </div>
+  <div id="modal-scores" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <h2>Scoreboard</h2>
+      <div class="subtitle">Lower score is better · $ = declared Pay Me</div>
+      <div id="scores-content"></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('modal-scores')">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="modal-game-over" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <h2>Game Over!</h2>
+      <div class="subtitle">All 11 hands have been played.</div>
+      <div id="game-over-content"></div>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="returnToLobby()">New game</button></div>
+    </div>
+  </div>
+  <div id="modal-meld" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <h2>Arrange your melds</h2>
+      <div class="subtitle">Select 3+ cards → Add meld. Mark one leftover as discard if needed.</div>
+      <div class="pin-hint" id="pin-hint" style="display:none">Wild-rank cards show a green "nat" badge — they play as
+        naturals by default. Select one alone and click "Force as wild" to use it as a wild substitute instead.</div>
+      <div style="font-size:calc(0.8rem * var(--fs));color:var(--text2);margin-bottom:0.5rem">Remaining cards:</div>
+      <div id="meld-hand" style="display:flex;flex-wrap:wrap;gap:5px;min-height:56px;margin-bottom:0.75rem"></div>
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem">
+        <div style="font-size:calc(0.75rem * var(--fs));color:var(--text3);margin-bottom:0.5rem">CONFIRMED MELDS</div>
+        <div id="meld-confirmed"></div>
+      </div>
+      <div id="discard-zone" class="discard-zone" style="display:none"></div>
+      <div class="msg-area" id="meld-msg" style="margin-top:0.5rem"></div>
+      <div class="modal-actions" style="flex-wrap:wrap;">
+        <button class="action-btn" onclick="confirmMeld()">Add meld</button>
+        <button class="action-btn danger" id="btn-force-wild" style="display:none" onclick="forceAsWild()">Force as
+          wild</button>
+        <button class="action-btn" onclick="setMeldDiscard()">Set as discard</button>
+        <button class="action-btn" onclick="clearMeldSel()">Clear</button>
+      </div>
+      <div class="modal-actions" style="margin-top:0.5rem">
+        <button class="btn btn-primary" onclick="submitMelds()">Submit & call Pay Me!</button>
+        <button class="btn btn-secondary" onclick="cancelMeld()">&#8592; Back</button>
+      </div>
+    </div>
+  </div>
+  <div id="modal-help" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <h2>Pay Me — Quick Rules</h2>
+      <div class="subtitle">Contract Rummy for 2–8 players · 11 hands</div>
+      <div style="font-size:calc(0.875rem * var(--fs));line-height:1.7;color:var(--text2)">
+        <p><strong style="color:var(--text)">Object:</strong> Be first to form your entire hand into melds.</p><br>
+        <p><strong style="color:var(--text)">Hands:</strong> Hand 1 = 3 cards … Hand 11 = 13.</p><br>
+        <p><strong style="color:var(--text)">Wilds:</strong> Jokers always wild. Wild-rank cards default to natural; use
+          "Force as wild" to change. Max half of any meld can be wild. At least 2 natural cards per meld.</p><br>
+        <p><strong style="color:var(--text)">Melds:</strong> Set = 3–4 same rank, different suits. Run = 3+ consecutive
+          same suit.</p><br>
+        <p><strong style="color:var(--text)">Turn:</strong> Draw from stock or discard, then discard one card.</p><br>
+        <p><strong style="color:var(--text)">Going out:</strong> Whole hand melds → "Pay Me!" Caller scores 0 ($). One
+          final turn each. Then lay-off phase.</p><br>
+        <p><strong style="color:var(--text)">Scoring:</strong> Caller=$0. Others: Wild=0, A=15, K–10=10, 9–2=face value.
+        </p>
+      </div>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal('modal-help')">Got it</button>
+      </div>
+    </div>
+  </div>
+  <button class="help-btn" onclick="showHelp()" title="Rules">?</button>
+  <script>
+    const SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], SUIT_COLOR = { '♠': 'black', '♣': 'black', '♥': 'red', '♦': 'red' }, RANK_VAL = { A: 15, K: 10, Q: 10, J: 10, '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2 }, WILD_BY_HAND = { 1: '3', 2: '4', 3: '5', 4: '6', 5: '7', 6: '8', 7: '9', 8: '10', 9: 'J', 10: 'Q', 11: 'K' }, HAND_SIZES = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11, 10: 12, 11: 13 };
+    function makeDecks(n) { let d = []; for (let i = 0; i < n; i++) { for (let s of SUITS) for (let r of RANKS) d.push({ suit: s, rank: r, id: `${r}${s}-${i}` }); d.push({ suit: '★', rank: 'JK', id: `JK1-${i}`, joker: true }); d.push({ suit: '★', rank: 'JK', id: `JK2-${i}`, joker: true }); } return shuffle(d); }
+    function shuffle(a) { let b = [...a]; for (let i = b.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));[b[i], b[j]] = [b[j], b[i]]; } return b; }
+    function isWild(c, h) { return c.joker || c.rank === WILD_BY_HAND[h]; }
+    function effectivelyWild(c, h, fw) { if (c.joker) return true; if (c.rank === WILD_BY_HAND[h]) return fw.has(c.id); return false; }
+    function cardValue(c, h) { return isWild(c, h) ? 0 : (RANK_VAL[c.rank] || 0); }
+    function rankIndex(r) { return RANKS.indexOf(r); }
+    function validateMeldCore(cards, hand, fw) { if (cards.length < 3) return { valid: false, msg: 'A meld needs at least 3 cards.' }; const wilds = cards.filter(c => effectivelyWild(c, hand, fw)), nats = cards.filter(c => !effectivelyWild(c, hand, fw)); if (nats.length < 2) return { valid: false, msg: 'A meld needs at least 2 natural cards.' }; if (wilds.length > Math.floor(cards.length / 2)) return { valid: false, msg: 'Too many wilds.' }; const ranks = nats.map(c => c.rank); if (ranks.every(r => r === ranks[0])) { if (new Set(nats.map(c => c.suit)).size < nats.length) return { valid: false, msg: 'Duplicate suits in set.' }; if (cards.length > 4) return { valid: false, msg: 'Set max 4 cards.' }; return { valid: true, type: 'set' }; } if (new Set(nats.map(c => c.suit)).size !== 1) return { valid: false, msg: 'Not a valid set or run.' }; const idxs = nats.map(c => rankIndex(c.rank)).sort((a, b) => a - b); for (let i = 1; i < idxs.length; i++)if (idxs[i] === idxs[i - 1]) return { valid: false, msg: 'Duplicate ranks in run.' }; if (wilds.length < idxs[idxs.length - 1] - idxs[0] + 1 - nats.length) return { valid: false, msg: 'Not enough wilds for run gaps.' }; return { valid: true, type: 'run' }; }
+    function validateMeld(cards, hand, fw = new Set()) { const r1 = validateMeldCore(cards, hand, fw); if (r1.valid) return r1; const aw = new Set([...fw, ...cards.filter(c => !c.joker && c.rank === WILD_BY_HAND[hand]).map(c => c.id)]); const r2 = validateMeldCore(cards, hand, aw); if (r2.valid) return r2; return r1; }
+    function canLayOff(card, meld, hand) { return validateMeld([...meld, card], hand, new Set()).valid || validateMeld([...meld, card], hand, new Set([card.id])).valid; }
+    function computeLayOffs(hc, cm, hand) { let melds = cm.map(m => [...m]), rem = [...hc], ch = true; while (ch) { ch = false; for (let ci = rem.length - 1; ci >= 0; ci--) { for (let mi = 0; mi < melds.length; mi++) { if (canLayOff(rem[ci], melds[mi], hand)) { melds[mi].push(rem[ci]); rem.splice(ci, 1); ch = true; break; } } } } return { melds, remaining: rem }; }
+    function totalDeadwood(cards, hand) { return cards.reduce((s, c) => s + cardValue(c, hand), 0); }
+    let G = { roomCode: '', players: [], myIdx: 0, isHost: false, phase: 'lobby', hand: 1, deck: [], discard: [], hands: [], scores: [], roundLog: [], payMeCount: [], currentTurn: 0, drawnThisTurn: false, payMeCaller: -1, lastTurnsLeft: 0, selectedCards: new Set(), confirmedMelds: [], meldSelecting: [], callerMelds: [], layoffOrder: [], layoffIdx: 0, layoffDone: new Set(), playerHands: [], layoffSelected: new Set() };
+    let meldHandSelected = new Set(), meldDiscardId = null, forcedWilds = new Set(), toastTimer = null, dragSrcIdx = null, playerName = '';
+    function genCode() { return Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 23)]).join(''); }
+    function showToast(msg, ms = 4000) { dismissToast(); document.getElementById('toast-msg').textContent = msg; document.getElementById('pay-me-toast').style.display = 'flex'; if (ms > 0) toastTimer = setTimeout(dismissToast, ms); }
+    function dismissToast() { if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; } document.getElementById('pay-me-toast').style.display = 'none'; }
+    function hostGame() { playerName = document.getElementById('player-name').value.trim(); if (!playerName) { alert('Please enter your name'); return; } G.roomCode = genCode(); G.players = [{ name: playerName, isHost: true }]; G.myIdx = 0; G.isHost = true; showWaitingLobby(); }
+    function joinGame() { playerName = document.getElementById('player-name').value.trim(); const code = document.getElementById('join-code').value.trim().toUpperCase(); if (!playerName) { alert('Enter your name'); return; } if (code.length !== 4) { alert('Enter valid room code'); return; } G.roomCode = code; G.players.push({ name: playerName, isHost: false }); G.myIdx = G.players.length - 1; showWaitingLobby(); }
+    function showWaitingLobby() { document.getElementById('lobby-home').style.display = 'none'; document.getElementById('lobby-waiting').style.display = ''; document.getElementById('room-code-show').textContent = G.roomCode; document.getElementById('waiting-title').textContent = G.isHost ? 'Your game room' : 'Joined!'; renderPlayersList(); if (G.isHost) { document.getElementById('start-btn').style.display = ''; const nb = parseInt(prompt('How many bot players? (1-5)', '2')) || 2; const names = ['Bot Alex', 'Bot Sam', 'Bot Jordan', 'Bot Taylor', 'Bot Morgan']; for (let i = 0; i < Math.min(nb, 5); i++)G.players.push({ name: names[i], isBot: true }); renderPlayersList(); } }
+    function renderPlayersList() { document.getElementById('players-list').innerHTML = G.players.map(p => `<div class="player-row"><div class="player-dot ${p.isHost ? 'host' : ''}"></div><span>${p.name}${p.isHost ? ' (host)' : ''}${p.isBot ? ' 🤖' : ''}</span></div>`).join(''); document.getElementById('waiting-msg').textContent = G.players.length < 2 ? 'Waiting for players...' : G.players.length + ' players ready.'; }
+    function leaveGame() { location.reload(); }
+    function startGame() { if (G.players.length < 2) { alert('Need at least 2 players.'); return; } G.scores = Array(G.players.length).fill(0); G.payMeCount = Array(G.players.length).fill(0); G.roundLog = []; G.hand = 1; G.phase = 'playing'; switchScreen('game'); dealHand(); }
+    function switchScreen(id) { dismissToast(); document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function dealHand() { const n = G.players.length, nd = n <= 4 ? 2 : 3; G.deck = makeDecks(nd); G.discard = []; const hs = HAND_SIZES[G.hand]; G.hands = G.players.map(() => []); for (let c = 0; c < hs; c++)for (let p = 0; p < n; p++)G.hands[p].push(G.deck.pop()); G.discard.push(G.deck.pop()); G.currentTurn = 0; G.drawnThisTurn = false; G.payMeCaller = -1; G.lastTurnsLeft = -1; G.selectedCards = new Set(); G.phase = 'playing'; G.callerMelds = []; updateHeader(); renderGame(); if (G.currentTurn !== G.myIdx) setTimeout(botTurn, 800); }
+    function updateHeader() { const wc = WILD_BY_HAND[G.hand]; document.getElementById('hdr-hand').textContent = G.hand; document.getElementById('hdr-cards').textContent = HAND_SIZES[G.hand]; document.getElementById('hdr-wild').textContent = `${wc}s + Jokers wild`; document.getElementById('hand-count-label').textContent = `(${G.hands[G.myIdx]?.length || 0})`; }
+    function renderGame() { updateHeader(); renderScoresBar(); renderOpponents(); renderDiscardPile(); renderMyHand(); updateActions(); }
+    function renderScoresBar() { document.getElementById('scores-bar').innerHTML = G.players.map((p, i) => `<div class="score-chip ${i === G.currentTurn ? 'current-turn' : ''} ${i === G.myIdx ? 'me' : ''}"><span class="sname">${p.name}${p.isBot ? ' 🤖' : ''}</span><span class="sval">${G.scores[i]}pts · $×${G.payMeCount[i]}</span></div>`).join(''); }
+    function renderOpponents() { document.getElementById('opponents-area').innerHTML = G.players.filter((_, i) => i !== G.myIdx).map((_, j) => { const i = j < G.myIdx ? j : j + 1; return `<div class="opponent-hand"><div class="oname">${G.players[i].name}${i === G.currentTurn ? ' ◀' : ''}</div><div class="opponent-cards">${(G.hands[i] || []).map(() => '<div class="card-back"></div>').join('')}</div></div>`; }).join(''); }
+    function renderDiscardPile() { const el = document.getElementById('discard-pile'); if (!G.discard.length) { el.innerHTML = '<span>empty</span>'; return; } el.innerHTML = mkCard(G.discard[G.discard.length - 1], G.hand, false, false, true, new Set()); }
+    function renderMyHand() { document.getElementById('my-hand').innerHTML = (G.hands[G.myIdx] || []).map((c, idx) => { const wild = isWild(c, G.hand), sel = G.selectedCards.has(c.id); return `<div class="card clickable ${SUIT_COLOR[c.suit] || 'black'} ${wild ? 'wild-card' : ''} ${sel ? 'selected' : ''}" draggable="true" data-idx="${idx}" onclick="toggleSelect('${c.id}')" ondragstart="onDragStart(event,${idx})" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,${idx})" ondragend="onDragEnd(event)"><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div></div>`; }).join(''); }
+    function onDragStart(e, idx) { dragSrcIdx = idx; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', idx); setTimeout(() => e.target.classList.add('dragging'), 0); }
+    function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
+    function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function onDrop(e, targetIdx) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if (dragSrcIdx === null || dragSrcIdx === targetIdx) return; const hand = G.hands[G.myIdx]; const [moved] = hand.splice(dragSrcIdx, 1); hand.splice(targetIdx, 0, moved); dragSrcIdx = null; renderMyHand(); }
+    function onDragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('#my-hand .card').forEach(c => c.classList.remove('drag-over')); dragSrcIdx = null; }
+    function mkCard(c, hand, small, sel, noHover, fw) { const isWR = !c.joker && c.rank === WILD_BY_HAND[hand]; const isForced = fw && fw.has(c.id); const showAmber = c.joker || (isWR && isForced); const sz = small ? 'width:58px;height:86px;' : ''; const cls = ['card', SUIT_COLOR[c.suit] || 'black', showAmber ? 'wild-card' : '', sel ? 'selected' : '', noHover ? 'no-hover' : ''].filter(Boolean).join(' '); return `<div class="${cls}" style="${sz}"><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div>${isWR && isForced ? '<div class="card-nat-pin" style="background:var(--warn)">wild</div>' : ''}${isWR && !isForced ? '<div class="card-nat-pin" style="background:var(--success)">nat</div>' : ''}</div>`; }
+    function updateActions() { const myTurn = G.currentTurn === G.myIdx && G.phase === 'playing', drawn = G.drawnThisTurn; document.getElementById('btn-discard').disabled = !(myTurn && drawn); document.getElementById('btn-pay-me').disabled = !(myTurn && drawn); const ind = document.getElementById('turn-indicator'); if (myTurn && !drawn) { ind.textContent = 'Your turn — draw'; ind.className = 'turn-indicator my-turn'; } else if (myTurn && drawn) { ind.textContent = 'Discard or Pay Me!'; ind.className = 'turn-indicator my-turn'; } else { ind.textContent = `Waiting for ${G.players[G.currentTurn]?.name}...`; ind.className = 'turn-indicator waiting'; } }
+    function setMsg(msg, type = '') { const el = document.getElementById('msg-area'); el.textContent = msg; el.className = 'msg-area' + (type ? ' ' + type : ''); }
+    function toggleSelect(id) { if (G.currentTurn !== G.myIdx || !G.drawnThisTurn) return; G.selectedCards.has(id) ? G.selectedCards.delete(id) : G.selectedCards.add(id); renderMyHand(); }
+    function drawFromStock() { if (G.currentTurn !== G.myIdx || G.drawnThisTurn || G.phase !== 'playing') return; if (!G.deck.length) reshuffleDiscard(); if (!G.deck.length) { setMsg('No cards left!', 'bad'); return; } const card = G.deck.pop(); G.hands[G.myIdx].push(card); G.drawnThisTurn = true; setMsg(`Drew ${card.rank}${card.suit}${isWild(card, G.hand) ? ' (wild-rank)' : ''}`); renderGame(); }
+    function drawFromDiscard() { if (G.currentTurn !== G.myIdx || G.drawnThisTurn || G.phase !== 'playing') return; if (!G.discard.length) return; const card = G.discard.pop(); G.hands[G.myIdx].push(card); G.drawnThisTurn = true; setMsg(`Picked up ${card.rank}${card.suit}`); renderGame(); }
+    function reshuffleDiscard() { if (G.discard.length <= 1) return; const top = G.discard.pop(); G.deck = shuffle(G.discard); G.discard = [top]; }
+    function discardSelected() { if (G.selectedCards.size !== 1) { setMsg('Select exactly one card to discard.', 'bad'); return; } const id = [...G.selectedCards][0]; const idx = G.hands[G.myIdx].findIndex(c => c.id === id); if (idx === -1) return; G.discard.push(G.hands[G.myIdx].splice(idx, 1)[0]); G.selectedCards.clear(); G.drawnThisTurn = false; setMsg(''); advanceTurn(); }
+    function declarePay() { if (!G.drawnThisTurn) return; G.confirmedMelds = []; meldHandSelected = new Set(); meldDiscardId = null; forcedWilds = new Set(); G.meldSelecting = [...G.hands[G.myIdx]]; document.getElementById('meld-msg').textContent = ''; const hasWR = G.meldSelecting.some(c => !c.joker && isWild(c, G.hand)); document.getElementById('pin-hint').style.display = hasWR ? 'block' : 'none'; document.getElementById('modal-meld').style.display = 'flex'; renderMeldModal(); }
+    function cancelMeld() { closeModal('modal-meld'); meldHandSelected = new Set(); meldDiscardId = null; forcedWilds = new Set(); G.confirmedMelds = []; setMsg(''); }
+    function renderMeldModal() { const usedIds = G.confirmedMelds.flat(); const remaining = G.meldSelecting.filter(c => !usedIds.includes(c.id) && c.id !== meldDiscardId); document.getElementById('meld-hand').innerHTML = remaining.map(c => { const isWR = !c.joker && c.rank === WILD_BY_HAND[G.hand]; const isForced = forcedWilds.has(c.id); const showAmber = c.joker || (isWR && isForced); const sel = meldHandSelected.has(c.id); const cls = ['card', 'clickable', SUIT_COLOR[c.suit] || 'black', showAmber ? 'wild-card' : '', sel ? 'selected' : ''].filter(Boolean).join(' '); return `<span onclick="toggleMeldCard('${c.id}')" style="cursor:pointer;display:inline-block;margin:3px"><div class="${cls}" style="width:58px;height:86px;"><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center" style="font-size:1.5rem">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div>${isWR && isForced ? '<div class="card-nat-pin" style="background:var(--warn)">wild</div>' : ''}${isWR && !isForced ? '<div class="card-nat-pin" style="background:var(--success)">nat</div>' : ''}</div></span>`; }).join(''); const selArr = [...meldHandSelected]; const singleWR = selArr.length === 1 && (() => { const c = G.meldSelecting.find(x => x.id === selArr[0]); return c && !c.joker && isWild(c, G.hand); })(); const btn = document.getElementById('btn-force-wild'); if (singleWR) { const id = selArr[0]; btn.style.display = ''; btn.textContent = forcedWilds.has(id) ? 'Use as natural rank' : 'Force as wild'; } else btn.style.display = 'none'; const conf = document.getElementById('meld-confirmed'); if (!G.confirmedMelds.length) conf.innerHTML = `<em style="font-size:calc(0.8rem * 1.5);color:var(--text3)">None yet</em>`; else conf.innerHTML = G.confirmedMelds.map((meld, mi) => { const cards = meld.map(id => G.meldSelecting.find(c => c.id === id)).filter(Boolean); return `<div class="meld-group"><div class="meld-group-label">Meld ${mi + 1}</div><div class="meld-cards">${cards.map(c => mkCard(c, G.hand, true, false, true, forcedWilds)).join('')}</div></div>`; }).join(''); const dz = document.getElementById('discard-zone'); if (meldDiscardId) { const dc = G.meldSelecting.find(c => c.id === meldDiscardId); dz.style.display = 'flex'; dz.style.alignItems = 'center'; dz.style.gap = '0.75rem'; dz.innerHTML = `<span>Discard:</span>${mkCard(dc, G.hand, true, false, false, forcedWilds)}<button class="action-btn" onclick="clearMeldDiscard()">Remove</button>`; } else dz.style.display = 'none'; }
+    function toggleMeldCard(id) { meldHandSelected.has(id) ? meldHandSelected.delete(id) : meldHandSelected.add(id); renderMeldModal(); }
+    function forceAsWild() { const selArr = [...meldHandSelected]; if (selArr.length !== 1) return; const id = selArr[0]; forcedWilds.has(id) ? forcedWilds.delete(id) : forcedWilds.add(id); document.getElementById('meld-msg').textContent = forcedWilds.has(id) ? 'Card will be used as a wild.' : 'Card will be used as its natural rank.'; renderMeldModal(); }
+    function confirmMeld() { const selIds = [...meldHandSelected]; if (selIds.length < 3) { document.getElementById('meld-msg').textContent = 'Select at least 3 cards.'; return; } const cards = selIds.map(id => G.meldSelecting.find(c => c.id === id)).filter(Boolean); const res = validateMeld(cards, G.hand, forcedWilds); if (!res.valid) { document.getElementById('meld-msg').textContent = res.msg; return; } G.confirmedMelds.push(selIds); meldHandSelected = new Set(); document.getElementById('meld-msg').textContent = `Meld added (${res.type})!`; renderMeldModal(); }
+    function setMeldDiscard() { const selIds = [...meldHandSelected]; if (selIds.length !== 1) { document.getElementById('meld-msg').textContent = 'Select exactly one card.'; return; } meldDiscardId = selIds[0]; meldHandSelected = new Set(); document.getElementById('meld-msg').textContent = 'Discard set.'; renderMeldModal(); }
+    function clearMeldDiscard() { meldDiscardId = null; renderMeldModal(); }
+    function clearMeldSel() { meldHandSelected = new Set(); renderMeldModal(); }
+    function submitMelds() { const usedIds = G.confirmedMelds.flat(); const leftover = G.meldSelecting.filter(c => !usedIds.includes(c.id) && c.id !== meldDiscardId); if (leftover.length > 0) { document.getElementById('meld-msg').textContent = `${leftover.length} card(s) unaccounted for.`; return; } closeModal('modal-meld'); if (meldDiscardId) { const di = G.hands[G.myIdx].findIndex(c => c.id === meldDiscardId); if (di !== -1) G.discard.push(G.hands[G.myIdx].splice(di, 1)[0]); } G.callerMelds = G.confirmedMelds.map(meld => meld.map(id => G.meldSelecting.find(c => c.id === id)).filter(Boolean)); G.payMeCaller = G.myIdx; G.phase = 'pay-me'; G.lastTurnsLeft = G.players.length; showToast(`${G.players[G.myIdx].name} called Pay Me! Each player gets one final turn.`, 4000); setMsg('You called Pay Me! Each player gets one final turn.', 'good'); advanceTurn(); }
+    function advanceTurn() { G.currentTurn = (G.currentTurn + 1) % G.players.length; G.drawnThisTurn = false; if (G.phase === 'pay-me') { G.lastTurnsLeft--; if (G.lastTurnsLeft <= 0 || G.currentTurn === G.payMeCaller) { dismissToast(); startLayoffPhase(); return; } } renderGame(); if (G.currentTurn !== G.myIdx) setTimeout(botTurn, 600 + Math.random() * 500); }
+    function botTurn() { if (G.currentTurn === G.myIdx) return; const bi = G.currentTurn, hand = G.hands[bi]; const topDiscard = G.discard.length ? G.discard[G.discard.length - 1] : null; let drawnCardId = null, drewFromDiscard = false; if (topDiscard && !isWild(topDiscard, G.hand) && Math.random() > 0.5) { const drawn = G.discard.pop(); hand.push(drawn); drawnCardId = drawn.id; drewFromDiscard = true; } else { if (!G.deck.length) reshuffleDiscard(); if (G.deck.length) { const drawn = G.deck.pop(); hand.push(drawn); drawnCardId = drawn.id; } } let di = -1, mv = -1; hand.forEach((c, i) => { if (isWild(c, G.hand)) return; if (drewFromDiscard && c.id === drawnCardId) return; const v = cardValue(c, G.hand); if (v > mv) { mv = v; di = i; } }); if (di === -1) hand.forEach((c, i) => { if (isWild(c, G.hand)) return; const v = cardValue(c, G.hand); if (v > mv) { mv = v; di = i; } }); if (di === -1) { di = hand.findIndex(c => c.id === drawnCardId); if (di === -1) di = hand.length - 1; } G.discard.push(hand.splice(di, 1)[0]); if (totalDeadwood(hand, G.hand) === 0 && G.phase === 'playing' && G.payMeCaller === -1) { G.callerMelds = []; G.payMeCaller = bi; G.phase = 'pay-me'; G.lastTurnsLeft = G.players.length; showToast(`${G.players[bi].name} called Pay Me! Each player gets one final turn.`, 4000); } renderGame(); setTimeout(advanceTurn, 400); }
+    function startLayoffPhase() { G.phase = 'layoff'; const caller = G.payMeCaller; if (G.callerMelds.length === 0 && caller >= 0) G.callerMelds = autoGenerateMelds(G.hands[caller], G.hand); G.playerHands = G.hands.map(h => [...h]); G.layoffOrder = []; for (let i = 1; i < G.players.length; i++)G.layoffOrder.push((caller + i) % G.players.length); G.layoffIdx = 0; G.layoffDone = new Set(); G.layoffSelected = new Set(); switchScreen('layoff'); renderLayoffScreen(); if (G.layoffOrder.length > 0) { const first = G.layoffOrder[0]; if (G.players[first].isBot || first !== G.myIdx) setTimeout(botLayoff, 900); } }
+    function autoGenerateMelds(hand, handNum) { const melds = []; let remaining = [...hand]; const byRank = {}; remaining.forEach(c => { if (!isWild(c, handNum)) (byRank[c.rank] = byRank[c.rank] || []).push(c); }); for (const rank of Object.keys(byRank)) { if (byRank[rank].length >= 3) { const set = byRank[rank].slice(0, Math.min(4, byRank[rank].length)); melds.push(set); set.forEach(c => { remaining = remaining.filter(x => x.id !== c.id); }); } } const bySuit = {}; remaining.filter(c => !isWild(c, handNum)).forEach(c => { (bySuit[c.suit] = bySuit[c.suit] || []).push(c); }); for (const suit of Object.keys(bySuit)) { const cards = bySuit[suit].sort((a, b) => rankIndex(a.rank) - rankIndex(b.rank)); let run = [cards[0]]; for (let i = 1; i < cards.length; i++) { if (rankIndex(cards[i].rank) === rankIndex(cards[i - 1].rank) + 1) run.push(cards[i]); else { if (run.length >= 3) { melds.push(run); run.forEach(c => { remaining = remaining.filter(x => x.id !== c.id); }); } run = [cards[i]]; } } if (run.length >= 3) { melds.push(run); run.forEach(c => { remaining = remaining.filter(x => x.id !== c.id); }); } } return melds; }
+    function renderLayoffScreen() { const caller = G.payMeCaller; document.getElementById('caller-melds-title').textContent = (caller >= 0 ? G.players[caller].name : 'Caller') + "'s melds"; document.getElementById('caller-melds-display').innerHTML = G.callerMelds.length === 0 ? `<em style="color:var(--text3)">No melds.</em>` : G.callerMelds.map((meld, mi) => `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map(c => mkCard(c, G.hand, true, false, true, new Set())).join('')}</div></div>`).join(''); document.getElementById('layoff-status').textContent = G.layoffIdx < G.layoffOrder.length ? `${G.players[G.layoffOrder[G.layoffIdx]].name}'s turn to lay off cards.` : 'All players done. Calculating scores...'; document.getElementById('all-players-layoff').innerHTML = G.layoffOrder.map((pi, oi) => { const p = G.players[pi], isActive = oi === G.layoffIdx, isDone = G.layoffDone.has(pi), isHuman = pi === G.myIdx; const hand = G.playerHands[pi] || []; let actionsHTML = ''; if (isActive && isHuman && !isDone) actionsHTML = `<div class="layoff-actions"><button class="action-btn" onclick="humanLayoff()">Lay off selected</button><button class="action-btn" onclick="humanPassLayoff()">Pass</button></div>`; return `<div class="player-layoff-section ${isActive && !isDone ? 'active-player' : ''}"><div class="plname">${p.name}${p.isBot ? ' 🤖' : ''}${isActive && !isDone ? '<span class="active-badge">laying off</span>' : ''}${isDone ? '<span class="done-badge">done</span>' : ''}</div><div class="player-cards-row">${hand.length === 0 ? `<em style="color:var(--text3)">No cards remaining</em>` : hand.map(c => { const sel = isActive && isHuman && G.layoffSelected.has(c.id); const oc = isActive && isHuman ? `onclick="toggleLayoffCard('${c.id}')"` : ''; return `<div class="card ${SUIT_COLOR[c.suit] || 'black'} ${isWild(c, G.hand) ? 'wild-card' : ''} ${sel ? 'selected' : ''} ${!(isActive && isHuman) ? 'no-hover' : ''} ${isActive && isHuman ? 'clickable' : ''}" ${oc}><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div></div>`; }).join('')}</div>${actionsHTML}</div>`; }).join(''); }
+    function toggleLayoffCard(id) { G.layoffSelected.has(id) ? G.layoffSelected.delete(id) : G.layoffSelected.add(id); renderLayoffScreen(); }
+    function humanLayoff() { if (!G.layoffSelected.size) return; const pi = G.layoffOrder[G.layoffIdx]; G.playerHands[pi].filter(c => G.layoffSelected.has(c.id)).forEach(card => { for (let mi = 0; mi < G.callerMelds.length; mi++) { if (canLayOff(card, G.callerMelds[mi], G.hand)) { G.callerMelds[mi].push(card); G.playerHands[pi] = G.playerHands[pi].filter(c => c.id !== card.id); break; } } }); G.layoffSelected = new Set(); renderLayoffScreen(); }
+    function humanPassLayoff() { G.layoffDone.add(G.layoffOrder[G.layoffIdx]); G.layoffSelected = new Set(); G.layoffIdx++; renderLayoffScreen(); if (G.layoffIdx < G.layoffOrder.length) { const next = G.layoffOrder[G.layoffIdx]; if (G.players[next].isBot || next !== G.myIdx) setTimeout(botLayoff, 700); } else setTimeout(finalizeScores, 800); }
+    function advanceLayoff() { G.layoffDone.add(G.layoffOrder[G.layoffIdx]); G.layoffIdx++; renderLayoffScreen(); if (G.layoffIdx < G.layoffOrder.length) { const next = G.layoffOrder[G.layoffIdx]; if (G.players[next].isBot || next !== G.myIdx) setTimeout(botLayoff, 700); } else setTimeout(finalizeScores, 800); }
+    function botLayoff() { const oi = G.layoffIdx; if (oi >= G.layoffOrder.length) return; const pi = G.layoffOrder[oi]; if (!G.players[pi].isBot && pi === G.myIdx) return; const result = computeLayOffs(G.playerHands[pi], G.callerMelds, G.hand); G.callerMelds = result.melds; G.playerHands[pi] = result.remaining; renderLayoffScreen(); setTimeout(advanceLayoff, 600); }
+    function finalizeScores() { G.phase = 'end-hand'; const caller = G.payMeCaller; const re = { handNum: G.hand, callerIdx: caller, playerScores: [] }; G.players.forEach((_, i) => { const cp = (i === caller), pts = cp ? 0 : totalDeadwood(G.playerHands[i], G.hand); G.scores[i] += pts; if (cp) G.payMeCount[i]++; re.playerScores.push({ pts, calledPayMe: cp }); }); G.roundLog.push(re); const cn = caller >= 0 ? G.players[caller].name : 'Nobody'; document.getElementById('end-hand-title').textContent = `Hand ${G.hand} complete`; document.getElementById('end-hand-sub').textContent = `${cn} called Pay Me!`; document.getElementById('end-hand-content').innerHTML = buildScorecardHTML(true); document.getElementById('end-hand-btn').textContent = G.hand === 11 ? 'See final results' : 'Next hand'; document.getElementById('modal-end-hand').style.display = 'flex'; }
+    function buildScorecardHTML(sc) { const hp = G.roundLog.length, lt = Math.min(...G.scores); let html = '<div class="section-label">Round by round</div><div class="overflow-scroll"><table class="scorecard"><thead><tr><th class="player-col">Player</th>'; for (let h = 1; h <= hp; h++)html += `<th>H${h}</th>`; html += '<th class="total-col">Total</th></tr></thead><tbody>'; G.players.forEach((p, pi) => { html += `<tr class="${G.scores[pi] === lt && hp > 0 ? 'lowest-total' : ''}"><td class="player-col">${p.name}${p.isBot ? ' 🤖' : ''}</td>`; for (let hi = 0; hi < hp; hi++) { const ps = G.roundLog[hi].playerScores[pi]; html += ps.calledPayMe ? `<td><span class="dollar">$</span></td>` : `<td style="${sc && hi === hp - 1 ? 'font-weight:600' : ''}">+${ps.pts}</td>`; } html += `<td class="total-col">${G.scores[pi]}</td></tr>`; }); html += '</tbody></table></div>'; const mp = Math.max(...G.payMeCount); html += '<div class="section-label" style="margin-top:1.25rem">Pay Me tally</div><div class="overflow-scroll"><table class="scorecard"><thead><tr><th class="player-col">Player</th>'; for (let h = 1; h <= hp; h++)html += `<th>H${h}</th>`; html += '<th class="wins-col">$</th></tr></thead><tbody>'; G.players.forEach((p, pi) => { html += `<tr><td class="player-col">${p.name}${p.isBot ? ' 🤖' : ''}</td>`; for (let hi = 0; hi < hp; hi++)html += G.roundLog[hi].callerIdx === pi ? `<td><span class="dollar">$</span></td>` : '<td>—</td>'; html += `<td class="wins-col">${G.payMeCount[pi]}</td></tr>`; }); html += '</tbody></table></div>'; return html; }
+    function nextHand() { closeModal('modal-end-hand'); if (G.hand === 11) { showGameOver(); return; } G.hand++; switchScreen('game'); dealHand(); }
+    function showGameOver() { const sorted = G.players.map((p, i) => ({ name: p.name, score: G.scores[i], isBot: p.isBot })).sort((a, b) => a.score - b.score); const mp = Math.max(...G.payMeCount); const pmL = G.players.filter((_, i) => G.payMeCount[i] === mp).map(p => p.name); let html = buildScorecardHTML(false); html += `<div style="margin-top:1rem;padding:1rem;background:var(--success-bg);border-radius:var(--radius-sm);text-align:center;color:var(--success);font-weight:600">Winner: ${sorted[0].name} — ${sorted[0].score} pts!</div>`; html += `<div style="margin-top:0.5rem;padding:0.75rem;background:var(--gold-bg);border-radius:var(--radius-sm);text-align:center;color:var(--gold);font-weight:600">Most Pay Me calls: ${pmL.join(', ')} (${mp}×)</div>`; document.getElementById('game-over-content').innerHTML = html; document.getElementById('modal-game-over').style.display = 'flex'; }
+    function showScores() { document.getElementById('scores-content').innerHTML = buildScorecardHTML(false); document.getElementById('modal-scores').style.display = 'flex'; }
+    function returnToLobby() { location.reload(); }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function showHelp() { document.getElementById('modal-help').style.display = 'flex'; }
+  </script>
+</body>
+
+</html>
