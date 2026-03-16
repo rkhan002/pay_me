@@ -880,6 +880,7 @@
         z-index: 50;
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
 
   <body>
@@ -923,6 +924,14 @@
         <div class="room-code-display" id="room-code-show"></div>
         <div class="players-list" id="players-list"></div>
         <div class="waiting-msg" id="waiting-msg"></div>
+        <button
+          class="btn btn-secondary"
+          id="add-bot-btn"
+          style="display: none; margin-bottom: 0.5rem"
+          onclick="addBot()"
+        >
+          + Add bot player
+        </button>
         <button
           class="btn btn-primary"
           id="start-btn"
@@ -1245,6 +1254,100 @@
     </div>
     <button class="help-btn" onclick="showHelp()" title="Rules">?</button>
     <script>
+      // ─── Supabase realtime multiplayer ────────────────────────────────────────
+      const SUPABASE_URL      = 'https://zyvxibowrftsxjmetero.supabase.co'; // ← replace
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5dnhpYm93cmZ0c3hqbWV0ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTgzNzIsImV4cCI6MjA4OTE5NDM3Mn0.4SELs5G7XHyfMbLxVBJ2Q9wap12lXTT3rl80law2ARE';                    // ← replace
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      let myPlayerId = crypto.randomUUID();
+      let sbChannel  = null;
+
+      function serializeG() {
+        const { myIdx, isHost, selectedCards, confirmedMelds, meldSelecting,
+                layoffSelected, layoffDone, ...rest } = G;
+        return { ...rest, layoffDone: [...G.layoffDone], _updatedBy: myPlayerId };
+      }
+      function applyRemoteState(raw) {
+        const { _updatedBy, layoffDone, ...rest } = raw;
+        const save = {
+          sel: G.selectedCards, lSel: G.layoffSelected,
+          cm:  G.confirmedMelds, ms:  G.meldSelecting,
+        };
+        Object.assign(G, rest);
+        G.layoffDone     = new Set(layoffDone || []);
+        G.selectedCards  = save.sel;
+        G.layoffSelected = save.lSel;
+        G.confirmedMelds = save.cm;
+        G.meldSelecting  = save.ms;
+        const idx = G.players.findIndex(p => p.id === myPlayerId);
+        if (idx >= 0) { G.myIdx = idx; G.isHost = idx === 0; }
+      }
+      async function syncState() {
+        if (!G.roomCode) return;
+        await sb.from('rooms')
+          .update({ state: serializeG(), updated_at: new Date().toISOString() })
+          .eq('code', G.roomCode);
+      }
+      function subscribeRoom(code) {
+        if (sbChannel) sb.removeChannel(sbChannel);
+        sbChannel = sb.channel('room_' + code)
+          .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
+            payload => {
+              const raw = payload.new?.state;
+              if (!raw || raw._updatedBy === myPlayerId) return;
+              onRemoteState(raw);
+            })
+          .subscribe();
+      }
+      async function afterAction() {
+        await syncState();
+        if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+          setTimeout(botTurn, 600 + Math.random() * 500);
+      }
+      function renderCurrentPhase() {
+        switch (G.phase) {
+          case 'lobby':
+            renderPlayersList();
+            break;
+          case 'playing':
+          case 'pay-me':
+            switchScreen('game');
+            renderGame();
+            break;
+          case 'layoff':
+            switchScreen('layoff');
+            renderLayoffScreen();
+            if (G.isHost) {
+              const next = G.layoffOrder[G.layoffIdx];
+              if (next !== undefined && G.players[next]?.isBot) setTimeout(botLayoff, 700);
+            }
+            break;
+          case 'end-hand': {
+            switchScreen('game');
+            renderGame();
+            const caller = G.payMeCaller, cn = caller >= 0 ? G.players[caller].name : 'Nobody';
+            document.getElementById('end-hand-title').textContent   = `Hand ${G.hand} complete`;
+            document.getElementById('end-hand-sub').textContent     = `${cn} called Pay Me!`;
+            document.getElementById('end-hand-content').innerHTML   = buildScorecardHTML(true);
+            document.getElementById('end-hand-btn').textContent     = G.hand === 11 ? 'See final results' : 'Next hand';
+            document.getElementById('end-hand-btn').disabled        = !G.isHost;
+            document.getElementById('modal-end-hand').style.display = 'flex';
+            break;
+          }
+          case 'game-over':
+            switchScreen('game');
+            showGameOver();
+            break;
+        }
+      }
+      function onRemoteState(raw) {
+        applyRemoteState(raw);
+        renderCurrentPhase();
+        if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+          setTimeout(botTurn, 800);
+      }
+      // ──────────────────────────────────────────────────────────────────────────
+
       const SUITS = ["♠", "♥", "♦", "♣"],
         RANKS = [
           "A",
@@ -1459,59 +1562,57 @@
         }
         document.getElementById("pay-me-toast").style.display = "none";
       }
-      function hostGame() {
+      async function hostGame() {
         playerName = document.getElementById("player-name").value.trim();
-        if (!playerName) {
-          alert("Please enter your name");
-          return;
-        }
+        if (!playerName) { alert("Please enter your name"); return; }
         G.roomCode = genCode();
-        G.players = [{ name: playerName, isHost: true }];
-        G.myIdx = 0;
-        G.isHost = true;
+        G.players  = [{ name: playerName, isHost: true, id: myPlayerId }];
+        G.myIdx    = 0;
+        G.isHost   = true;
+        const { error } = await sb.from('rooms').insert({ code: G.roomCode, state: serializeG() });
+        if (error) { alert('Could not create room: ' + error.message); return; }
+        subscribeRoom(G.roomCode);
         showWaitingLobby();
       }
-      function joinGame() {
+      async function joinGame() {
         playerName = document.getElementById("player-name").value.trim();
-        const code = document
-          .getElementById("join-code")
-          .value.trim()
-          .toUpperCase();
-        if (!playerName) {
-          alert("Enter your name");
-          return;
-        }
-        if (code.length !== 4) {
-          alert("Enter valid room code");
-          return;
-        }
+        const code = document.getElementById("join-code").value.trim().toUpperCase();
+        if (!playerName) { alert("Enter your name"); return; }
+        if (code.length !== 4) { alert("Enter valid room code"); return; }
+        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
+        if (error || !data) { alert('Room not found. Check the code.'); return; }
+        const raw = data.state;
+        if (raw.phase !== 'lobby') { alert('Game already in progress.'); return; }
+        applyRemoteState(raw);
         G.roomCode = code;
-        G.players.push({ name: playerName, isHost: false });
-        G.myIdx = G.players.length - 1;
+        G.myIdx    = G.players.length;
+        G.isHost   = false;
+        G.players.push({ name: playerName, isBot: false, id: myPlayerId });
+        const { error: e2 } = await sb.from('rooms')
+          .update({ state: serializeG(), updated_at: new Date().toISOString() })
+          .eq('code', code);
+        if (e2) { alert('Could not join room.'); return; }
+        subscribeRoom(code);
         showWaitingLobby();
       }
       function showWaitingLobby() {
         document.getElementById("lobby-home").style.display = "none";
         document.getElementById("lobby-waiting").style.display = "";
         document.getElementById("room-code-show").textContent = G.roomCode;
-        document.getElementById("waiting-title").textContent = G.isHost
-          ? "Your game room"
-          : "Joined!";
-        renderPlayersList();
+        document.getElementById("waiting-title").textContent = G.isHost ? "Your game room" : "Joined!";
         if (G.isHost) {
-          document.getElementById("start-btn").style.display = "";
-          const nb = parseInt(prompt("How many bot players? (1-5)", "2")) || 2;
-          const names = [
-            "Bot Alex",
-            "Bot Sam",
-            "Bot Jordan",
-            "Bot Taylor",
-            "Bot Morgan",
-          ];
-          for (let i = 0; i < Math.min(nb, 5); i++)
-            G.players.push({ name: names[i], isBot: true });
-          renderPlayersList();
+          document.getElementById("start-btn").style.display   = "";
+          document.getElementById("add-bot-btn").style.display = "";
         }
+        renderPlayersList();
+      }
+      function addBot() {
+        const names = ["Bot Alex","Bot Sam","Bot Jordan","Bot Taylor","Bot Morgan"];
+        const botCount = G.players.filter(p => p.isBot).length;
+        if (G.players.length >= 8) { alert("Max 8 players."); return; }
+        G.players.push({ name: names[botCount] || `Bot ${botCount + 1}`, isBot: true });
+        renderPlayersList();
+        syncState();
       }
       function renderPlayersList() {
         document.getElementById("players-list").innerHTML = G.players
@@ -1526,6 +1627,7 @@
             : G.players.length + " players ready.";
       }
       function leaveGame() {
+        if (sbChannel) sb.removeChannel(sbChannel);
         location.reload();
       }
       function startGame() {
@@ -1570,7 +1672,7 @@
         G.callerMelds = [];
         updateHeader();
         renderGame();
-        if (G.currentTurn !== G.myIdx) setTimeout(botTurn, 800);
+        afterAction();
       }
       function updateHeader() {
         const wc = WILD_BY_HAND[G.hand];
@@ -1725,6 +1827,7 @@
           `Drew ${card.rank}${card.suit}${isWild(card, G.hand) ? " (wild-rank)" : ""}`,
         );
         renderGame();
+        syncState();
       }
       function drawFromDiscard() {
         if (
@@ -1739,6 +1842,7 @@
         G.drawnThisTurn = true;
         setMsg(`Picked up ${card.rank}${card.suit}`);
         renderGame();
+        syncState();
       }
       function reshuffleDiscard() {
         if (G.discard.length <= 1) return;
@@ -1943,11 +2047,11 @@
           }
         }
         renderGame();
-        if (G.currentTurn !== G.myIdx)
-          setTimeout(botTurn, 600 + Math.random() * 500);
+        afterAction();
       }
       function botTurn() {
-        if (G.currentTurn === G.myIdx) return;
+        if (!G.isHost) return;
+        if (!G.players[G.currentTurn]?.isBot) return;
         const bi = G.currentTurn,
           hand = G.hands[bi];
         const topDiscard = G.discard.length
@@ -2024,10 +2128,10 @@
         G.layoffSelected = new Set();
         switchScreen("layoff");
         renderLayoffScreen();
-        if (G.layoffOrder.length > 0) {
+        syncState();
+        if (G.isHost && G.layoffOrder.length > 0) {
           const first = G.layoffOrder[0];
-          if (G.players[first].isBot || first !== G.myIdx)
-            setTimeout(botLayoff, 900);
+          if (G.players[first]?.isBot) setTimeout(botLayoff, 900);
         }
       }
       function autoGenerateMelds(hand, handNum) {
@@ -2149,6 +2253,7 @@
           });
         G.layoffSelected = new Set();
         renderLayoffScreen();
+        syncState();
       }
       function humanPassLayoff() {
         G.layoffDone.add(G.layoffOrder[G.layoffIdx]);
@@ -2157,9 +2262,14 @@
         renderLayoffScreen();
         if (G.layoffIdx < G.layoffOrder.length) {
           const next = G.layoffOrder[G.layoffIdx];
-          if (G.players[next].isBot || next !== G.myIdx)
+          if (G.isHost && G.players[next]?.isBot) {
             setTimeout(botLayoff, 700);
-        } else setTimeout(finalizeScores, 800);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
+        syncState();
       }
       function advanceLayoff() {
         G.layoffDone.add(G.layoffOrder[G.layoffIdx]);
@@ -2167,15 +2277,21 @@
         renderLayoffScreen();
         if (G.layoffIdx < G.layoffOrder.length) {
           const next = G.layoffOrder[G.layoffIdx];
-          if (G.players[next].isBot || next !== G.myIdx)
+          if (G.isHost && G.players[next]?.isBot) {
             setTimeout(botLayoff, 700);
-        } else setTimeout(finalizeScores, 800);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
+        syncState();
       }
       function botLayoff() {
+        if (!G.isHost) return;
         const oi = G.layoffIdx;
         if (oi >= G.layoffOrder.length) return;
         const pi = G.layoffOrder[oi];
-        if (!G.players[pi].isBot && pi === G.myIdx) return;
+        if (!G.players[pi]?.isBot) return;
         const result = computeLayOffs(G.playerHands[pi], G.callerMelds, G.hand);
         G.callerMelds = result.melds;
         G.playerHands[pi] = result.remaining;
@@ -2194,6 +2310,7 @@
           re.playerScores.push({ pts, calledPayMe: cp });
         });
         G.roundLog.push(re);
+        syncState();
         const cn = caller >= 0 ? G.players[caller].name : "Nobody";
         document.getElementById("end-hand-title").textContent =
           `Hand ${G.hand} complete`;
@@ -2203,6 +2320,7 @@
           buildScorecardHTML(true);
         document.getElementById("end-hand-btn").textContent =
           G.hand === 11 ? "See final results" : "Next hand";
+        document.getElementById("end-hand-btn").disabled = !G.isHost;
         document.getElementById("modal-end-hand").style.display = "flex";
       }
       function buildScorecardHTML(sc) {
@@ -2241,6 +2359,7 @@
         return html;
       }
       function nextHand() {
+        if (!G.isHost) return;
         closeModal("modal-end-hand");
         if (G.hand === 11) {
           showGameOver();
@@ -2251,6 +2370,10 @@
         dealHand();
       }
       function showGameOver() {
+        if (G.phase !== 'game-over') {
+          G.phase = 'game-over';
+          if (G.isHost) syncState();
+        }
         const sorted = G.players
           .map((p, i) => ({ name: p.name, score: G.scores[i], isBot: p.isBot }))
           .sort((a, b) => a.score - b.score);
