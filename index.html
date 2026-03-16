@@ -1258,8 +1258,36 @@
       const SUPABASE_URL      = 'https://zyvxibowrftsxjmetero.supabase.co'; // ← replace
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5dnhpYm93cmZ0c3hqbWV0ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTgzNzIsImV4cCI6MjA4OTE5NDM3Mn0.4SELs5G7XHyfMbLxVBJ2Q9wap12lXTT3rl80law2ARE';                    // ← replace
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      let myPlayerId = crypto.randomUUID();
+      const _urlParams = new URLSearchParams(location.search);
+      let myPlayerId = _urlParams.get('pid') || crypto.randomUUID();
       let sbChannel  = null;
+
+      function setUrlParams(code) {
+        history.replaceState(null, '', `?room=${code}&pid=${myPlayerId}`);
+      }
+      function clearUrlParams() {
+        history.replaceState(null, '', location.pathname);
+      }
+      async function restoreSession() {
+        const code = _urlParams.get('room');
+        const pid  = _urlParams.get('pid');
+        if (!code || !pid) return;
+        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
+        if (error || !data) { clearUrlParams(); return; }
+        applyRemoteState(data.state);
+        G.roomCode = code;
+        const myPlayer = G.players.find(p => p.id === myPlayerId);
+        if (!myPlayer) { clearUrlParams(); return; }
+        playerName = myPlayer.name;
+        subscribeRoom(code);
+        if (G.phase === 'lobby') {
+          showWaitingLobby();
+        } else {
+          renderCurrentPhase();
+          if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+            setTimeout(botTurn, 1200);
+        }
+      }
 
       function serializeG() {
         const { myIdx, isHost, selectedCards, confirmedMelds, meldSelecting,
@@ -1575,6 +1603,7 @@
         const { error } = await sb.from('rooms').insert({ code: G.roomCode, state: serializeG() });
         if (error) { alert('Could not create room: ' + error.message); return; }
         subscribeRoom(G.roomCode);
+        setUrlParams(G.roomCode);
         showWaitingLobby();
       }
       async function joinGame() {
@@ -1596,6 +1625,7 @@
           .eq('code', code);
         if (e2) { alert('Could not join room.'); return; }
         subscribeRoom(code);
+        setUrlParams(code);
         showWaitingLobby();
       }
       function showWaitingLobby() {
@@ -1639,6 +1669,7 @@
           }
         }
         try { if (sbChannel) await sb.removeChannel(sbChannel); } catch(e) {}
+        clearUrlParams();
         location.reload();
       }
       function startGame() {
@@ -2404,6 +2435,7 @@
         document.getElementById("modal-scores").style.display = "flex";
       }
       function returnToLobby() {
+        clearUrlParams();
         location.reload();
       }
       function closeModal(id) {
@@ -2412,6 +2444,7 @@
       function showHelp() {
         document.getElementById("modal-help").style.display = "flex";
       }
+      restoreSession();
     </script>
   </body>
 </html>
