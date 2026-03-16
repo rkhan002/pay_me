@@ -1297,6 +1297,9 @@
               if (!raw || raw._updatedBy === myPlayerId) return;
               onRemoteState(raw);
             })
+          .on('postgres_changes',
+            { event: 'DELETE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
+            () => location.reload())
           .subscribe();
       }
       async function afterAction() {
@@ -1626,8 +1629,16 @@
             ? "Waiting for players..."
             : G.players.length + " players ready.";
       }
-      function leaveGame() {
-        if (sbChannel) sb.removeChannel(sbChannel);
+      async function leaveGame() {
+        if (G.roomCode) {
+          if (G.isHost) {
+            await sb.from('rooms').delete().eq('code', G.roomCode);
+          } else {
+            G.players = G.players.filter(p => p.id !== myPlayerId);
+            await syncState();
+          }
+        }
+        try { if (sbChannel) await sb.removeChannel(sbChannel); } catch(e) {}
         location.reload();
       }
       function startGame() {
