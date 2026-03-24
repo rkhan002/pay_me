@@ -1339,7 +1339,7 @@
       }
       async function afterAction() {
         await syncState();
-        if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
           setTimeout(botTurn, 600 + Math.random() * 500);
       }
       function renderCurrentPhase() {
@@ -1379,9 +1379,16 @@
         }
       }
       function onRemoteState(raw) {
+        const prevPhase = G.phase;
         applyRemoteState(raw);
+        if (G.phase === 'pay-me' && prevPhase !== 'pay-me') {
+          showToast(
+            `${G.players[G.payMeCaller]?.name} called Pay Me! Each player gets one final turn.`,
+            5000,
+          );
+        }
         renderCurrentPhase();
-        if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
           setTimeout(botTurn, 800);
       }
       // ──────────────────────────────────────────────────────────────────────────
@@ -1710,7 +1717,7 @@
         for (let c = 0; c < hs; c++)
           for (let p = 0; p < n; p++) G.hands[p].push(G.deck.pop());
         G.discard.push(G.deck.pop());
-        G.currentTurn = 0;
+        G.currentTurn = (G.hand - 1) % G.players.length;
         G.drawnThisTurn = false;
         G.payMeCaller = -1;
         G.lastTurnsLeft = -1;
