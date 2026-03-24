@@ -964,6 +964,13 @@
           >
             Scores
           </button>
+          <button
+            class="action-btn"
+            onclick="confirmLeave()"
+            style="padding: 4px 9px; background: var(--danger, #c0392b); color: #fff; border: none"
+          >
+            Leave
+          </button>
         </div>
       </div>
       <div class="scores-bar" id="scores-bar"></div>
@@ -1659,14 +1666,12 @@
             ? "Waiting for players..."
             : G.players.length + " players ready.";
       }
+      function confirmLeave() {
+        if (confirm('Leave the game? This will end the game for all players.')) leaveGame();
+      }
       async function leaveGame() {
         if (G.roomCode) {
-          if (G.isHost) {
-            await sb.from('rooms').delete().eq('code', G.roomCode);
-          } else {
-            G.players = G.players.filter(p => p.id !== myPlayerId);
-            await syncState();
-          }
+          await sb.from('rooms').delete().eq('code', G.roomCode);
         }
         try { if (sbChannel) await sb.removeChannel(sbChannel); } catch(e) {}
         clearUrlParams();
@@ -1822,16 +1827,17 @@
         return `<div class="${cls}" style="${sz}"><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div>${isWR && isForced ? '<div class="card-nat-pin" style="background:var(--warn)">wild</div>' : ""}${isWR && !isForced ? '<div class="card-nat-pin" style="background:var(--success)">nat</div>' : ""}</div>`;
       }
       function updateActions() {
-        const myTurn = G.currentTurn === G.myIdx && G.phase === "playing",
+        const inTurn = G.currentTurn === G.myIdx && (G.phase === "playing" || G.phase === "pay-me"),
+          myTurn = G.currentTurn === G.myIdx && G.phase === "playing",
           drawn = G.drawnThisTurn;
-        document.getElementById("btn-discard").disabled = !(myTurn && drawn);
+        document.getElementById("btn-discard").disabled = !(inTurn && drawn);
         document.getElementById("btn-pay-me").disabled = !(myTurn && drawn);
         const ind = document.getElementById("turn-indicator");
-        if (myTurn && !drawn) {
+        if (inTurn && !drawn) {
           ind.textContent = "Your turn — draw";
           ind.className = "turn-indicator my-turn";
-        } else if (myTurn && drawn) {
-          ind.textContent = "Discard or Pay Me!";
+        } else if (inTurn && drawn) {
+          ind.textContent = G.phase === "pay-me" ? "Final turn — discard" : "Discard or Pay Me!";
           ind.className = "turn-indicator my-turn";
         } else {
           ind.textContent = `Waiting for ${G.players[G.currentTurn]?.name}...`;
@@ -1854,7 +1860,7 @@
         if (
           G.currentTurn !== G.myIdx ||
           G.drawnThisTurn ||
-          G.phase !== "playing"
+          (G.phase !== "playing" && G.phase !== "pay-me")
         )
           return;
         if (!G.deck.length) reshuffleDiscard();
@@ -1875,7 +1881,7 @@
         if (
           G.currentTurn !== G.myIdx ||
           G.drawnThisTurn ||
-          G.phase !== "playing"
+          (G.phase !== "playing" && G.phase !== "pay-me")
         )
           return;
         if (!G.discard.length) return;
