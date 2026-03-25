@@ -1509,13 +1509,24 @@
         }
         if (new Set(nats.map((c) => c.suit)).size !== 1)
           return { valid: false, msg: "Not a valid set or run." };
-        const idxs = nats.map((c) => rankIndex(c.rank)).sort((a, b) => a - b);
-        for (let i = 1; i < idxs.length; i++)
-          if (idxs[i] === idxs[i - 1])
-            return { valid: false, msg: "Duplicate ranks in run." };
-        if (wilds.length < idxs[idxs.length - 1] - idxs[0] + 1 - nats.length)
-          return { valid: false, msg: "Not enough wilds for run gaps." };
-        return { valid: true, type: "run" };
+        const tryRun = (idxs) => {
+          const sorted = [...idxs].sort((a, b) => a - b);
+          for (let i = 1; i < sorted.length; i++)
+            if (sorted[i] === sorted[i - 1]) return null; // duplicate
+          const needed = sorted[sorted.length - 1] - sorted[0] + 1 - nats.length;
+          return wilds.length >= needed ? sorted : null;
+        };
+        const loIdxs = nats.map((c) => rankIndex(c.rank));
+        if (loIdxs.some((i) => i === -1))
+          return { valid: false, msg: "Unknown card rank." };
+        // Try ace-low first; if Ace present also try ace-high (index 13)
+        const hasAce = nats.some((c) => c.rank === "A");
+        if (tryRun(loIdxs)) return { valid: true, type: "run" };
+        if (hasAce) {
+          const hiIdxs = nats.map((c) => (c.rank === "A" ? 13 : rankIndex(c.rank)));
+          if (tryRun(hiIdxs)) return { valid: true, type: "run" };
+        }
+        return { valid: false, msg: "Not enough wilds for run gaps." };
       }
       function validateMeld(cards, hand, fw = new Set()) {
         const r1 = validateMeldCore(cards, hand, fw);
