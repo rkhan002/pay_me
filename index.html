@@ -1381,13 +1381,14 @@
       function onRemoteState(raw) {
         const prevPhase = G.phase;
         applyRemoteState(raw);
-        if (G.phase === 'pay-me' && prevPhase !== 'pay-me') {
+        const isNewPayMe = G.phase === 'pay-me' && prevPhase !== 'pay-me';
+        renderCurrentPhase();
+        if (isNewPayMe) {
           showToast(
             `${G.players[G.payMeCaller]?.name} called Pay Me! Each player gets one final turn.`,
             5000,
           );
         }
-        renderCurrentPhase();
         if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
           setTimeout(botTurn, 800);
       }
