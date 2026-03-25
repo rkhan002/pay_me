@@ -2294,19 +2294,24 @@
       function humanLayoff() {
         if (!G.layoffSelected.size) return;
         const pi = G.layoffOrder[G.layoffIdx];
-        G.playerHands[pi]
-          .filter((c) => G.layoffSelected.has(c.id))
-          .forEach((card) => {
+        // Retry loop: order-dependent cases (e.g. need 4♠ before 3♠ can extend a run)
+        // require multiple passes until nothing new can be placed.
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let ci = G.playerHands[pi].length - 1; ci >= 0; ci--) {
+            const card = G.playerHands[pi][ci];
+            if (!G.layoffSelected.has(card.id)) continue;
             for (let mi = 0; mi < G.callerMelds.length; mi++) {
               if (canLayOff(card, G.callerMelds[mi], G.hand)) {
                 G.callerMelds[mi].push(card);
-                G.playerHands[pi] = G.playerHands[pi].filter(
-                  (c) => c.id !== card.id,
-                );
+                G.playerHands[pi].splice(ci, 1);
+                changed = true;
                 break;
               }
             }
-          });
+          }
+        }
         G.layoffSelected = new Set();
         G.layoffDone.add(pi);
         G.layoffIdx++;
