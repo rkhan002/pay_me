@@ -1590,6 +1590,7 @@
         confirmedMelds: [],
         meldSelecting: [],
         callerMelds: [],
+        callerForcedWilds: [],
         layoffOrder: [],
         layoffIdx: 0,
         layoffDone: new Set(),
@@ -1740,6 +1741,7 @@
         G.selectedCards = new Set();
         G.phase = "playing";
         G.callerMelds = [];
+        G.callerForcedWilds = [];
         updateHeader();
         renderGame();
         afterAction();
@@ -2147,6 +2149,7 @@
             .map((id) => G.meldSelecting.find((c) => c.id === id))
             .filter(Boolean),
         );
+        G.callerForcedWilds = [...forcedWilds];
         G.payMeCaller = G.myIdx;
         G.phase = "pay-me";
         G.lastTurnsLeft = G.players.length;
@@ -2317,7 +2320,7 @@
             : G.callerMelds
                 .map(
                   (meld, mi) =>
-                    `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map((c) => mkCard(c, G.hand, true, false, true, new Set())).join("")}</div></div>`,
+                    `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map((c) => mkCard(c, G.hand, true, false, true, new Set(G.callerForcedWilds || []))).join("")}</div></div>`,
                 )
                 .join("");
         document.getElementById("layoff-status").textContent =
