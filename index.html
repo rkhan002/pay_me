@@ -2308,7 +2308,18 @@
             }
           });
         G.layoffSelected = new Set();
+        G.layoffDone.add(pi);
+        G.layoffIdx++;
         renderLayoffScreen();
+        if (G.layoffIdx < G.layoffOrder.length) {
+          const next = G.layoffOrder[G.layoffIdx];
+          if (G.isHost && G.players[next]?.isBot) {
+            setTimeout(botLayoff, 700);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
         syncState();
       }
       function humanPassLayoff() {
