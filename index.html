@@ -1361,6 +1361,7 @@
       const _urlParams = new URLSearchParams(location.search);
       let myPlayerId = _urlParams.get('pid') || crypto.randomUUID();
       let sbChannel  = null;
+      let _lastSyncAt = '';
 
       function setUrlParams(code) {
         history.replaceState(null, '', `?room=${code}&pid=${myPlayerId}`);
@@ -1425,6 +1426,7 @@
             payload => {
               const raw = payload.new?.state;
               if (!raw || raw._updatedBy === myPlayerId) return;
+              if (payload.new?.updated_at) _lastSyncAt = payload.new.updated_at;
               onRemoteState(raw);
             })
           .on('postgres_changes',
@@ -1432,6 +1434,20 @@
             () => location.reload())
           .subscribe();
       }
+
+      async function backgroundSync() {
+        if (!G.roomCode || G.phase === 'lobby' || G.phase === 'game-over') return;
+        const { data } = await sb.from('rooms')
+          .select('state, updated_at')
+          .eq('code', G.roomCode)
+          .single();
+        if (!data?.state) return;
+        if (data.state._updatedBy === myPlayerId) return;   // our own last write
+        if (data.updated_at <= _lastSyncAt) return;          // already applied
+        _lastSyncAt = data.updated_at;
+        onRemoteState(data.state);
+      }
+      setInterval(backgroundSync, 8000);
       async function afterAction() {
         await syncState();
         if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
