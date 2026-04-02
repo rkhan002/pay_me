@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pay Me — Card Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
     <style>
       * {
         box-sizing: border-box;
@@ -12,38 +15,48 @@
       }
 
       :root {
-        --bg: #f8f7f4;
-        --surface: #ffffff;
-        --surface2: #f1efe8;
-        --border: rgba(0, 0, 0, 0.12);
-        --border2: rgba(0, 0, 0, 0.22);
-        --text: #1a1917;
-        --text2: #5f5e5a;
-        --text3: #888780;
-        --accent: #185fa5;
-        --accent-light: #e6f1fb;
-        --accent-text: #0c447c;
-        --success: #3b6d11;
-        --success-bg: #eaf3de;
-        --danger: #a32d2d;
-        --danger-bg: #fcebeb;
-        --warn: #854f0b;
-        --warn-bg: #faeeda;
-        --gold: #854f0b;
-        --gold-bg: #faeeda;
-        --card-red: #a32d2d;
-        --radius: 10px;
-        --radius-sm: 6px;
-        --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        --bg: #06080a;
+        --surface: #111518;
+        --surface2: #191d21;
+        --surface3: #1e2428;
+        --border: rgba(255, 255, 255, 0.07);
+        --border2: rgba(255, 255, 255, 0.12);
+        --text: #e8e4dc;
+        --text2: #9a948a;
+        --text3: #5c5850;
+        --accent: #4a8fd4;
+        --accent-light: rgba(74, 143, 212, 0.15);
+        --accent-text: #7ab3e8;
+        --success: #4caa5e;
+        --success-bg: rgba(76, 170, 94, 0.12);
+        --danger: #d44a4a;
+        --danger-bg: rgba(212, 74, 74, 0.12);
+        --warn: #c88a2a;
+        --warn-bg: rgba(200, 138, 42, 0.12);
+        --gold: #c8991f;
+        --gold-bright: #e8b830;
+        --gold-bg: rgba(200, 153, 31, 0.12);
+        --card-red: #d42020;
+        --card-black: #1a1a1a;
+        --felt: #0a1a0d;
+        --felt-mid: #0d2010;
+        --felt-light: #112814;
+        --card-back: #0f1e3a;
+        --shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+        --card-shadow: 0 4px 18px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.3);
+        --radius: 12px;
+        --radius-sm: 8px;
         --fs: 1.5;
       }
 
       body {
-        font-family: "Georgia", serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
         font-size: calc(16px * var(--fs));
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       .screen {
@@ -56,10 +69,15 @@
         flex-direction: column;
       }
 
+      /* ── LOBBY ── */
       #lobby {
         align-items: center;
         justify-content: center;
         padding: 2rem 1rem;
+        background:
+          radial-gradient(ellipse 100% 60% at 50% 0%, rgba(200,153,31,0.06) 0%, transparent 70%),
+          radial-gradient(ellipse 140% 100% at 50% 50%, #0d1a0f 0%, #060808 100%);
+        min-height: 100vh;
       }
 
       .logo {
@@ -68,33 +86,51 @@
       }
 
       .logo h1 {
+        font-family: 'Cinzel', Georgia, serif;
         font-size: calc(3.5rem * var(--fs));
-        font-weight: 700;
-        letter-spacing: -1px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        background: linear-gradient(160deg, #f0e8d0 0%, var(--gold-bright) 45%, #c8991f 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 2px 20px rgba(200, 153, 31, 0.3));
+      }
+
+      .logo .suits {
+        display: block;
+        font-size: calc(0.95rem * var(--fs));
+        color: rgba(255, 255, 255, 0.2);
+        letter-spacing: 0.6em;
+        margin-top: 0.2rem;
+        text-indent: 0.6em;
       }
 
       .logo .sub {
-        font-size: calc(1rem * var(--fs));
-        color: var(--text2);
-        font-style: italic;
-        margin-top: 0.25rem;
+        font-size: calc(0.85rem * var(--fs));
+        color: var(--text3);
+        letter-spacing: 0.06em;
+        margin-top: 0.5rem;
+        text-transform: uppercase;
+        font-weight: 500;
       }
 
       .lobby-card {
         background: var(--surface);
-        border: 0.5px solid var(--border);
+        border: 1px solid var(--border2);
         border-radius: var(--radius);
         padding: 2rem;
         width: 100%;
         max-width: 520px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.04);
       }
 
       .lobby-card h2 {
-        font-size: calc(1.1rem * var(--fs));
+        font-size: calc(1rem * var(--fs));
         margin-bottom: 1.25rem;
         color: var(--text2);
         font-weight: 400;
-        font-style: italic;
+        letter-spacing: 0.01em;
       }
 
       .field {
@@ -103,75 +139,94 @@
 
       .field label {
         display: block;
-        font-size: calc(0.8rem * var(--fs));
+        font-size: calc(0.72rem * var(--fs));
         font-weight: 600;
-        color: var(--text2);
+        color: var(--text3);
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.1em;
         margin-bottom: 0.4rem;
       }
 
       .field input {
         width: 100%;
-        padding: 0.6rem 0.75rem;
-        border: 0.5px solid var(--border2);
+        padding: 0.65rem 0.85rem;
+        border: 1px solid var(--border2);
         border-radius: var(--radius-sm);
         font-size: calc(0.95rem * var(--fs));
-        background: var(--surface);
+        background: var(--surface2);
         color: var(--text);
         font-family: inherit;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .field input::placeholder {
+        color: var(--text3);
       }
 
       .field input:focus {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-light);
       }
 
       .btn {
         width: 100%;
-        padding: 0.7rem;
+        padding: 0.78rem;
         border: none;
         border-radius: var(--radius-sm);
-        font-size: calc(1rem * var(--fs));
+        font-size: calc(0.9rem * var(--fs));
         font-family: inherit;
         cursor: pointer;
         font-weight: 600;
-        transition: opacity 0.15s;
+        letter-spacing: 0.02em;
+        transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
       }
 
       .btn:hover {
-        opacity: 0.85;
+        opacity: 0.88;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+        box-shadow: none;
       }
 
       .btn-primary {
-        background: var(--text);
-        color: var(--surface);
+        background: linear-gradient(160deg, var(--gold-bright) 0%, var(--gold) 100%);
+        color: #0a0800;
+        box-shadow: 0 3px 14px rgba(200, 153, 31, 0.3);
       }
 
       .btn-secondary {
         background: var(--surface2);
         color: var(--text);
-        border: 0.5px solid var(--border2);
+        border: 1px solid var(--border2);
       }
 
       .divider {
         text-align: center;
         color: var(--text3);
         margin: 1rem 0;
-        font-size: calc(0.85rem * var(--fs));
+        font-size: calc(0.82rem * var(--fs));
+        letter-spacing: 0.05em;
       }
 
       .room-code-display {
-        font-size: calc(2.2rem * var(--fs));
+        font-size: calc(2.4rem * var(--fs));
         font-weight: 700;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.32em;
+        text-indent: 0.32em;
         text-align: center;
-        padding: 1rem;
-        background: var(--accent-light);
-        color: var(--accent-text);
+        padding: 1.1rem;
+        background: linear-gradient(135deg, var(--gold-bg), rgba(200,153,31,0.08));
+        color: var(--gold-bright);
         border-radius: var(--radius-sm);
         margin: 0.75rem 0;
-        font-family: monospace;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        border: 1px solid rgba(200, 153, 31, 0.25);
+        text-shadow: 0 0 20px rgba(200, 153, 31, 0.4);
       }
 
       .players-list {
@@ -183,29 +238,33 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 0;
-        border-bottom: 0.5px solid var(--border);
-        font-size: calc(0.9rem * var(--fs));
+        border-bottom: 1px solid var(--border);
+        font-size: calc(0.88rem * var(--fs));
+        color: var(--text2);
       }
 
       .player-dot {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background: var(--success);
+        box-shadow: 0 0 6px var(--success);
       }
 
       .player-dot.host {
-        background: var(--accent);
+        background: var(--gold);
+        box-shadow: 0 0 6px var(--gold);
       }
 
       .waiting-msg {
-        font-size: calc(0.85rem * var(--fs));
+        font-size: calc(0.82rem * var(--fs));
         color: var(--text3);
         text-align: center;
-        font-style: italic;
         margin: 0.75rem 0;
+        letter-spacing: 0.03em;
       }
 
+      /* ── GAME SHELL ── */
       #game {
         flex-direction: column;
         height: 100vh;
@@ -214,40 +273,47 @@
 
       .game-header {
         background: var(--surface);
-        border-bottom: 0.5px solid var(--border);
-        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--border);
+        padding: 0.55rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-shrink: 0;
+        box-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+        z-index: 10;
       }
 
       .game-header .hand-info {
-        font-size: calc(0.85rem * var(--fs));
+        font-size: calc(0.82rem * var(--fs));
         color: var(--text2);
+        letter-spacing: 0.02em;
       }
 
       .game-header .hand-info strong {
         color: var(--text);
-        font-size: calc(1rem * var(--fs));
+        font-size: calc(0.95rem * var(--fs));
       }
 
       .wild-badge {
-        background: var(--warn-bg);
-        color: var(--warn);
-        font-size: calc(0.75rem * var(--fs));
-        padding: 3px 10px;
+        background: linear-gradient(135deg, rgba(200,153,31,0.2), rgba(200,153,31,0.1));
+        color: var(--gold-bright);
+        font-size: calc(0.7rem * var(--fs));
+        padding: 4px 12px;
         border-radius: 20px;
-        font-weight: 600;
+        font-weight: 700;
+        border: 1px solid rgba(200, 153, 31, 0.3);
+        letter-spacing: 0.04em;
+        text-shadow: 0 0 10px rgba(200, 153, 31, 0.4);
       }
 
+      /* ── SCORES BAR ── */
       .scores-bar {
         background: var(--surface2);
-        border-bottom: 0.5px solid var(--border);
+        border-bottom: 1px solid var(--border);
         padding: 0.4rem 1rem;
         overflow-x: auto;
         display: flex;
-        gap: 1rem;
+        gap: 1.5rem;
         flex-shrink: 0;
       }
 
@@ -256,19 +322,20 @@
         align-items: center;
         gap: 0.4rem;
         white-space: nowrap;
-        font-size: calc(0.8rem * var(--fs));
+        font-size: calc(0.78rem * var(--fs));
       }
 
       .score-chip .sname {
         font-weight: 600;
-      }
-
-      .score-chip .sval {
         color: var(--text2);
       }
 
+      .score-chip .sval {
+        color: var(--text3);
+      }
+
       .score-chip.current-turn .sname {
-        color: var(--accent);
+        color: var(--gold-bright);
       }
 
       .score-chip.me .sname::after {
@@ -277,6 +344,7 @@
         color: var(--text3);
       }
 
+      /* ── FELT GAME AREA ── */
       .game-area {
         flex: 1;
         overflow-y: auto;
@@ -284,6 +352,8 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        background:
+          radial-gradient(ellipse 120% 60% at 50% 0%, #112415 0%, #0a1a0d 50%, #06100a 100%);
       }
 
       .opponents-area {
@@ -293,17 +363,19 @@
       }
 
       .opponent-hand {
-        background: var(--surface);
-        border: 0.5px solid var(--border);
+        background: rgba(17, 21, 24, 0.92);
+        border: 1px solid var(--border2);
         border-radius: var(--radius-sm);
         padding: 0.5rem 0.75rem;
-        font-size: calc(0.8rem * var(--fs));
+        font-size: calc(0.78rem * var(--fs));
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
       }
 
       .opponent-hand .oname {
         font-weight: 600;
         margin-bottom: 0.3rem;
         color: var(--text2);
+        letter-spacing: 0.02em;
       }
 
       .opponent-cards {
@@ -314,23 +386,29 @@
       .card-back {
         width: 28px;
         height: 40px;
-        background: var(--accent);
+        background-color: var(--card-back);
+        background-image:
+          repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(200,153,31,0.06) 4px, rgba(200,153,31,0.06) 5px),
+          repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(200,153,31,0.06) 4px, rgba(200,153,31,0.06) 5px);
         border-radius: 4px;
-        border: 1px solid rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(200, 153, 31, 0.12);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
       }
 
+      /* ── TABLE AREA (piles) ── */
       .table-area {
-        background: var(--surface);
-        border: 0.5px solid var(--border);
+        background: rgba(10, 14, 11, 0.85);
+        border: 1px solid var(--border2);
         border-radius: var(--radius);
         padding: 1rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.04);
       }
 
       .table-label {
-        font-size: calc(0.75rem * var(--fs));
-        font-weight: 600;
+        font-size: calc(0.68rem * var(--fs));
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.12em;
         color: var(--text3);
         margin-bottom: 0.6rem;
       }
@@ -349,16 +427,19 @@
       }
 
       .pile-label {
-        font-size: calc(0.7rem * var(--fs));
+        font-size: calc(0.68rem * var(--fs));
         color: var(--text3);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
       }
 
+      /* ── CARDS ── */
       .card {
         width: 78px;
         height: 114px;
-        border-radius: 8px;
-        border: 1px solid var(--border2);
-        background: var(--surface);
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -366,11 +447,9 @@
         font-weight: 700;
         user-select: none;
         position: relative;
-        box-shadow: var(--shadow);
+        box-shadow: var(--card-shadow);
         flex-shrink: 0;
-        transition:
-          transform 0.15s,
-          box-shadow 0.15s;
+        transition: transform 0.15s, box-shadow 0.15s;
       }
 
       .card.clickable {
@@ -378,8 +457,8 @@
       }
 
       .card.clickable:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 5px 12px rgba(0, 0, 0, 0.13);
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
       }
 
       .card.red {
@@ -387,32 +466,36 @@
       }
 
       .card.black {
-        color: var(--text);
+        color: #111111;
       }
 
       .card.selected {
-        outline: 3px solid var(--accent);
-        transform: translateY(-8px);
+        outline: 2.5px solid var(--accent);
+        outline-offset: 2px;
+        transform: translateY(-12px);
+        box-shadow: 0 14px 32px rgba(74, 143, 212, 0.4), 0 3px 8px rgba(0, 0, 0, 0.3);
       }
 
       .card.wild-card {
-        background: var(--warn-bg);
+        background: linear-gradient(150deg, #fffdf5, #fff8e0);
+        border-color: rgba(200, 153, 31, 0.3);
+        box-shadow: var(--card-shadow), 0 0 0 1px rgba(200,153,31,0.15);
       }
 
       .card.no-hover:hover {
         transform: none;
-        box-shadow: var(--shadow);
+        box-shadow: var(--card-shadow);
         cursor: default;
       }
 
       .card.drag-over {
-        outline: 3px dashed var(--accent);
-        opacity: 0.7;
+        outline: 2.5px dashed var(--accent);
+        opacity: 0.65;
       }
 
       .card.dragging {
-        opacity: 0.35;
-        transform: scale(0.95);
+        opacity: 0.3;
+        transform: scale(0.94);
       }
 
       .card-corner {
@@ -446,29 +529,38 @@
         line-height: 1.2;
       }
 
+      /* ── STOCK PILE ── */
       .stock-pile {
         width: 78px;
         height: 114px;
-        border-radius: 8px;
-        background: var(--accent);
+        border-radius: 9px;
+        background-color: var(--card-back);
+        background-image:
+          repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(200,153,31,0.06) 6px, rgba(200,153,31,0.06) 7px),
+          repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(200,153,31,0.06) 6px, rgba(200,153,31,0.06) 7px);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        box-shadow: var(--shadow);
-        transition: transform 0.1s;
-        border: 1px solid rgba(0, 0, 0, 0.15);
+        box-shadow: 4px 4px 0 rgba(0,0,0,0.4), 2px 2px 0 rgba(0,0,0,0.25), 0 6px 20px rgba(0,0,0,0.6);
+        transition: transform 0.12s, box-shadow 0.12s;
+        border: 1px solid rgba(200, 153, 31, 0.15);
+        position: relative;
       }
 
       .stock-pile:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
+        box-shadow: 4px 8px 0 rgba(0,0,0,0.35), 2px 4px 0 rgba(0,0,0,0.2), 0 14px 30px rgba(0,0,0,0.65);
       }
 
+      /* ── MY HAND ── */
       .my-hand-area {
-        background: var(--surface);
-        border: 0.5px solid var(--border);
+        background: rgba(10, 14, 11, 0.9);
+        border: 1px solid var(--border2);
         border-radius: var(--radius);
         padding: 1rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        border-top: 2px solid var(--accent);
       }
 
       .my-hand-cards {
@@ -486,70 +578,92 @@
         align-items: center;
       }
 
+      /* ── ACTION BUTTONS ── */
       .action-btn {
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 1.1rem;
         border-radius: var(--radius-sm);
-        font-size: calc(0.82rem * var(--fs));
+        font-size: calc(0.78rem * var(--fs));
         font-family: inherit;
         cursor: pointer;
-        border: 0.5px solid var(--border2);
-        background: var(--surface);
+        border: 1px solid var(--border2);
+        background: var(--surface2);
         color: var(--text);
         font-weight: 500;
+        letter-spacing: 0.02em;
         transition: all 0.15s;
       }
 
       .action-btn:hover:not(:disabled) {
-        background: var(--surface2);
+        background: var(--surface3);
+        border-color: rgba(255,255,255,0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      }
+
+      .action-btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
       }
 
       .action-btn:disabled {
-        opacity: 0.4;
+        opacity: 0.3;
         cursor: not-allowed;
       }
 
       .action-btn.danger {
         background: var(--danger-bg);
         color: var(--danger);
-        border-color: var(--danger);
+        border-color: rgba(212, 74, 74, 0.3);
       }
 
+      .action-btn.danger:hover:not(:disabled) {
+        background: rgba(212, 74, 74, 0.2);
+      }
+
+      /* ── TURN INDICATOR ── */
       .turn-indicator {
-        font-size: calc(0.8rem * var(--fs));
-        padding: 0.35rem 0.9rem;
+        font-size: calc(0.75rem * var(--fs));
+        padding: 0.38rem 1.1rem;
         border-radius: 20px;
-        font-weight: 500;
+        font-weight: 600;
+        letter-spacing: 0.04em;
       }
 
       .turn-indicator.my-turn {
-        background: var(--success-bg);
-        color: var(--success);
+        background: linear-gradient(135deg, rgba(200,153,31,0.18), rgba(200,153,31,0.1));
+        color: var(--gold-bright);
+        border: 1px solid rgba(200, 153, 31, 0.3);
+        animation: gold-pulse 2.5s ease-in-out infinite;
+      }
+
+      @keyframes gold-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(200, 153, 31, 0.35); }
+        50% { box-shadow: 0 0 0 7px rgba(200, 153, 31, 0); }
       }
 
       .turn-indicator.waiting {
         background: var(--surface2);
         color: var(--text3);
+        border: 1px solid var(--border);
       }
 
       .msg-area {
-        font-size: calc(0.82rem * var(--fs));
+        font-size: calc(0.8rem * var(--fs));
         color: var(--text2);
         min-height: 1.8rem;
-        font-style: italic;
       }
 
       .msg-area.good {
         color: var(--success);
-        font-style: normal;
         font-weight: 500;
       }
 
       .msg-area.bad {
         color: var(--danger);
-        font-style: normal;
         font-weight: 500;
       }
 
+      /* ── LAYOFF SCREEN ── */
       #layoff {
         flex-direction: column;
         min-height: 100vh;
@@ -557,17 +671,21 @@
 
       .layoff-header {
         background: var(--surface);
-        border-bottom: 0.5px solid var(--border);
+        border-bottom: 1px solid var(--border);
         padding: 0.75rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-shrink: 0;
+        box-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+        z-index: 10;
       }
 
       .layoff-header h2 {
-        font-size: calc(1.1rem * var(--fs));
+        font-family: 'Cinzel', Georgia, serif;
+        font-size: calc(1rem * var(--fs));
         font-weight: 600;
+        letter-spacing: 0.05em;
       }
 
       .layoff-body {
@@ -577,29 +695,34 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        background:
+          radial-gradient(ellipse 120% 60% at 50% 0%, #112415 0%, #0a1a0d 50%, #06100a 100%);
       }
 
       .layoff-status {
-        background: var(--accent-light);
+        background: rgba(10, 14, 11, 0.85);
         border-radius: var(--radius-sm);
         padding: 0.6rem 0.9rem;
-        font-size: calc(0.85rem * var(--fs));
+        font-size: calc(0.82rem * var(--fs));
         color: var(--accent-text);
         font-weight: 500;
+        border-left: 3px solid var(--accent);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
       }
 
       .caller-melds-section {
-        background: var(--surface);
-        border: 0.5px solid var(--border);
+        background: rgba(10, 14, 11, 0.88);
+        border: 1px solid var(--border2);
         border-radius: var(--radius);
         padding: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
       }
 
       .caller-melds-section .section-title {
-        font-size: calc(0.75rem * var(--fs));
-        font-weight: 600;
+        font-size: calc(0.7rem * var(--fs));
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.1em;
         color: var(--text3);
         margin-bottom: 0.75rem;
       }
@@ -613,7 +736,7 @@
       }
 
       .meld-index {
-        font-size: calc(0.7rem * var(--fs));
+        font-size: calc(0.68rem * var(--fs));
         color: var(--text3);
         min-width: 52px;
         padding-top: 4px;
@@ -626,19 +749,20 @@
       }
 
       .player-layoff-section {
-        background: var(--surface);
-        border: 0.5px solid var(--border);
+        background: rgba(10, 14, 11, 0.85);
+        border: 1px solid var(--border2);
         border-radius: var(--radius);
         padding: 1rem;
+        box-shadow: 0 3px 16px rgba(0, 0, 0, 0.35);
       }
 
       .player-layoff-section.active-player {
         border-color: var(--accent);
-        border-width: 1.5px;
+        box-shadow: 0 4px 22px rgba(74, 143, 212, 0.2);
       }
 
       .player-layoff-section .plname {
-        font-size: calc(0.85rem * var(--fs));
+        font-size: calc(0.82rem * var(--fs));
         font-weight: 600;
         margin-bottom: 0.5rem;
         display: flex;
@@ -649,18 +773,20 @@
       .active-badge {
         background: var(--accent-light);
         color: var(--accent-text);
-        font-size: calc(0.7rem * var(--fs));
-        padding: 1px 7px;
+        font-size: calc(0.68rem * var(--fs));
+        padding: 2px 8px;
         border-radius: 20px;
         font-weight: 600;
+        letter-spacing: 0.04em;
       }
 
       .done-badge {
         background: var(--success-bg);
         color: var(--success);
-        font-size: calc(0.7rem * var(--fs));
-        padding: 1px 7px;
+        font-size: calc(0.68rem * var(--fs));
+        padding: 2px 8px;
         border-radius: 20px;
+        font-weight: 500;
       }
 
       .player-cards-row {
@@ -677,21 +803,23 @@
         flex-wrap: wrap;
       }
 
+      /* ── PAY ME TOAST ── */
       .pay-me-toast {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         z-index: 200;
-        background: var(--accent);
-        color: #fff;
-        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, var(--gold) 0%, #a07800 100%);
+        color: #0a0800;
+        padding: 0.85rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: calc(0.9rem * var(--fs));
-        font-weight: 500;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        font-size: calc(0.88rem * var(--fs));
+        font-weight: 700;
+        box-shadow: 0 4px 24px rgba(200, 153, 31, 0.4);
+        letter-spacing: 0.02em;
       }
 
       .pay-me-toast .toast-msg {
@@ -699,47 +827,58 @@
       }
 
       .pay-me-toast .toast-close {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: #fff;
-        padding: 4px 12px;
-        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        color: #0a0800;
+        padding: 4px 14px;
+        border-radius: 5px;
         cursor: pointer;
         font-family: inherit;
-        font-size: calc(0.82rem * var(--fs));
+        font-size: calc(0.78rem * var(--fs));
+        font-weight: 600;
+        transition: background 0.15s;
       }
 
+      .pay-me-toast .toast-close:hover {
+        background: rgba(0, 0, 0, 0.28);
+      }
+
+      /* ── MODAL ── */
       .modal-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.45);
+        background: rgba(0, 0, 0, 0.75);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 100;
         padding: 1rem;
+        backdrop-filter: blur(6px);
       }
 
       .modal {
         background: var(--surface);
         border-radius: var(--radius);
-        padding: 1.5rem;
+        padding: 1.75rem;
         width: 100%;
         max-width: 560px;
         max-height: 90vh;
         overflow-y: auto;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border2);
       }
 
       .modal h2 {
-        font-size: calc(1.3rem * var(--fs));
+        font-family: 'Cinzel', Georgia, serif;
+        font-size: calc(1.25rem * var(--fs));
         margin-bottom: 0.25rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
       }
 
       .modal .subtitle {
-        font-size: calc(0.875rem * var(--fs));
+        font-size: calc(0.85rem * var(--fs));
         color: var(--text2);
         margin-bottom: 1.25rem;
-        font-style: italic;
       }
 
       .modal-actions {
@@ -758,9 +897,10 @@
       }
 
       .meld-group-label {
-        font-size: calc(0.75rem * var(--fs));
+        font-size: calc(0.72rem * var(--fs));
         color: var(--text3);
         margin-bottom: 0.3rem;
+        letter-spacing: 0.04em;
       }
 
       .meld-cards {
@@ -774,32 +914,33 @@
         padding: 0.6rem 0.75rem;
         background: var(--danger-bg);
         border-radius: var(--radius-sm);
-        border: 0.5px solid var(--danger);
-        font-size: calc(0.8rem * var(--fs));
+        border: 1px solid rgba(212, 74, 74, 0.3);
+        font-size: calc(0.78rem * var(--fs));
         color: var(--danger);
       }
 
       .pin-hint {
-        font-size: calc(0.75rem * var(--fs));
+        font-size: calc(0.72rem * var(--fs));
         color: var(--text3);
         margin-bottom: 0.5rem;
-        font-style: italic;
+        letter-spacing: 0.02em;
       }
 
+      /* ── SCORECARD ── */
       .scorecard {
         width: 100%;
         border-collapse: collapse;
-        font-size: calc(0.82rem * var(--fs));
+        font-size: calc(0.8rem * var(--fs));
         margin-top: 0.5rem;
       }
 
       .scorecard th {
         padding: 0.4rem 0.5rem;
-        font-size: calc(0.7rem * var(--fs));
+        font-size: calc(0.68rem * var(--fs));
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.08em;
         color: var(--text3);
-        border-bottom: 0.5px solid var(--border);
+        border-bottom: 1px solid var(--border);
         white-space: nowrap;
         text-align: center;
       }
@@ -811,32 +952,36 @@
 
       .scorecard td {
         padding: 0.35rem 0.5rem;
-        border-bottom: 0.5px solid var(--border);
+        border-bottom: 1px solid var(--border);
         text-align: center;
         white-space: nowrap;
+        color: var(--text2);
       }
 
       .scorecard td.player-col {
         text-align: left;
         font-weight: 600;
-        font-size: calc(0.8rem * var(--fs));
+        font-size: calc(0.78rem * var(--fs));
+        color: var(--text);
       }
 
       .scorecard td.total-col {
         font-weight: 700;
         background: var(--surface2);
+        color: var(--text);
       }
 
       .scorecard td.wins-col {
         font-weight: 700;
-        color: var(--gold);
+        color: var(--gold-bright);
         background: var(--gold-bg);
       }
 
       .scorecard .dollar {
-        color: var(--gold);
+        color: var(--gold-bright);
         font-weight: 700;
         font-size: calc(0.95rem * var(--fs));
+        text-shadow: 0 0 12px rgba(200, 153, 31, 0.4);
       }
 
       .scorecard tr.lowest-total td {
@@ -845,14 +990,14 @@
 
       .scorecard tr.lowest-total td.player-col::after {
         content: " ★";
-        color: var(--success);
+        color: var(--gold-bright);
       }
 
       .section-label {
-        font-size: calc(0.75rem * var(--fs));
-        font-weight: 600;
+        font-size: calc(0.72rem * var(--fs));
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.1em;
         color: var(--text3);
         margin: 1.25rem 0 0.4rem;
       }
@@ -861,6 +1006,7 @@
         overflow-x: auto;
       }
 
+      /* ── HELP BUTTON ── */
       .help-btn {
         position: fixed;
         bottom: 1rem;
@@ -868,24 +1014,33 @@
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        background: var(--surface);
-        border: 0.5px solid var(--border2);
+        background: var(--surface2);
+        border: 1px solid var(--border2);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         font-size: calc(0.9rem * var(--fs));
         color: var(--text2);
-        box-shadow: var(--shadow);
+        box-shadow: 0 3px 16px rgba(0, 0, 0, 0.5);
         z-index: 50;
+        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      }
+
+      .help-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 5px 22px rgba(0, 0, 0, 0.6);
+        border-color: var(--border2);
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
 
   <body>
     <div id="lobby" class="screen active">
       <div class="logo">
         <h1>Pay Me</h1>
+        <span class="suits">♠ ♥ ♦ ♣</span>
         <div class="sub">Contract Rummy · 2–8 Players</div>
       </div>
       <div class="lobby-card" id="lobby-home">
@@ -924,6 +1079,14 @@
         <div class="players-list" id="players-list"></div>
         <div class="waiting-msg" id="waiting-msg"></div>
         <button
+          class="btn btn-secondary"
+          id="add-bot-btn"
+          style="display: none; margin-bottom: 0.5rem"
+          onclick="addBot()"
+        >
+          + Add bot player
+        </button>
+        <button
           class="btn btn-primary"
           id="start-btn"
           style="display: none"
@@ -954,6 +1117,13 @@
             style="padding: 4px 9px"
           >
             Scores
+          </button>
+          <button
+            class="action-btn"
+            onclick="confirmLeave()"
+            style="padding: 4px 9px; background: var(--danger, #c0392b); color: #fff; border: none"
+          >
+            Leave
           </button>
         </div>
       </div>
@@ -987,7 +1157,7 @@
                   width: 78px;
                   height: 114px;
                   border-radius: 8px;
-                  border: 2px dashed var(--border2);
+                  border: 2px dashed rgba(0, 0, 0, 0.18);
                   display: flex;
                   align-items: center;
                   justify-content: center;
@@ -1114,8 +1284,8 @@
     </div>
     <div id="modal-meld" class="modal-overlay" style="display: none">
       <div class="modal">
-        <h2>Arrange your melds</h2>
-        <div class="subtitle">
+        <h2 id="meld-modal-title">Arrange your melds</h2>
+        <div class="subtitle" id="meld-modal-subtitle">
           Select 3+ cards → Add meld. Mark one leftover as discard if needed.
         </div>
         <div class="pin-hint" id="pin-hint" style="display: none">
@@ -1172,13 +1342,13 @@
           >
             Force as wild
           </button>
-          <button class="action-btn" onclick="setMeldDiscard()">
+          <button class="action-btn" id="btn-meld-set-discard" onclick="setMeldDiscard()">
             Set as discard
           </button>
           <button class="action-btn" onclick="clearMeldSel()">Clear</button>
         </div>
         <div class="modal-actions" style="margin-top: 0.5rem">
-          <button class="btn btn-primary" onclick="submitMelds()">
+          <button class="btn btn-primary" id="btn-meld-submit" onclick="handleMeldSubmit()">
             Submit & call Pay Me!
           </button>
           <button class="btn btn-secondary" onclick="cancelMeld()">
@@ -1245,6 +1415,157 @@
     </div>
     <button class="help-btn" onclick="showHelp()" title="Rules">?</button>
     <script>
+      // ─── Supabase realtime multiplayer ────────────────────────────────────────
+      const SUPABASE_URL      = 'https://zyvxibowrftsxjmetero.supabase.co'; // ← replace
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5dnhpYm93cmZ0c3hqbWV0ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTgzNzIsImV4cCI6MjA4OTE5NDM3Mn0.4SELs5G7XHyfMbLxVBJ2Q9wap12lXTT3rl80law2ARE';                    // ← replace
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const _urlParams = new URLSearchParams(location.search);
+      let myPlayerId = _urlParams.get('pid') || crypto.randomUUID();
+      let sbChannel  = null;
+      let _lastSyncAt = '';
+
+      function setUrlParams(code) {
+        history.replaceState(null, '', `?room=${code}&pid=${myPlayerId}`);
+      }
+      function clearUrlParams() {
+        history.replaceState(null, '', location.pathname);
+      }
+      async function restoreSession() {
+        const code = _urlParams.get('room');
+        const pid  = _urlParams.get('pid');
+        if (!code || !pid) return;
+        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
+        if (error || !data) { clearUrlParams(); return; }
+        applyRemoteState(data.state);
+        G.roomCode = code;
+        const myPlayer = G.players.find(p => p.id === myPlayerId);
+        if (!myPlayer) { clearUrlParams(); return; }
+        playerName = myPlayer.name;
+        subscribeRoom(code);
+        if (G.phase === 'lobby') {
+          showWaitingLobby();
+        } else {
+          renderCurrentPhase();
+          if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+            setTimeout(botTurn, 1200);
+        }
+      }
+
+      function serializeG() {
+        const { myIdx, isHost, selectedCards, confirmedMelds, meldSelecting,
+                layoffSelected, layoffDone, ...rest } = G;
+        return { ...rest, layoffDone: [...G.layoffDone], _updatedBy: myPlayerId };
+      }
+      function applyRemoteState(raw) {
+        const { _updatedBy, layoffDone, ...rest } = raw;
+        const save = {
+          myIdx: G.myIdx,
+          sel: G.selectedCards, lSel: G.layoffSelected,
+          cm:  G.confirmedMelds, ms:  G.meldSelecting,
+        };
+        Object.assign(G, rest);
+        G.layoffDone     = new Set(layoffDone || []);
+        G.selectedCards  = save.sel;
+        G.layoffSelected = save.lSel;
+        G.confirmedMelds = save.cm;
+        G.meldSelecting  = save.ms;
+        const idx = G.players.findIndex(p => p.id === myPlayerId);
+        if (idx >= 0) { G.myIdx = idx; G.isHost = idx === 0; }
+        else if (save.myIdx >= 0) { G.myIdx = save.myIdx; }
+      }
+      async function syncState() {
+        if (!G.roomCode) return;
+        await sb.from('rooms')
+          .update({ state: serializeG(), updated_at: new Date().toISOString() })
+          .eq('code', G.roomCode);
+      }
+      function subscribeRoom(code) {
+        if (sbChannel) sb.removeChannel(sbChannel);
+        sbChannel = sb.channel('room_' + code)
+          .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
+            payload => {
+              const raw = payload.new?.state;
+              if (!raw || raw._updatedBy === myPlayerId) return;
+              if (payload.new?.updated_at) _lastSyncAt = payload.new.updated_at;
+              onRemoteState(raw);
+            })
+          .on('postgres_changes',
+            { event: 'DELETE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
+            () => location.reload())
+          .subscribe();
+      }
+
+      async function backgroundSync() {
+        if (!G.roomCode || G.phase === 'lobby' || G.phase === 'game-over') return;
+        const { data } = await sb.from('rooms')
+          .select('state, updated_at')
+          .eq('code', G.roomCode)
+          .single();
+        if (!data?.state) return;
+        if (data.state._updatedBy === myPlayerId) return;   // our own last write
+        if (data.updated_at <= _lastSyncAt) return;          // already applied
+        _lastSyncAt = data.updated_at;
+        onRemoteState(data.state);
+      }
+      setInterval(backgroundSync, 8000);
+      async function afterAction() {
+        await syncState();
+        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
+          setTimeout(botTurn, 600 + Math.random() * 500);
+      }
+      function renderCurrentPhase() {
+        switch (G.phase) {
+          case 'lobby':
+            renderPlayersList();
+            break;
+          case 'playing':
+          case 'pay-me':
+            switchScreen('game');
+            renderGame();
+            break;
+          case 'layoff':
+            switchScreen('layoff');
+            renderLayoffScreen();
+            if (G.isHost) {
+              const next = G.layoffOrder[G.layoffIdx];
+              if (next !== undefined && G.players[next]?.isBot) setTimeout(botLayoff, 700);
+            }
+            break;
+          case 'end-hand': {
+            switchScreen('game');
+            renderGame();
+            const caller = G.payMeCaller, cn = caller >= 0 ? G.players[caller].name : 'Nobody';
+            document.getElementById('end-hand-title').textContent   = `Hand ${G.hand} complete`;
+            document.getElementById('end-hand-sub').textContent     = `${cn} called Pay Me!`;
+            document.getElementById('end-hand-content').innerHTML   = buildScorecardHTML(true);
+            document.getElementById('end-hand-btn').textContent     = G.hand === 11 ? 'See final results' : 'Next hand';
+            document.getElementById('end-hand-btn').disabled        = !G.isHost;
+            document.getElementById('modal-end-hand').style.display = 'flex';
+            break;
+          }
+          case 'game-over':
+            switchScreen('game');
+            showGameOver();
+            break;
+        }
+      }
+      function onRemoteState(raw) {
+        const prevPhase = G.phase;
+        applyRemoteState(raw);
+        const isNewPayMe = G.phase === 'pay-me' && prevPhase !== 'pay-me';
+        renderCurrentPhase();
+        if (isNewPayMe) {
+          showToast(
+            `${G.players[G.payMeCaller]?.name} called Pay Me! Each player gets one final turn.`,
+            5000,
+          );
+        }
+        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
+          setTimeout(botTurn, 800);
+      }
+      // ──────────────────────────────────────────────────────────────────────────
+
       const SUITS = ["♠", "♥", "♦", "♣"],
         RANKS = [
           "A",
@@ -1358,13 +1679,24 @@
         }
         if (new Set(nats.map((c) => c.suit)).size !== 1)
           return { valid: false, msg: "Not a valid set or run." };
-        const idxs = nats.map((c) => rankIndex(c.rank)).sort((a, b) => a - b);
-        for (let i = 1; i < idxs.length; i++)
-          if (idxs[i] === idxs[i - 1])
-            return { valid: false, msg: "Duplicate ranks in run." };
-        if (wilds.length < idxs[idxs.length - 1] - idxs[0] + 1 - nats.length)
-          return { valid: false, msg: "Not enough wilds for run gaps." };
-        return { valid: true, type: "run" };
+        const tryRun = (idxs) => {
+          const sorted = [...idxs].sort((a, b) => a - b);
+          for (let i = 1; i < sorted.length; i++)
+            if (sorted[i] === sorted[i - 1]) return null; // duplicate
+          const needed = sorted[sorted.length - 1] - sorted[0] + 1 - nats.length;
+          return wilds.length >= needed ? sorted : null;
+        };
+        const loIdxs = nats.map((c) => rankIndex(c.rank));
+        if (loIdxs.some((i) => i === -1))
+          return { valid: false, msg: "Unknown card rank." };
+        // Try ace-low first; if Ace present also try ace-high (index 13)
+        const hasAce = nats.some((c) => c.rank === "A");
+        if (tryRun(loIdxs)) return { valid: true, type: "run" };
+        if (hasAce) {
+          const hiIdxs = nats.map((c) => (c.rank === "A" ? 13 : rankIndex(c.rank)));
+          if (tryRun(hiIdxs)) return { valid: true, type: "run" };
+        }
+        return { valid: false, msg: "Not enough wilds for run gaps." };
       }
       function validateMeld(cards, hand, fw = new Set()) {
         const r1 = validateMeldCore(cards, hand, fw);
@@ -1428,14 +1760,17 @@
         confirmedMelds: [],
         meldSelecting: [],
         callerMelds: [],
+        callerForcedWilds: [],
         layoffOrder: [],
         layoffIdx: 0,
         layoffDone: new Set(),
+        playerMelds: [],
         playerHands: [],
         layoffSelected: new Set(),
       };
       let meldHandSelected = new Set(),
         meldDiscardId = null,
+        layoffMeldMode = false,
         forcedWilds = new Set(),
         toastTimer = null,
         dragSrcIdx = null,
@@ -1459,59 +1794,59 @@
         }
         document.getElementById("pay-me-toast").style.display = "none";
       }
-      function hostGame() {
+      async function hostGame() {
         playerName = document.getElementById("player-name").value.trim();
-        if (!playerName) {
-          alert("Please enter your name");
-          return;
-        }
+        if (!playerName) { alert("Please enter your name"); return; }
         G.roomCode = genCode();
-        G.players = [{ name: playerName, isHost: true }];
-        G.myIdx = 0;
-        G.isHost = true;
+        G.players  = [{ name: playerName, isHost: true, id: myPlayerId }];
+        G.myIdx    = 0;
+        G.isHost   = true;
+        const { error } = await sb.from('rooms').insert({ code: G.roomCode, state: serializeG() });
+        if (error) { alert('Could not create room: ' + error.message); return; }
+        subscribeRoom(G.roomCode);
+        setUrlParams(G.roomCode);
         showWaitingLobby();
       }
-      function joinGame() {
+      async function joinGame() {
         playerName = document.getElementById("player-name").value.trim();
-        const code = document
-          .getElementById("join-code")
-          .value.trim()
-          .toUpperCase();
-        if (!playerName) {
-          alert("Enter your name");
-          return;
-        }
-        if (code.length !== 4) {
-          alert("Enter valid room code");
-          return;
-        }
+        const code = document.getElementById("join-code").value.trim().toUpperCase();
+        if (!playerName) { alert("Enter your name"); return; }
+        if (code.length !== 4) { alert("Enter valid room code"); return; }
+        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
+        if (error || !data) { alert('Room not found. Check the code.'); return; }
+        const raw = data.state;
+        if (raw.phase !== 'lobby') { alert('Game already in progress.'); return; }
+        applyRemoteState(raw);
         G.roomCode = code;
-        G.players.push({ name: playerName, isHost: false });
-        G.myIdx = G.players.length - 1;
+        G.myIdx    = G.players.length;
+        G.isHost   = false;
+        G.players.push({ name: playerName, isBot: false, id: myPlayerId });
+        const { error: e2 } = await sb.from('rooms')
+          .update({ state: serializeG(), updated_at: new Date().toISOString() })
+          .eq('code', code);
+        if (e2) { alert('Could not join room.'); return; }
+        subscribeRoom(code);
+        setUrlParams(code);
         showWaitingLobby();
       }
       function showWaitingLobby() {
         document.getElementById("lobby-home").style.display = "none";
         document.getElementById("lobby-waiting").style.display = "";
         document.getElementById("room-code-show").textContent = G.roomCode;
-        document.getElementById("waiting-title").textContent = G.isHost
-          ? "Your game room"
-          : "Joined!";
-        renderPlayersList();
+        document.getElementById("waiting-title").textContent = G.isHost ? "Your game room" : "Joined!";
         if (G.isHost) {
-          document.getElementById("start-btn").style.display = "";
-          const nb = parseInt(prompt("How many bot players? (1-5)", "2")) || 2;
-          const names = [
-            "Bot Alex",
-            "Bot Sam",
-            "Bot Jordan",
-            "Bot Taylor",
-            "Bot Morgan",
-          ];
-          for (let i = 0; i < Math.min(nb, 5); i++)
-            G.players.push({ name: names[i], isBot: true });
-          renderPlayersList();
+          document.getElementById("start-btn").style.display   = "";
+          document.getElementById("add-bot-btn").style.display = "";
         }
+        renderPlayersList();
+      }
+      function addBot() {
+        const names = ["Bot Alex","Bot Sam","Bot Jordan","Bot Taylor","Bot Morgan"];
+        const botCount = G.players.filter(p => p.isBot).length;
+        if (G.players.length >= 8) { alert("Max 8 players."); return; }
+        G.players.push({ name: names[botCount] || `Bot ${botCount + 1}`, isBot: true });
+        renderPlayersList();
+        syncState();
       }
       function renderPlayersList() {
         document.getElementById("players-list").innerHTML = G.players
@@ -1525,7 +1860,15 @@
             ? "Waiting for players..."
             : G.players.length + " players ready.";
       }
-      function leaveGame() {
+      function confirmLeave() {
+        if (confirm('Leave the game? This will end the game for all players.')) leaveGame();
+      }
+      async function leaveGame() {
+        if (G.roomCode) {
+          await sb.from('rooms').delete().eq('code', G.roomCode);
+        }
+        try { if (sbChannel) await sb.removeChannel(sbChannel); } catch(e) {}
+        clearUrlParams();
         location.reload();
       }
       function startGame() {
@@ -1561,16 +1904,17 @@
         for (let c = 0; c < hs; c++)
           for (let p = 0; p < n; p++) G.hands[p].push(G.deck.pop());
         G.discard.push(G.deck.pop());
-        G.currentTurn = 0;
+        G.currentTurn = (G.hand - 1) % G.players.length;
         G.drawnThisTurn = false;
         G.payMeCaller = -1;
         G.lastTurnsLeft = -1;
         G.selectedCards = new Set();
         G.phase = "playing";
         G.callerMelds = [];
+        G.callerForcedWilds = [];
         updateHeader();
         renderGame();
-        if (G.currentTurn !== G.myIdx) setTimeout(botTurn, 800);
+        afterAction();
       }
       function updateHeader() {
         const wc = WILD_BY_HAND[G.hand];
@@ -1678,16 +2022,17 @@
         return `<div class="${cls}" style="${sz}"><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div>${isWR && isForced ? '<div class="card-nat-pin" style="background:var(--warn)">wild</div>' : ""}${isWR && !isForced ? '<div class="card-nat-pin" style="background:var(--success)">nat</div>' : ""}</div>`;
       }
       function updateActions() {
-        const myTurn = G.currentTurn === G.myIdx && G.phase === "playing",
+        const inTurn = G.currentTurn === G.myIdx && (G.phase === "playing" || G.phase === "pay-me"),
+          myTurn = G.currentTurn === G.myIdx && G.phase === "playing",
           drawn = G.drawnThisTurn;
-        document.getElementById("btn-discard").disabled = !(myTurn && drawn);
+        document.getElementById("btn-discard").disabled = !(inTurn && drawn);
         document.getElementById("btn-pay-me").disabled = !(myTurn && drawn);
         const ind = document.getElementById("turn-indicator");
-        if (myTurn && !drawn) {
+        if (inTurn && !drawn) {
           ind.textContent = "Your turn — draw";
           ind.className = "turn-indicator my-turn";
-        } else if (myTurn && drawn) {
-          ind.textContent = "Discard or Pay Me!";
+        } else if (inTurn && drawn) {
+          ind.textContent = G.phase === "pay-me" ? "Final turn — discard" : "Discard or Pay Me!";
           ind.className = "turn-indicator my-turn";
         } else {
           ind.textContent = `Waiting for ${G.players[G.currentTurn]?.name}...`;
@@ -1710,7 +2055,7 @@
         if (
           G.currentTurn !== G.myIdx ||
           G.drawnThisTurn ||
-          G.phase !== "playing"
+          (G.phase !== "playing" && G.phase !== "pay-me")
         )
           return;
         if (!G.deck.length) reshuffleDiscard();
@@ -1725,12 +2070,13 @@
           `Drew ${card.rank}${card.suit}${isWild(card, G.hand) ? " (wild-rank)" : ""}`,
         );
         renderGame();
+        syncState();
       }
       function drawFromDiscard() {
         if (
           G.currentTurn !== G.myIdx ||
           G.drawnThisTurn ||
-          G.phase !== "playing"
+          (G.phase !== "playing" && G.phase !== "pay-me")
         )
           return;
         if (!G.discard.length) return;
@@ -1739,6 +2085,7 @@
         G.drawnThisTurn = true;
         setMsg(`Picked up ${card.rank}${card.suit}`);
         renderGame();
+        syncState();
       }
       function reshuffleDiscard() {
         if (G.discard.length <= 1) return;
@@ -1765,6 +2112,11 @@
         G.confirmedMelds = [];
         meldHandSelected = new Set();
         meldDiscardId = null;
+        layoffMeldMode = false;
+        document.getElementById('meld-modal-title').textContent = 'Arrange your melds';
+        document.getElementById('meld-modal-subtitle').textContent = 'Select 3+ cards → Add meld. Mark one leftover as discard if needed.';
+        document.getElementById('btn-meld-submit').textContent = 'Submit & call Pay Me!';
+        document.getElementById('btn-meld-set-discard').style.display = '';
         forcedWilds = new Set();
         G.meldSelecting = [...G.hands[G.myIdx]];
         document.getElementById("meld-msg").textContent = "";
@@ -1777,13 +2129,59 @@
         document.getElementById("modal-meld").style.display = "flex";
         renderMeldModal();
       }
+      function handleMeldSubmit() {
+        if (layoffMeldMode) submitLayoffMelds();
+        else submitMelds();
+      }
+      function openLayoffMeld() {
+        const pi = G.layoffOrder[G.layoffIdx];
+        if (pi !== G.myIdx) return;
+        layoffMeldMode = true;
+        G.confirmedMelds = [];
+        meldHandSelected = new Set();
+        meldDiscardId = null;
+        forcedWilds = new Set();
+        G.meldSelecting = [...G.playerHands[pi]];
+        document.getElementById('meld-modal-title').textContent = 'Make your own melds';
+        document.getElementById('meld-modal-subtitle').textContent =
+          'Select 3+ cards → Add meld. Remaining cards count as deadwood.';
+        document.getElementById('btn-meld-submit').textContent = 'Submit melds';
+        document.getElementById('btn-meld-set-discard').style.display = 'none';
+        renderMeldModal();
+        document.getElementById('modal-meld').style.display = 'flex';
+      }
+      function submitLayoffMelds() {
+        if (!G.confirmedMelds.length) {
+          document.getElementById('meld-msg').textContent = 'Add at least one meld first.';
+          return;
+        }
+        const pi = G.layoffOrder[G.layoffIdx];
+        const usedIds = new Set(G.confirmedMelds.flat());
+        const newMelds = G.confirmedMelds.map(meldIds =>
+          meldIds.map(id => G.meldSelecting.find(c => c.id === id)).filter(Boolean)
+        );
+        G.playerHands[pi] = G.playerHands[pi].filter(c => !usedIds.has(c.id));
+        if (!G.playerMelds[pi]) G.playerMelds[pi] = [];
+        G.playerMelds[pi].push(...newMelds);
+        G.confirmedMelds = [];
+        meldHandSelected = new Set();
+        meldDiscardId = null;
+        forcedWilds = new Set();
+        layoffMeldMode = false;
+        closeModal('modal-meld');
+        renderLayoffScreen();
+        syncState();
+      }
       function cancelMeld() {
+        const wasLayoff = layoffMeldMode;
+        layoffMeldMode = false;
         closeModal("modal-meld");
         meldHandSelected = new Set();
         meldDiscardId = null;
         forcedWilds = new Set();
         G.confirmedMelds = [];
-        setMsg("");
+        if (!wasLayoff) setMsg("");
+        else renderLayoffScreen();
       }
       function renderMeldModal() {
         const usedIds = G.confirmedMelds.flat();
@@ -1921,6 +2319,7 @@
             .map((id) => G.meldSelecting.find((c) => c.id === id))
             .filter(Boolean),
         );
+        G.callerForcedWilds = [...forcedWilds];
         G.payMeCaller = G.myIdx;
         G.phase = "pay-me";
         G.lastTurnsLeft = G.players.length;
@@ -1943,11 +2342,11 @@
           }
         }
         renderGame();
-        if (G.currentTurn !== G.myIdx)
-          setTimeout(botTurn, 600 + Math.random() * 500);
+        afterAction();
       }
       function botTurn() {
-        if (G.currentTurn === G.myIdx) return;
+        if (!G.isHost) return;
+        if (!G.players[G.currentTurn]?.isBot) return;
         const bi = G.currentTurn,
           hand = G.hands[bi];
         const topDiscard = G.discard.length
@@ -2022,12 +2421,13 @@
         G.layoffIdx = 0;
         G.layoffDone = new Set();
         G.layoffSelected = new Set();
+        G.playerMelds = G.players.map(() => []);
         switchScreen("layoff");
         renderLayoffScreen();
-        if (G.layoffOrder.length > 0) {
+        syncState();
+        if (G.isHost && G.layoffOrder.length > 0) {
           const first = G.layoffOrder[0];
-          if (G.players[first].isBot || first !== G.myIdx)
-            setTimeout(botLayoff, 900);
+          if (G.players[first]?.isBot) setTimeout(botLayoff, 900);
         }
       }
       function autoGenerateMelds(hand, handNum) {
@@ -2090,7 +2490,7 @@
             : G.callerMelds
                 .map(
                   (meld, mi) =>
-                    `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map((c) => mkCard(c, G.hand, true, false, true, new Set())).join("")}</div></div>`,
+                    `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map((c) => mkCard(c, G.hand, true, false, true, new Set(G.callerForcedWilds || []))).join("")}</div></div>`,
                 )
                 .join("");
         document.getElementById("layoff-status").textContent =
@@ -2102,11 +2502,11 @@
             const p = G.players[pi],
               isActive = oi === G.layoffIdx,
               isDone = G.layoffDone.has(pi),
-              isHuman = pi === G.myIdx;
+              isHuman = pi === G.myIdx || G.players[pi]?.id === myPlayerId;
             const hand = G.playerHands[pi] || [];
             let actionsHTML = "";
             if (isActive && isHuman && !isDone)
-              actionsHTML = `<div class="layoff-actions"><button class="action-btn" onclick="humanLayoff()">Lay off selected</button><button class="action-btn" onclick="humanPassLayoff()">Pass</button></div>`;
+              actionsHTML = `<div class="layoff-actions"><button class="action-btn" onclick="humanLayoff()">Lay off selected</button><button class="action-btn" onclick="openLayoffMeld()">Make meld</button><button class="action-btn" onclick="humanPassLayoff()">Pass</button></div>`;
             return `<div class="player-layoff-section ${isActive && !isDone ? "active-player" : ""}"><div class="plname">${p.name}${p.isBot ? " 🤖" : ""}${isActive && !isDone ? '<span class="active-badge">laying off</span>' : ""}${isDone ? '<span class="done-badge">done</span>' : ""}</div><div class="player-cards-row">${
               hand.length === 0
                 ? `<em style="color:var(--text3)">No cards remaining</em>`
@@ -2121,7 +2521,13 @@
                       return `<div class="card ${SUIT_COLOR[c.suit] || "black"} ${isWild(c, G.hand) ? "wild-card" : ""} ${sel ? "selected" : ""} ${!(isActive && isHuman) ? "no-hover" : ""} ${isActive && isHuman ? "clickable" : ""}" ${oc}><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div></div>`;
                     })
                     .join("")
-            }</div>${actionsHTML}</div>`;
+            }</div>${actionsHTML}${
+              (() => {
+                const ownMelds = (G.playerMelds || [])[pi] || [];
+                if (!ownMelds.length) return '';
+                return `<div style="margin-top:0.5rem"><div style="font-size:calc(0.72rem * var(--fs));color:var(--text3);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:.05em">Your melds</div>${ownMelds.map((meld, mi) => `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map(c => mkCard(c, G.hand, true, false, true, new Set())).join('')}</div></div>`).join('')}</div>`;
+              })()
+            }</div>`;
           })
           .join("");
       }
@@ -2134,21 +2540,38 @@
       function humanLayoff() {
         if (!G.layoffSelected.size) return;
         const pi = G.layoffOrder[G.layoffIdx];
-        G.playerHands[pi]
-          .filter((c) => G.layoffSelected.has(c.id))
-          .forEach((card) => {
+        // Retry loop: order-dependent cases (e.g. need 4♠ before 3♠ can extend a run)
+        // require multiple passes until nothing new can be placed.
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let ci = G.playerHands[pi].length - 1; ci >= 0; ci--) {
+            const card = G.playerHands[pi][ci];
+            if (!G.layoffSelected.has(card.id)) continue;
             for (let mi = 0; mi < G.callerMelds.length; mi++) {
               if (canLayOff(card, G.callerMelds[mi], G.hand)) {
                 G.callerMelds[mi].push(card);
-                G.playerHands[pi] = G.playerHands[pi].filter(
-                  (c) => c.id !== card.id,
-                );
+                G.playerHands[pi].splice(ci, 1);
+                changed = true;
                 break;
               }
             }
-          });
+          }
+        }
         G.layoffSelected = new Set();
+        G.layoffDone.add(pi);
+        G.layoffIdx++;
         renderLayoffScreen();
+        if (G.layoffIdx < G.layoffOrder.length) {
+          const next = G.layoffOrder[G.layoffIdx];
+          if (G.isHost && G.players[next]?.isBot) {
+            setTimeout(botLayoff, 700);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
+        syncState();
       }
       function humanPassLayoff() {
         G.layoffDone.add(G.layoffOrder[G.layoffIdx]);
@@ -2157,9 +2580,14 @@
         renderLayoffScreen();
         if (G.layoffIdx < G.layoffOrder.length) {
           const next = G.layoffOrder[G.layoffIdx];
-          if (G.players[next].isBot || next !== G.myIdx)
+          if (G.isHost && G.players[next]?.isBot) {
             setTimeout(botLayoff, 700);
-        } else setTimeout(finalizeScores, 800);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
+        syncState();
       }
       function advanceLayoff() {
         G.layoffDone.add(G.layoffOrder[G.layoffIdx]);
@@ -2167,15 +2595,21 @@
         renderLayoffScreen();
         if (G.layoffIdx < G.layoffOrder.length) {
           const next = G.layoffOrder[G.layoffIdx];
-          if (G.players[next].isBot || next !== G.myIdx)
+          if (G.isHost && G.players[next]?.isBot) {
             setTimeout(botLayoff, 700);
-        } else setTimeout(finalizeScores, 800);
+            return;
+          }
+        } else {
+          setTimeout(finalizeScores, 800);
+        }
+        syncState();
       }
       function botLayoff() {
+        if (!G.isHost) return;
         const oi = G.layoffIdx;
         if (oi >= G.layoffOrder.length) return;
         const pi = G.layoffOrder[oi];
-        if (!G.players[pi].isBot && pi === G.myIdx) return;
+        if (!G.players[pi]?.isBot) return;
         const result = computeLayOffs(G.playerHands[pi], G.callerMelds, G.hand);
         G.callerMelds = result.melds;
         G.playerHands[pi] = result.remaining;
@@ -2194,6 +2628,7 @@
           re.playerScores.push({ pts, calledPayMe: cp });
         });
         G.roundLog.push(re);
+        syncState();
         const cn = caller >= 0 ? G.players[caller].name : "Nobody";
         document.getElementById("end-hand-title").textContent =
           `Hand ${G.hand} complete`;
@@ -2203,6 +2638,7 @@
           buildScorecardHTML(true);
         document.getElementById("end-hand-btn").textContent =
           G.hand === 11 ? "See final results" : "Next hand";
+        document.getElementById("end-hand-btn").disabled = !G.isHost;
         document.getElementById("modal-end-hand").style.display = "flex";
       }
       function buildScorecardHTML(sc) {
@@ -2241,6 +2677,7 @@
         return html;
       }
       function nextHand() {
+        if (!G.isHost) return;
         closeModal("modal-end-hand");
         if (G.hand === 11) {
           showGameOver();
@@ -2251,6 +2688,10 @@
         dealHand();
       }
       function showGameOver() {
+        if (G.phase !== 'game-over') {
+          G.phase = 'game-over';
+          if (G.isHost) syncState();
+        }
         const sorted = G.players
           .map((p, i) => ({ name: p.name, score: G.scores[i], isBot: p.isBot }))
           .sort((a, b) => a.score - b.score);
@@ -2270,6 +2711,7 @@
         document.getElementById("modal-scores").style.display = "flex";
       }
       function returnToLobby() {
+        clearUrlParams();
         location.reload();
       }
       function closeModal(id) {
@@ -2278,6 +2720,7 @@
       function showHelp() {
         document.getElementById("modal-help").style.display = "flex";
       }
+      restoreSession();
     </script>
   </body>
 </html>
