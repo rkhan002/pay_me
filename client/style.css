@@ -307,7 +307,12 @@ body {
 .hand-fan {
   display: flex;
   justify-content: center;
-  padding-top: 1rem;
+  padding: 1.5rem 1rem 1rem;
+  /* Deal size grows to 13 cards across the game - rather than squeezing
+     them all into one line, let the hand scroll horizontally once it
+     doesn't fit, so cards never get pushed to overlapping unreadably. */
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 /* ---------- Cards ---------- */
@@ -315,7 +320,10 @@ body {
 .card {
   width: 54px;
   height: 76px;
-  margin: 0 -14px;
+  /* Enough overlap to read as "a hand of cards," not so much that a
+     card's rank/suit corner is hidden behind its neighbor. */
+  margin: 0 4px;
+  flex-shrink: 0;
   border-radius: 8px;
   background: var(--surface);
   border: 2px solid var(--cyan);
