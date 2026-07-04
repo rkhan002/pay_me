@@ -101,10 +101,13 @@ function removeCardsFromHand(hand: Card[], cards: Card[]): Card[] | null {
   return remaining;
 }
 
-let meldCounter = 0;
 function nextMeldId(): string {
-  meldCounter += 1;
-  return `meld_${meldCounter}`;
+  // melds.id is a uuid column in Postgres. A counter-based string like
+  // "meld_1" passes every check the rules-engine itself does (it never
+  // touches the DB) but fails the real insert with "invalid input syntax
+  // for type uuid" - by which point other writes in the same request had
+  // already committed, so the meld silently vanished instead of saving.
+  return crypto.randomUUID();
 }
 
 export function proposeMeld(
