@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateSet, validateRun } from "../src/melds";
+import { validateSet, validateRun, canLayOff } from "../src/melds";
 import { card, joker } from "./testHelpers";
 
 describe("validateSet", () => {
@@ -93,5 +93,28 @@ describe("validateRun", () => {
   it("rejects a run shorter than 3 cards", () => {
     const result = validateRun([card("4", "S"), card("5", "S")], "9");
     expect(result.valid).toBe(false);
+  });
+});
+
+describe("canLayOff", () => {
+  it("allows extending a set with a matching natural of a new suit", () => {
+    const existing = [card("6", "S"), card("6", "H"), card("6", "D")];
+    expect(canLayOff(existing, "SET", card("6", "C"), "9")).toBe(true);
+  });
+
+  it("rejects extending a set with a mismatched rank", () => {
+    const existing = [card("6", "S"), card("6", "H"), card("6", "D")];
+    expect(canLayOff(existing, "SET", card("7", "C"), "9")).toBe(false);
+  });
+
+  it("allows extending a run at either end", () => {
+    const existing = [card("4", "S"), card("5", "S"), card("6", "S")];
+    expect(canLayOff(existing, "RUN", card("7", "S"), "9")).toBe(true);
+    expect(canLayOff(existing, "RUN", card("3", "S"), "9")).toBe(true);
+  });
+
+  it("rejects extending a run with a wrong suit", () => {
+    const existing = [card("4", "S"), card("5", "S"), card("6", "S")];
+    expect(canLayOff(existing, "RUN", card("7", "H"), "9")).toBe(false);
   });
 });
