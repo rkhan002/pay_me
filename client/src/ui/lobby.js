@@ -49,11 +49,19 @@ export function renderLobby(root) {
   joinBtn.className = "btn btn--primary";
   joinBtn.textContent = "Join table";
   joinBtn.addEventListener("click", async () => {
+    // Disable immediately: without this, a double-click (or a slow network
+    // making the first click look like it did nothing) fires enterRoom()
+    // twice, which calls subscribeToRoom() twice and leaves two redundant
+    // Realtime channels open for the same room in this tab.
+    joinBtn.disabled = true;
+    createBtn.disabled = true;
     try {
       const { roomId, playerId } = await joinRoom(codeInput.value.trim(), nameInput.value.trim());
       await enterRoom(roomId, playerId);
     } catch (e) {
       setState({ error: e.message });
+      joinBtn.disabled = false;
+      createBtn.disabled = false;
     }
   });
   card.appendChild(joinBtn);
@@ -67,11 +75,15 @@ export function renderLobby(root) {
   createBtn.className = "btn btn--secondary";
   createBtn.textContent = "Start a new table";
   createBtn.addEventListener("click", async () => {
+    joinBtn.disabled = true;
+    createBtn.disabled = true;
     try {
       const { roomId, playerId } = await createRoom(nameInput.value.trim() || "Host");
       await enterRoom(roomId, playerId);
     } catch (e) {
       setState({ error: e.message });
+      joinBtn.disabled = false;
+      createBtn.disabled = false;
     }
   });
   card.appendChild(createBtn);
