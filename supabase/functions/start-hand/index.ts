@@ -57,6 +57,22 @@ Deno.serve(async (req: Request) => {
       })
       .select()
       .single();
+
+    // Any seated player can trigger "deal next hand", so two players
+    // clicking around the same time both land here concurrently. One
+    // insert wins; the other hits hands_room_id_hand_number_key. Treat
+    // that race as success and hand back the hand the winner created,
+    // rather than surfacing a 500 to the loser.
+    if (handError?.code === "23505") {
+      const { data: existingHand, error: existingHandError } = await admin
+        .from("hands")
+        .select("id")
+        .eq("room_id", roomId)
+        .eq("hand_number", nextHandNumber)
+        .single();
+      if (existingHandError || !existingHand) throw new HttpError("Failed to create hand", 500);
+      return json({ ok: true, handId: existingHand.id, handNumber: nextHandNumber });
+    }
     if (handError || !hand) throw new HttpError("Failed to create hand", 500);
 
     const { error: stockError } = await admin
