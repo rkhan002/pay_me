@@ -1,0 +1,352 @@
+/* Neon Tabletop - see the visual direction mockups for the source concept. */
+
+:root {
+  --bg: #0b0e1a;
+  --surface: #14182b;
+  --surface2: #1b2140;
+  --text: #f5f6ff;
+  --text-dim: rgba(245, 246, 255, 0.6);
+  --pink: #ff3d8a;
+  --cyan: #3de0ff;
+  --lime: #c8ff3d;
+  --purple: #7b2ff7;
+  --red: #ff5470;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, #171c33 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+  min-height: 100vh;
+}
+
+#error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--red);
+  color: #2a0510;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.6rem;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  z-index: 100;
+}
+
+#error-banner.visible {
+  transform: translateY(0);
+}
+
+/* ---------- Lobby ---------- */
+
+.lobby {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo h1 {
+  font-family: "Bungee", cursive;
+  font-size: 3rem;
+  color: var(--text);
+  text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  letter-spacing: 1px;
+}
+
+.logo .suits {
+  margin-top: 0.4rem;
+  letter-spacing: 0.6em;
+  text-indent: 0.6em;
+  color: var(--text-dim);
+}
+
+.lobby-card {
+  background: var(--surface);
+  border: 2px solid var(--purple);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  border: 2px solid var(--purple);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--cyan);
+}
+
+.lobby-divider {
+  text-align: center;
+  color: var(--text-dim);
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  font-family: "Bungee", cursive;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.1rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 2px solid var(--cyan);
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  transition: transform 0.05s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--lime);
+  color: #0b0e1a;
+  border-color: var(--lime);
+  box-shadow: 0 0 20px rgba(200, 255, 61, 0.45);
+}
+
+.btn--secondary {
+  border-color: var(--pink);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.controls .btn {
+  width: auto;
+  flex: 1 1 160px;
+}
+
+/* ---------- Table ---------- */
+
+.table-screen {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  font-family: "Bungee", cursive;
+  font-size: 0.85rem;
+  color: var(--cyan);
+}
+
+.opponents-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem;
+  border-radius: var(--radius);
+}
+
+.seat--active {
+  background: rgba(61, 224, 255, 0.12);
+  box-shadow: 0 0 0 2px var(--cyan);
+}
+
+.seat--pay-me {
+  box-shadow: 0 0 0 2px var(--lime);
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.avatar--disconnected {
+  opacity: 0.35;
+}
+
+.seat-name {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.seat-count {
+  font-size: 0.7rem;
+  color: var(--text);
+}
+
+.pay-me-banner {
+  font-family: "Bungee", cursive;
+  text-align: center;
+  color: #0b0e1a;
+  background: var(--lime);
+  padding: 0.7rem;
+  border-radius: 8px;
+  transform: rotate(-2deg);
+  box-shadow: 0 0 30px rgba(200, 255, 61, 0.6);
+  margin-bottom: 1.5rem;
+}
+
+.center-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.discard-pile {
+  position: relative;
+  width: 64px;
+  height: 88px;
+}
+
+.discard-pile .card {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.melds {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.meld {
+  display: flex;
+  gap: -8px;
+  padding: 0.5rem;
+  border: 2px dashed var(--purple);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.meld:hover {
+  border-color: var(--cyan);
+}
+
+.hand-label {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.hand-fan {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  width: 54px;
+  height: 76px;
+  margin: 0 -14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 2px solid var(--cyan);
+  color: var(--cyan);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(61, 224, 255, 0.25);
+  transition: transform 0.1s ease;
+}
+
+.card--red {
+  border-color: var(--pink);
+  color: var(--pink);
+  box-shadow: 0 0 10px rgba(255, 61, 138, 0.25);
+}
+
+.card--wild {
+  border-color: var(--lime);
+  color: var(--lime);
+  box-shadow: 0 0 14px rgba(200, 255, 61, 0.45);
+}
+
+.card--selected {
+  transform: translateY(-14px);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+}
