@@ -1,5 +1,5 @@
-import { dealCards } from "../../../packages/rules-engine/src/deal.ts";
-import { configForHand, TOTAL_HANDS } from "../../../packages/rules-engine/src/handConfig.ts";
+import { dealCards } from "../_shared/rules-engine/deal.ts";
+import { configForHand, TOTAL_HANDS } from "../_shared/rules-engine/handConfig.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
 

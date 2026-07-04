@@ -2,9 +2,9 @@
 // pendingLayoffs also needs to finalize scoring: compute each player's
 // score, persist it, and mark the room ready for the next hand (or
 // complete, if this was hand 11).
-import { passLayoff } from "../../../packages/rules-engine/src/handState.ts";
-import { scoreHandForAllPlayers } from "../../../packages/rules-engine/src/scoring.ts";
-import { TOTAL_HANDS } from "../../../packages/rules-engine/src/handConfig.ts";
+import { passLayoff } from "../_shared/rules-engine/handState.ts";
+import { scoreHandForAllPlayers } from "../_shared/rules-engine/scoring.ts";
+import { TOTAL_HANDS } from "../_shared/rules-engine/handConfig.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
 import { resolvePlayerIdForHand } from "../_shared/playerLookup.ts";

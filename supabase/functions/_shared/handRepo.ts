@@ -3,8 +3,8 @@
 // between "rows in several tables" and the pure in-memory HandState the
 // shared rules-engine package operates on - keeping every function's body
 // down to "load -> call rules-engine -> save".
-import type { HandState, TableMeld } from "../../../packages/rules-engine/src/handState.ts";
-import type { Card } from "../../../packages/rules-engine/src/deck.ts";
+import type { HandState, TableMeld } from "./rules-engine/handState.ts";
+import type { Card } from "./rules-engine/deck.ts";
 import { HttpError } from "./http.ts";
 
 // deno-lint-ignore no-explicit-any

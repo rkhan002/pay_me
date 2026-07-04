@@ -1,4 +1,4 @@
-import { proposeMeld } from "../../../packages/rules-engine/src/handState.ts";
+import { proposeMeld } from "../_shared/rules-engine/handState.ts";
 import { handleAction } from "../_shared/actionHandler.ts";
 
 Deno.serve(

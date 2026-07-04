@@ -1,4 +1,4 @@
-import { discard } from "../../../packages/rules-engine/src/handState.ts";
+import { discard } from "../_shared/rules-engine/handState.ts";
 import { handleAction } from "../_shared/actionHandler.ts";
 
 Deno.serve(

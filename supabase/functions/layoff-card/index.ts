@@ -1,7 +1,4 @@
-import {
-  layOffDuringTurn,
-  layOffDuringLayoffPhase,
-} from "../../../packages/rules-engine/src/handState.ts";
+import { layOffDuringTurn, layOffDuringLayoffPhase } from "../_shared/rules-engine/handState.ts";
 import { handleAction } from "../_shared/actionHandler.ts";
 
 Deno.serve(

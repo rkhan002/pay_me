@@ -3,7 +3,7 @@
 // run the rules-engine transition -> persist -> log -> respond. Every
 // function file becomes a one-line call into this, keeping the actual game
 // logic entirely inside packages/rules-engine.
-import type { HandState, Result } from "../../../packages/rules-engine/src/handState.ts";
+import type { HandState, Result } from "./rules-engine/handState.ts";
 import { supabaseAdmin } from "./supabaseAdmin.ts";
 import {
   CORS_HEADERS,

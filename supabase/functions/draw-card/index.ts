@@ -1,4 +1,4 @@
-import { drawFromDiscard, drawFromStock } from "../../../packages/rules-engine/src/handState.ts";
+import { drawFromDiscard, drawFromStock } from "../_shared/rules-engine/handState.ts";
 import { handleAction } from "../_shared/actionHandler.ts";
 
 Deno.serve(
