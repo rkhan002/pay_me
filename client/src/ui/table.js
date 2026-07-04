@@ -15,6 +15,7 @@ import {
   layOffCard,
   passLayoff,
 } from "../network/intents.js";
+import { loadRoom, loadHand } from "../network/queries.js";
 
 function selectedCards() {
   const { myCards, selectedCardKeys } = getState();
@@ -25,9 +26,17 @@ function isMyTurn(state) {
   return state.hand && state.hand.turnPlayerId === state.myPlayerId;
 }
 
-async function guard(fn) {
+// Realtime eventually tells every other player about a successful action,
+// but the player who just took the action shouldn't have to wait on a
+// round trip through Postgres Changes to see their own move reflected -
+// and if realtime is ever slow, down, or misconfigured, an unrefreshed
+// screen looks exactly like "nothing happened", which invites exactly the
+// kind of repeated re-clicking that causes duplicate actions. So every
+// guarded call refreshes this client's own state directly after success.
+async function guard(fn, refresh) {
   try {
     await fn();
+    if (refresh) await refresh();
   } catch (e) {
     setState({ error: e.message });
   }
@@ -86,7 +95,10 @@ function renderMelds(root, state) {
         });
         return;
       }
-      guard(() => layOffCard(state.hand.id, card, meld.id)).then(clearSelection);
+      guard(
+        () => layOffCard(state.hand.id, card, meld.id),
+        () => loadHand(state.hand.id),
+      ).then(clearSelection);
     });
     section.appendChild(meldEl);
   }
@@ -113,7 +125,17 @@ function renderControls(root, state) {
     btn.className = "btn btn--primary";
     btn.textContent = state.room.currentHandNumber >= 11 ? "Game complete" : label;
     btn.disabled = state.room.currentHandNumber >= 11 || state.players.length < 2;
-    btn.addEventListener("click", () => guard(() => startHand(state.room.id)));
+    btn.addEventListener("click", () => {
+      // Belt-and-suspenders against double-fires: disable immediately so a
+      // second click (or a slow network making the first click look like
+      // it did nothing) can't send a second start-hand before this one's
+      // refresh lands and re-renders the button away.
+      btn.disabled = true;
+      guard(
+        () => startHand(state.room.id),
+        () => loadRoom(state.room.id),
+      );
+    });
     bar.appendChild(btn);
     root.appendChild(bar);
     return;
@@ -132,14 +154,24 @@ function renderControls(root, state) {
   drawStockBtn.className = "btn";
   drawStockBtn.textContent = "Draw from stock";
   drawStockBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawStockBtn.addEventListener("click", () => guard(() => drawStock(state.hand.id)));
+  drawStockBtn.addEventListener("click", () =>
+    guard(
+      () => drawStock(state.hand.id),
+      () => loadHand(state.hand.id),
+    ),
+  );
   bar.appendChild(drawStockBtn);
 
   const drawDiscardBtn = document.createElement("button");
   drawDiscardBtn.className = "btn";
   drawDiscardBtn.textContent = "Draw from discard";
   drawDiscardBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawDiscardBtn.addEventListener("click", () => guard(() => drawDiscard(state.hand.id)));
+  drawDiscardBtn.addEventListener("click", () =>
+    guard(
+      () => drawDiscard(state.hand.id),
+      () => loadHand(state.hand.id),
+    ),
+  );
   bar.appendChild(drawDiscardBtn);
 
   const setBtn = document.createElement("button");
@@ -147,7 +179,10 @@ function renderControls(root, state) {
   setBtn.textContent = "Meld as set";
   setBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length < 3;
   setBtn.addEventListener("click", () =>
-    guard(() => proposeMeld(state.hand.id, selectedCards(), "SET")).then(clearSelection),
+    guard(
+      () => proposeMeld(state.hand.id, selectedCards(), "SET"),
+      () => loadHand(state.hand.id),
+    ).then(clearSelection),
   );
   bar.appendChild(setBtn);
 
@@ -156,7 +191,10 @@ function renderControls(root, state) {
   runBtn.textContent = "Meld as run";
   runBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length < 3;
   runBtn.addEventListener("click", () =>
-    guard(() => proposeMeld(state.hand.id, selectedCards(), "RUN")).then(clearSelection),
+    guard(
+      () => proposeMeld(state.hand.id, selectedCards(), "RUN"),
+      () => loadHand(state.hand.id),
+    ).then(clearSelection),
   );
   bar.appendChild(runBtn);
 
@@ -165,7 +203,10 @@ function renderControls(root, state) {
   discardBtn.textContent = "Discard selected";
   discardBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length !== 1;
   discardBtn.addEventListener("click", () =>
-    guard(() => discardCard(state.hand.id, selectedCards()[0])).then(clearSelection),
+    guard(
+      () => discardCard(state.hand.id, selectedCards()[0]),
+      () => loadHand(state.hand.id),
+    ).then(clearSelection),
   );
   bar.appendChild(discardBtn);
 
@@ -173,7 +214,12 @@ function renderControls(root, state) {
     const passBtn = document.createElement("button");
     passBtn.className = "btn btn--primary";
     passBtn.textContent = "Pass (done laying off)";
-    passBtn.addEventListener("click", () => guard(() => passLayoff(state.hand.id)));
+    passBtn.addEventListener("click", () =>
+      guard(
+        () => passLayoff(state.hand.id),
+        () => loadHand(state.hand.id),
+      ),
+    );
     bar.appendChild(passBtn);
   }
 

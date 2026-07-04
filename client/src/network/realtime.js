@@ -17,8 +17,13 @@ import { loadRoom, loadHand } from "./queries.js";
 export function subscribeToRoom(roomId) {
   const refreshRoom = () => loadRoom(roomId);
   const refreshHand = () => {
+    // If we don't have a hand loaded yet (e.g. this is the very first hand
+    // dealt in the room, or we joined mid-game before our own load
+    // finished), fall back to a full room refresh - loadRoom already knows
+    // how to find and load whichever hand is current.
     const { hand } = getState();
     if (hand) loadHand(hand.id);
+    else loadRoom(roomId);
   };
 
   const channel = supabase
