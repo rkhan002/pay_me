@@ -324,11 +324,21 @@ body {
   font-weight: 700;
   font-size: 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.2rem;
   cursor: pointer;
   box-shadow: 0 0 10px rgba(61, 224, 255, 0.25);
   transition: transform 0.1s ease;
+}
+
+.card-rank {
+  line-height: 1;
+}
+
+.suit-icon {
+  display: block;
 }
 
 .card--red {

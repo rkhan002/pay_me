@@ -18,30 +18,31 @@ export async function loadHandState(admin: SupabaseAdmin, handId: string): Promi
     .single();
   if (handError || !hand) throw new HttpError("Hand not found", 404);
 
-  const { data: players, error: playersError } = await admin
-    .from("players")
-    .select("id, seat_index, connected")
-    .eq("room_id", hand.room_id)
-    .order("seat_index", { ascending: true });
+  // These four only depend on hand.room_id / handId, both already known, so
+  // there's no reason to make the caller wait on them one at a time - every
+  // sequential round trip here was pure added latency on every single
+  // action (draw, discard, meld, layoff).
+  const [
+    { data: players, error: playersError },
+    { data: stockRow, error: stockError },
+    { data: handPlayers, error: hpError },
+    { data: melds, error: meldsError },
+  ] = await Promise.all([
+    admin
+      .from("players")
+      .select("id, seat_index, connected")
+      .eq("room_id", hand.room_id)
+      .order("seat_index", { ascending: true }),
+    admin.from("hand_stock").select("stock").eq("hand_id", handId).single(),
+    admin.from("hand_players").select("player_id, hand_cards").eq("hand_id", handId),
+    admin
+      .from("melds")
+      .select("id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position)")
+      .eq("hand_id", handId),
+  ]);
   if (playersError || !players?.length) throw new HttpError("Room has no players", 500);
-
-  const { data: stockRow, error: stockError } = await admin
-    .from("hand_stock")
-    .select("stock")
-    .eq("hand_id", handId)
-    .single();
   if (stockError || !stockRow) throw new HttpError("Hand stock not found", 500);
-
-  const { data: handPlayers, error: hpError } = await admin
-    .from("hand_players")
-    .select("player_id, hand_cards")
-    .eq("hand_id", handId);
   if (hpError) throw new HttpError("Failed to load hands", 500);
-
-  const { data: melds, error: meldsError } = await admin
-    .from("melds")
-    .select("id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position)")
-    .eq("hand_id", handId);
   if (meldsError) throw new HttpError("Failed to load melds", 500);
 
   const hands: Record<string, Card[]> = {};

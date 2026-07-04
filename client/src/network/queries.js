@@ -6,12 +6,16 @@ import { supabase } from "./supabaseClient.js";
 import { setState } from "../state/store.js";
 
 export async function loadRoom(roomId) {
-  const { data: room } = await supabase.from("rooms").select("*").eq("id", roomId).single();
-  const { data: players } = await supabase
-    .from("players")
-    .select("*")
-    .eq("room_id", roomId)
-    .order("seat_index", { ascending: true });
+  // room and players are independent reads - fire them together instead of
+  // waiting on one before starting the other.
+  const [{ data: room }, { data: players }] = await Promise.all([
+    supabase.from("rooms").select("*").eq("id", roomId).single(),
+    supabase
+      .from("players")
+      .select("*")
+      .eq("room_id", roomId)
+      .order("seat_index", { ascending: true }),
+  ]);
 
   setState({
     room: room
@@ -47,27 +51,27 @@ export async function loadHand(handId) {
   const { getState } = await import("../state/store.js");
   const { myPlayerId } = getState();
 
-  const { data: hand } = await supabase.from("hands").select("*").eq("id", handId).single();
+  // All four only need handId (and myPlayerId, already known) - none
+  // depends on another's result, so run them concurrently rather than
+  // one after another.
+  const [{ data: hand }, { data: myHandPlayer }, { data: publicInfo }, { data: melds }] =
+    await Promise.all([
+      supabase.from("hands").select("*").eq("id", handId).single(),
+      supabase
+        .from("hand_players")
+        .select("hand_cards")
+        .eq("hand_id", handId)
+        .eq("player_id", myPlayerId)
+        .maybeSingle(),
+      supabase.from("hand_player_public").select("*").eq("hand_id", handId),
+      supabase
+        .from("melds")
+        .select(
+          "id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position, added_by_player_id)",
+        )
+        .eq("hand_id", handId),
+    ]);
   if (!hand) return;
-
-  const { data: myHandPlayer } = await supabase
-    .from("hand_players")
-    .select("hand_cards")
-    .eq("hand_id", handId)
-    .eq("player_id", myPlayerId)
-    .maybeSingle();
-
-  const { data: publicInfo } = await supabase
-    .from("hand_player_public")
-    .select("*")
-    .eq("hand_id", handId);
-
-  const { data: melds } = await supabase
-    .from("melds")
-    .select(
-      "id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position, added_by_player_id)",
-    )
-    .eq("hand_id", handId);
 
   setState({
     hand: {
