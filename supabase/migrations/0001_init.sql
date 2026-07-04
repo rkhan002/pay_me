@@ -47,9 +47,13 @@ create table hands (
   deal_size int not null,
   discard_pile jsonb not null default '[]'::jsonb,
   turn_player_id uuid references players (id),
+  has_drawn_this_turn boolean not null default false,
   phase text not null default 'playing'
     check (phase in ('playing', 'final_turns', 'layoff', 'scoring', 'complete')),
   pay_me_caller_id uuid references players (id),
+  -- Player ids (not seats) still owed a turn in the current phase, in order.
+  pending_final_turns uuid[] not null default '{}',
+  pending_layoffs uuid[] not null default '{}',
   created_at timestamptz not null default now(),
   unique (room_id, hand_number)
 );
