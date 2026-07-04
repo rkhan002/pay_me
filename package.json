@@ -1,0 +1,17 @@
+{
+  "name": "pay-me",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pay Me - server-authoritative Contract Rummy variant. Client + Supabase edge functions + shared rules engine.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace=@pay-me/rules-engine",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}
