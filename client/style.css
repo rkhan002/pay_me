@@ -500,13 +500,13 @@ body {
   box-shadow: 0 0 14px rgba(200, 255, 61, 0.45);
 }
 
-/* The lift alone (used to be the only signal) was too close to the
-   hover lift below to read as a distinct state - a white ring reads as
-   "selected" regardless of the card's own border color (cyan, pink, or
-   lime for wilds), and the corner badge (see .card-selected-badge)
-   adds a second, unambiguous cue. */
+/* No lift here (dropped it - it put selected cards at a different
+   height than the rest of the hand, breaking the row's alignment). A
+   white ring reads as "selected" regardless of the card's own border
+   color (cyan, pink, or lime for wilds), and the corner badge (see
+   .card-selected-badge) adds a second, unambiguous cue - both stay
+   level with the rest of the row. */
 .card--selected {
-  transform: translateY(-14px);
   box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(255, 255, 255, 0.35);
 }
 
