@@ -9,23 +9,41 @@ const RED_SUITS = new Set(["H", "D"]);
 // fallback, so the suit silently disappeared while the rank text (plain
 // Latin characters, which Space Grotesk does cover) rendered fine. SVG
 // paths render identically everywhere, no font involved.
+//
+// Paths are jean_victor_balin's classic public-domain suit shapes
+// (openclipart.org, card_pique/card_coeur/card_carreau/card_trefle,
+// CC0/public domain) on their native 40x40 viewBox - fuller, more
+// traditional silhouettes than the earlier placeholder glyphs. Their
+// original flat red (#d40000) fill is dropped in favor of
+// fill="currentColor" so each suit still picks up this app's neon
+// palette (cyan/pink per suit, lime when wild) via CSS, same as before.
 const SUIT_PATH = {
-  S: "M8 1C5 4 1 7 1 10a4 4 0 0 0 6 3.46C6.7 14.5 5.8 15 4.5 15h7c-1.3 0-2.2-.5-2.5-1.54A4 4 0 0 0 15 10C15 7 11 4 8 1z",
-  H: "M8 14S2 9.65 2 5.5C2 3 4 1 6.5 1 8 1 8 2.5 8 2.5S8 1 9.5 1C12 1 14 3 14 5.5 14 9.65 8 14 8 14z",
-  D: "M8 1 14 8 8 15 2 8Z",
-  C: "M9.6 9.4A2.5 2.5 0 1 0 8 6a2.5 2.5 0 1 0-1.6 3.4C6 11 5 12 4 12.5v.5h8v-.5c-1-.5-2-1.5-2.4-3.1z",
+  S: "m9.9958 40c7.2112-1.603 7.9872-5.826 8.5312-13.594-1.253 2.075-3.531 3.607-7.25 3.594-6.1124-0.021-10.207-3.576-8.75-11.25 1.4688-7.737 12.469-10.737 17.469-18.75 5 8.0128 16 11.013 17.469 18.75 1.456 7.674-2.469 11.228-8.75 11.25-3.719 0.013-5.997-1.519-7.25-3.594 0.544 7.768 1.319 11.991 8.531 13.594h-20z",
+  H: "m20 10c0.97-5 2.911-10 9.702-10 6.792 0 12.128 5 9.703 15-2.426 10-13.584 15-19.405 25-5.821-10-16.979-15-19.405-25-2.4254-10 2.9109-15 9.703-15 6.791 0 8.732 5 9.702 10z",
+  D: "m20-3.5527e-15c4 11 9 16 20 20-11 4-16 9-20 20-4-11-9-16-20-20 11-4 16-9 20-20z",
+  C: "m20 0c-4.731 0-8.571 4.032-8.571 9 0.041 3.126 1.654 5.768 3.333 8.281-1.871-1.416-3.951-2.272-6.1906-2.281-4.7314 0-8.5714 4.032-8.5714 9s3.84 9 8.5714 9c3.8326-0.064 6.8986-2.746 9.9106-5-0.539 6.733-1.635 10.514-8.006 12h19.048c-6.371-1.486-7.467-5.267-8.006-12 2.977 2.552 6.1 4.717 9.911 5 4.731 0 8.571-4.032 8.571-9s-3.84-9-8.571-9c-2.297 0-4.281 1.057-6.191 2.281 1.9-2.487 3.151-5.17 3.333-8.281 0-4.968-3.84-9-8.571-9z",
 };
+
+// The diamond is a simple rhombus touching the midpoint of each edge of its
+// 40x40 box - geometrically the same bounding box as the other three, but
+// a rhombus only fills half that box's area versus the heart/spade/club's
+// fuller, rounder silhouettes, so at matching size it reads visibly
+// smaller. Scale it up around its own center to match the others' visual
+// weight rather than their literal bounding box.
+const SUIT_SCALE = { D: 1.3 };
 
 function suitIcon(suit) {
   const svgns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgns, "svg");
-  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("viewBox", "0 0 40 40");
   svg.setAttribute("width", "12");
   svg.setAttribute("height", "12");
   svg.classList.add("suit-icon");
   const path = document.createElementNS(svgns, "path");
   path.setAttribute("d", SUIT_PATH[suit]);
   path.setAttribute("fill", "currentColor");
+  const scale = SUIT_SCALE[suit];
+  if (scale) path.setAttribute("transform", `translate(20 20) scale(${scale}) translate(-20 -20)`);
   svg.appendChild(path);
   return svg;
 }
