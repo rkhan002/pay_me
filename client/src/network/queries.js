@@ -4,6 +4,7 @@
 // for the only way this client ever changes game state.
 import { supabase } from "./supabaseClient.js";
 import { setState } from "../state/store.js";
+import { playSfx } from "../audio/audioManager.js";
 
 // Mirrors STALE_MS in supabase/functions/_shared/handRepo.ts - this copy is
 // purely cosmetic (whether an avatar looks dimmed), so it doesn't need to
@@ -17,6 +18,9 @@ function isConnected(lastSeenAt) {
 }
 
 export async function loadRoom(roomId) {
+  const { getState } = await import("../state/store.js");
+  const prevRoomStatus = getState().room?.status;
+
   // room and players are independent reads - fire them together instead of
   // waiting on one before starting the other.
   const [{ data: room }, { data: players }] = await Promise.all([
@@ -27,6 +31,13 @@ export async function loadRoom(roomId) {
       .eq("room_id", roomId)
       .order("seat_index", { ascending: true }),
   ]);
+
+  // Only fires on an actual observed transition into "complete" (never on
+  // the very first load, where prevRoomStatus is undefined) - the game's
+  // 11th and final hand has just been scored.
+  if (prevRoomStatus && prevRoomStatus !== "complete" && room?.status === "complete") {
+    playSfx("win");
+  }
 
   setState({
     room: room
@@ -111,9 +122,68 @@ export async function loadStandings(roomId) {
   });
 }
 
+function cardIdentity(c) {
+  return `${c.rank}|${c.suit ?? ""}|${c.deckIndex}`;
+}
+
+/**
+ * Fires the right SFX for whatever changed between the previously-loaded
+ * hand snapshot and this one - covers both this client's own actions and
+ * ones a realtime update just delivered from another player, since both
+ * paths funnel through loadHand(). Deliberately conservative: only ever
+ * compares two snapshots of the SAME hand (never fires anything on the
+ * very first load of a hand, where there's nothing to diff against, which
+ * is what keeps a page reload or reconnect from replaying every sound
+ * that already happened).
+ */
+function fireHandSfx(prevHand, prevMyCards, prevMelds, nextHand, nextMyCards, nextMelds, myPlayerId) {
+  if (!prevHand || prevHand.id !== nextHand.id) return;
+
+  // Draw: only ever observable for this client's own hand - an opponent's
+  // cards aren't visible to us at all, before or after.
+  if (nextMyCards.length > prevMyCards.length) playSfx("draw");
+
+  // Discard: the shared pile grew (drawing FROM it shrinks it instead, so
+  // that alone can't trigger this).
+  if (nextHand.discardPile.length > prevHand.discardPile.length) playSfx("discard");
+
+  // Melds: matched by id. A new id is a fresh meld; a growing card count
+  // on an existing id is a lay-off; an id that vanished was unmelded.
+  // Comparing card *identity* (not array position) for "what's new" is
+  // required here, not just an appended-tail assumption - a wild landing
+  // on the low end of a RUN re-sorts the whole array (see sortRunCards
+  // server-side), so the newest card isn't always last.
+  const prevMeldsById = new Map(prevMelds.map((m) => [m.id, m]));
+  const nextMeldsById = new Map(nextMelds.map((m) => [m.id, m]));
+
+  for (const meld of nextMelds) {
+    const prevMeld = prevMeldsById.get(meld.id);
+    if (!prevMeld) {
+      playSfx(meld.cards.some((c) => c.wildAs) ? "wild" : "meld");
+    } else if (meld.cards.length > prevMeld.cards.length) {
+      const prevKeys = new Set(prevMeld.cards.map(cardIdentity));
+      const newCards = meld.cards.filter((c) => !prevKeys.has(cardIdentity(c)));
+      playSfx(newCards.some((c) => c.wildAs) ? "wild" : "layoff");
+    }
+  }
+  for (const meld of prevMelds) {
+    if (!nextMeldsById.has(meld.id)) playSfx("unmeld");
+  }
+
+  // Pay Me: someone just went out.
+  if (!prevHand.payMeCallerId && nextHand.payMeCallerId) playSfx("payme");
+
+  // Turn: it just became this player's turn (covers the "playing",
+  // "final_turns", and "layoff" phases alike, since turnPlayerId tracks
+  // whoever's action is expected in all three - see handRepo.ts).
+  if (nextHand.turnPlayerId === myPlayerId && prevHand.turnPlayerId !== myPlayerId) {
+    playSfx("turn");
+  }
+}
+
 export async function loadHand(handId) {
   const { getState } = await import("../state/store.js");
-  const { myPlayerId } = getState();
+  const { myPlayerId, hand: prevHand, myCards: prevMyCards, melds: prevMelds } = getState();
 
   // All four only need handId (and myPlayerId, already known) - none
   // depends on another's result, so run them concurrently rather than
@@ -137,40 +207,46 @@ export async function loadHand(handId) {
     ]);
   if (!hand) return;
 
+  const nextHand = {
+    id: hand.id,
+    handNumber: hand.hand_number,
+    wildRank: hand.wild_rank,
+    dealSize: hand.deal_size,
+    discardPile: hand.discard_pile,
+    turnPlayerId: hand.turn_player_id,
+    hasDrawnThisTurn: hand.has_drawn_this_turn,
+    phase: hand.phase,
+    payMeCallerId: hand.pay_me_caller_id,
+    pendingFinalTurns: hand.pending_final_turns ?? [],
+    pendingLayoffs: hand.pending_layoffs ?? [],
+  };
+  const nextMyCards = myHandPlayer?.hand_cards ?? [];
+  const nextMelds = (melds ?? []).map((m) => ({
+    id: m.id,
+    ownerPlayerId: m.owner_player_id,
+    meldType: m.meld_type,
+    cards: [...m.meld_cards]
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({
+        rank: c.rank,
+        suit: c.suit,
+        deckIndex: c.deck_index,
+        addedByPlayerId: c.added_by_player_id,
+        wildAs: c.wild_as_rank ?? undefined,
+      })),
+  }));
+
+  fireHandSfx(prevHand, prevMyCards, prevMelds, nextHand, nextMyCards, nextMelds, myPlayerId);
+
   setState({
-    hand: {
-      id: hand.id,
-      handNumber: hand.hand_number,
-      wildRank: hand.wild_rank,
-      dealSize: hand.deal_size,
-      discardPile: hand.discard_pile,
-      turnPlayerId: hand.turn_player_id,
-      hasDrawnThisTurn: hand.has_drawn_this_turn,
-      phase: hand.phase,
-      payMeCallerId: hand.pay_me_caller_id,
-      pendingFinalTurns: hand.pending_final_turns ?? [],
-      pendingLayoffs: hand.pending_layoffs ?? [],
-    },
-    myCards: myHandPlayer?.hand_cards ?? [],
+    hand: nextHand,
+    myCards: nextMyCards,
     publicHandInfo: (publicInfo ?? []).map((p) => ({
       playerId: p.player_id,
       cardCount: p.card_count,
       score: p.score,
       hasTakenFinalTurn: p.has_taken_final_turn,
     })),
-    melds: (melds ?? []).map((m) => ({
-      id: m.id,
-      ownerPlayerId: m.owner_player_id,
-      meldType: m.meld_type,
-      cards: [...m.meld_cards]
-        .sort((a, b) => a.position - b.position)
-        .map((c) => ({
-          rank: c.rank,
-          suit: c.suit,
-          deckIndex: c.deck_index,
-          addedByPlayerId: c.added_by_player_id,
-          wildAs: c.wild_as_rank ?? undefined,
-        })),
-    })),
+    melds: nextMelds,
   });
 }

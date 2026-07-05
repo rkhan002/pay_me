@@ -215,6 +215,14 @@ body {
   font-family: "Bungee", cursive;
   font-size: 0.85rem;
   color: var(--cyan);
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .scores-btn {
@@ -232,6 +240,23 @@ body {
    the label around it. */
 .room-code-value {
   color: var(--lime);
+}
+
+.audio-toggle-btn {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.65rem;
+  border-color: var(--cyan);
+  flex-shrink: 0;
+}
+
+/* Muted/off state reads as visually "quieter" than the default cyan -
+   same dimming language the rest of the app uses for a disconnected
+   player's avatar. */
+.audio-toggle-btn--off {
+  border-color: var(--text-dim);
+  color: var(--text-dim);
 }
 
 /* ---------- Scores ---------- */

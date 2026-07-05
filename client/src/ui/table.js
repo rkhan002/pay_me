@@ -18,6 +18,7 @@ import {
   unmeld,
 } from "../network/intents.js";
 import { loadRoom, loadHand, loadStandings } from "../network/queries.js";
+import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/audioManager.js";
 
 function selectedCards() {
   const { myCards, selectedCardKeys } = getState();
@@ -560,6 +561,9 @@ export function renderTable(root) {
         : "Waiting to deal"
     }</div>
   `;
+  const headerActions = document.createElement("div");
+  headerActions.className = "header-actions";
+
   const scoresBtn = document.createElement("button");
   scoresBtn.className = "btn scores-btn";
   scoresBtn.textContent = "Scores";
@@ -570,7 +574,43 @@ export function renderTable(root) {
     if (state.room) await loadStandings(state.room.id);
     setState({ showStandings: true });
   });
-  header.appendChild(scoresBtn);
+  headerActions.appendChild(scoresBtn);
+
+  // Audio prefs aren't part of the shared game state (they're a purely
+  // local, per-browser preference - see audioManager.js), so toggling
+  // them updates these two buttons directly instead of going through
+  // setState/a full re-render.
+  const musicBtn = document.createElement("button");
+  musicBtn.type = "button";
+  musicBtn.className = "btn audio-toggle-btn";
+  const syncMusicBtn = () => {
+    const on = isMusicEnabled();
+    musicBtn.textContent = on ? "Music: On" : "Music: Off";
+    musicBtn.classList.toggle("audio-toggle-btn--off", !on);
+  };
+  syncMusicBtn();
+  musicBtn.addEventListener("click", () => {
+    toggleMusic();
+    syncMusicBtn();
+  });
+  headerActions.appendChild(musicBtn);
+
+  const sfxBtn = document.createElement("button");
+  sfxBtn.type = "button";
+  sfxBtn.className = "btn audio-toggle-btn";
+  const syncSfxBtn = () => {
+    const on = isSfxEnabled();
+    sfxBtn.textContent = on ? "SFX: On" : "SFX: Off";
+    sfxBtn.classList.toggle("audio-toggle-btn--off", !on);
+  };
+  syncSfxBtn();
+  sfxBtn.addEventListener("click", () => {
+    toggleSfx();
+    syncSfxBtn();
+  });
+  headerActions.appendChild(sfxBtn);
+
+  header.appendChild(headerActions);
   wrap.appendChild(header);
 
   renderOpponents(wrap, state);
