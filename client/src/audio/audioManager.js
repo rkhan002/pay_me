@@ -20,6 +20,23 @@
 // looping the decoded buffer via Web Audio is sample-accurate and gapless
 // - this is what made the loop sound "abrupt" before, independent of the
 // music itself.
+//
+// A browser is free to suspend a running AudioContext again after the
+// initial unlock - screen lock, an incoming call/notification, switching
+// apps, or (on iOS Safari especially) just backgrounding the tab for a
+// few seconds all do it, and Safari on iOS is considerably more
+// aggressive about this than desktop Safari. `unlockOnFirstGesture()`
+// used to be truly one-shot (an internal flag blocked it from ever
+// running again), so once the context got re-suspended mid-game, every
+// later `playSfx()` call would schedule a sound on a silent, suspended
+// context - it fails silently, not with an error, which is exactly what
+// "sound randomly turns off partway through" looks like from the
+// player's side, and why it showed up on an iPad and not a laptop.
+// `resumeIfNeeded()` below is called opportunistically from several
+// places (every SFX attempt, every subsequent tap/click/keypress, and
+// whenever the tab/app becomes visible again) so the context gets
+// nudged back to "running" the moment any of those next occur, instead
+// of staying silently stuck.
 
 const MUSIC_KEY = "payme:musicEnabled";
 const SFX_KEY = "payme:sfxEnabled";
@@ -72,6 +89,35 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// Covers both the standard "suspended" state and Safari's non-standard
+// "interrupted" state (used for phone calls, Siri, etc.) - anything that
+// isn't "running" gets a resume attempt. Safe to call constantly: resuming
+// an already-running context is a harmless no-op.
+function resumeIfNeeded() {
+  if (audioCtx && audioCtx.state !== "running") {
+    audioCtx.resume().catch(() => {});
+  }
+}
+
+let recoveryListenersInstalled = false;
+
+// Beyond the one-time gesture that creates/unlocks the context, keep
+// nudging it back to "running" for the rest of the session - on the next
+// tap/click/keypress (covers the "came back from being backgrounded"
+// case, since resuming from a non-autoplay suspension doesn't need a
+// fresh gesture, just *a* later event loop turn) and whenever the tab or
+// installed-to-homescreen app regains visibility.
+function installRecoveryListeners() {
+  if (recoveryListenersInstalled) return;
+  recoveryListenersInstalled = true;
+  document.addEventListener("click", resumeIfNeeded);
+  document.addEventListener("touchend", resumeIfNeeded);
+  document.addEventListener("keydown", resumeIfNeeded);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") resumeIfNeeded();
+  });
+}
+
 async function loadSfxBuffers() {
   const ctx = getAudioCtx();
   await Promise.all(
@@ -111,6 +157,11 @@ export function playSfx(name) {
   if (!sfxEnabled || !unlocked) return;
   const buffer = sfxBuffers.get(name);
   if (!buffer || !audioCtx) return;
+  // Opportunistic, not a guarantee: if the context got suspended (see the
+  // note above) this SFX call may still land before the resume completes,
+  // but it also means the very next one won't - rather than staying
+  // silent for the rest of the session.
+  resumeIfNeeded();
   const source = audioCtx.createBufferSource();
   source.buffer = buffer;
   source.connect(sfxGain);
@@ -122,7 +173,8 @@ export function unlockOnFirstGesture() {
   if (unlocked) return;
   unlocked = true;
   const ctx = getAudioCtx();
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  if (ctx.state !== "running") ctx.resume().catch(() => {});
+  installRecoveryListeners();
   if (musicEnabled) startMusic();
 }
 
@@ -140,6 +192,18 @@ async function startMusic() {
   // first sample of our synthesized track, not the codec's added silence.
   source.loop = true;
   source.connect(musicGain);
+  // Belt-and-suspenders: a looping source shouldn't ever fire "ended" on
+  // its own, but if a browser ever stops it out from under us (rather
+  // than just suspending the context, which doesn't fire this), don't
+  // leave musicSource pointing at a dead node - clear it and, if the
+  // player still has music on, start a fresh one. The identity check
+  // guards against a stale handler from a previous source clearing out
+  // a newer one it raced with (e.g. a quick off-then-on toggle).
+  source.onended = () => {
+    if (musicSource !== source) return;
+    musicSource = null;
+    if (musicEnabled && unlocked) startMusic();
+  };
   source.start(0);
   musicSource = source;
 }
