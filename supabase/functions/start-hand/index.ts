@@ -1,5 +1,9 @@
 import { dealCards } from "../_shared/rules-engine/deal.ts";
-import { configForHand, TOTAL_HANDS } from "../_shared/rules-engine/handConfig.ts";
+import {
+  configForHand,
+  startingSeatIndex,
+  TOTAL_HANDS,
+} from "../_shared/rules-engine/handConfig.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
 
@@ -65,6 +69,11 @@ Deno.serve(async (req: Request) => {
     const playerIds: string[] = players.map((p: any) => p.id as string);
     const { hands, stock, discardPile } = dealCards(playerIds, config.dealSize);
 
+    // Who leads rotates every hand instead of always being whoever's in
+    // seat 0 - round-robin for 3+ players, which for exactly 2 players
+    // is the same thing as strict alternation.
+    const leadPlayerId = playerIds[startingSeatIndex(nextHandNumber, playerIds.length)];
+
     const { data: hand, error: handError } = await admin
       .from("hands")
       .insert({
@@ -73,7 +82,7 @@ Deno.serve(async (req: Request) => {
         wild_rank: config.wildRank,
         deal_size: config.dealSize,
         discard_pile: discardPile,
-        turn_player_id: playerIds[0],
+        turn_player_id: leadPlayerId,
       })
       .select()
       .single();

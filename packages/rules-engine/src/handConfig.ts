@@ -30,3 +30,14 @@ export function configForHand(handNumber: number): HandConfig {
 }
 
 export const TOTAL_HANDS = HAND_CONFIGS.length;
+
+/**
+ * Which seat (by index into the room's seat-ordered player list) leads a
+ * given hand. Rotates by one seat every hand so the same player doesn't
+ * always go first - round-robin for any player count, which for exactly
+ * 2 players is the same thing as strict alternation (round-robin with a
+ * period of 2 IS alternating).
+ */
+export function startingSeatIndex(handNumber: number, playerCount: number): number {
+  return (handNumber - 1) % playerCount;
+}
