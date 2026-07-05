@@ -4,8 +4,16 @@ import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
 
 async function enterRoom(roomId, playerId) {
-  setState({ screen: "table", myPlayerId: playerId, error: null });
+  // Load the room's actual state BEFORE switching screens. Flipping to
+  // "table" first and loading after left a brief window where state.hand
+  // was still null - table.js reads that as "no active hand" and shows an
+  // enabled "Deal next hand" button even when a hand is already in
+  // progress (seen during playtesting as a stale "Waiting to deal" flash
+  // on rejoin). Loading first means the table screen's first render
+  // already has the real hand state.
+  setState({ myPlayerId: playerId, error: null });
   await loadRoom(roomId);
+  setState({ screen: "table" });
   subscribeToRoom(roomId);
 }
 
