@@ -155,6 +155,36 @@ describe("lay-off phase", () => {
   });
 });
 
+describe("proposing a brand-new meld during the layoff phase", () => {
+  // p2's whole hand (K-D, Q-D, J-D) is a valid run - lets this exercise the
+  // real "form a new meld" path, not just a single lay-off onto meld_1.
+  const layoffState = baseState({
+    phase: "layoff",
+    payMeCallerId: "p1",
+    pendingLayoffs: ["p2", "p3"],
+    currentPlayerIndex: 1, // p2's turn to lay off
+    hasDrawnThisTurn: false,
+  });
+
+  it("allows the player up in the layoff round to form a new meld without having drawn", () => {
+    const result = unwrap(
+      proposeMeld(layoffState, "p2", [card("K", "D"), card("Q", "D"), card("J", "D")], "RUN"),
+    );
+    expect(result.hands.p2).toEqual([]);
+    expect(result.melds).toHaveLength(2);
+  });
+
+  it("still rejects a meld from a player who isn't up in the layoff round", () => {
+    const result = proposeMeld(
+      layoffState,
+      "p3",
+      [card("7", "C"), card("8", "C"), card("2", "H")],
+      "SET",
+    );
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe("disconnected players are skipped in turn order", () => {
   it("advances past a disconnected player to the next connected one", () => {
     const state = baseState({

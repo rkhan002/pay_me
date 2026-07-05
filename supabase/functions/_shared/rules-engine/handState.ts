@@ -124,11 +124,16 @@ export function proposeMeld(
   meldType: MeldType,
   wildAssignments?: Record<string, Rank>,
 ): Result<HandState> {
-  if (state.phase !== "playing" && state.phase !== "final_turns") {
+  if (state.phase !== "playing" && state.phase !== "final_turns" && state.phase !== "layoff") {
     return { ok: false, error: "Melding isn't allowed right now" };
   }
   if (currentPlayer(state) !== playerId) return { ok: false, error: "Not your turn" };
-  if (!state.hasDrawnThisTurn) return { ok: false, error: "Draw a card before melding" };
+  // The layoff phase never involves drawing - it's a card-dump round after
+  // everyone's had their real final turn - so the "drew this turn" gate
+  // only applies to the phases where drawing is actually part of the turn.
+  if (state.phase !== "layoff" && !state.hasDrawnThisTurn) {
+    return { ok: false, error: "Draw a card before melding" };
+  }
 
   const validation = validateMeld(cards, meldType, state.wildRank);
   if (!validation.valid) return { ok: false, error: validation.reason ?? "Invalid meld" };

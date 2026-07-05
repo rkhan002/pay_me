@@ -497,10 +497,17 @@ function renderControls(root, state) {
   );
   bar.appendChild(drawDiscardBtn);
 
+  // The layoff phase never involves drawing (it's a card-dump round after
+  // everyone's had their real final turn), so hasDrawnThisTurn never becomes
+  // true there - gating melding on it would leave these buttons permanently
+  // disabled for the rest of the hand. myLayoffTurn stands in for "allowed
+  // to act right now" in that phase instead.
+  const canMeld = myTurn && (state.hand.hasDrawnThisTurn || myLayoffTurn);
+
   const setBtn = document.createElement("button");
   setBtn.className = "btn";
   setBtn.textContent = "Meld as set";
-  setBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length < 3;
+  setBtn.disabled = !canMeld || selectedCards().length < 3;
   setBtn.addEventListener("click", () =>
     guard(
       () => proposeMeld(state.hand.id, selectedCards(), "SET"),
@@ -512,7 +519,7 @@ function renderControls(root, state) {
   const runBtn = document.createElement("button");
   runBtn.className = "btn";
   runBtn.textContent = "Meld as run";
-  runBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length < 3;
+  runBtn.disabled = !canMeld || selectedCards().length < 3;
   runBtn.addEventListener("click", () => proposeRun(state));
   bar.appendChild(runBtn);
 
