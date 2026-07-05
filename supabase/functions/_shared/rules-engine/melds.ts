@@ -37,24 +37,21 @@ function partition(cards: Card[], wildRank: Rank) {
 }
 
 /**
- * Set: 3-4 cards, same rank. At least 2 natural cards. Naturals do not need
- * distinct suits - with multiple decks in play, two 8 of Hearts (one from
- * each deck) are legitimate duplicates and can sit in the same set (house
- * ruling). No maximum-wild-proportion cap either - the only wild limit is
- * the shared "at least 2 naturals" floor, which a 4-card set already
- * satisfies at up to 2 wilds.
+ * Set: 3+ cards, same rank, no upper limit (house ruling) - with multiple
+ * decks in play there's no reason to cap out at 4 once duplicate suits are
+ * allowed among naturals (see below), so e.g. three natural 9s plus two
+ * wild cards is a perfectly good 5-card set. At least 2 natural cards.
+ * Naturals do not need distinct suits either - with multiple decks in
+ * play, two 8 of Hearts (one from each deck) are legitimate duplicates and
+ * can sit in the same set (also house ruling).
  */
 export function validateSet(cards: Card[], wildRank: Rank): MeldValidationResult {
-  if (cards.length < 3 || cards.length > 4) {
-    return { valid: false, reason: "A set must have 3 or 4 cards" };
+  if (cards.length < 3) {
+    return { valid: false, reason: "A set must have at least 3 cards" };
   }
-  const { naturals, wilds } = partition(cards, wildRank);
+  const { naturals } = partition(cards, wildRank);
   if (naturals.length < MIN_NATURALS) {
     return { valid: false, reason: "A meld needs at least 2 natural cards" };
-  }
-  if (wilds.length > cards.length - MIN_NATURALS) {
-    // Cannot happen given the length check above, kept for clarity/safety.
-    return { valid: false, reason: "Too many wild cards for this meld size" };
   }
   const rank = naturals[0].rank;
   if (!naturals.every((c) => c.rank === rank)) {

@@ -45,12 +45,26 @@ describe("validateSet", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("rejects sets larger than 4 or smaller than 3", () => {
+  it("rejects sets smaller than 3", () => {
     expect(validateSet([card("7", "S"), card("7", "H")], "9").valid).toBe(false);
-    expect(
-      validateSet([card("7", "S"), card("7", "H"), card("7", "D"), card("7", "C"), joker()], "9")
-        .valid,
-    ).toBe(false);
+  });
+
+  it("has no upper size limit - 5+ card sets are fine", () => {
+    const result = validateSet(
+      [card("7", "S"), card("7", "H"), card("7", "D"), card("7", "C"), joker()],
+      "9",
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it("accepts 3 naturals of the same rank plus 2 wilds (5-card set)", () => {
+    // The exact case reported as broken: three natural 9s plus two wild
+    // cards, with no suit constraint and no 4-card ceiling in the way.
+    const result = validateSet(
+      [card("9", "H"), card("9", "S"), card("9", "D"), joker(0), joker(1)],
+      "5",
+    );
+    expect(result.valid).toBe(true);
   });
 });
 
