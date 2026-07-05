@@ -104,21 +104,17 @@ export function renderCard(card, { selected = false, wild = false, onClick, tabI
 export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
   const wrap = document.createElement("div");
   wrap.className = "hand-fan";
-  const n = cards.length;
-  // A tighter fan (steep rotation, heavy overlap) looks nice with 3 cards
-  // but hides the rank/suit of anything but the top card once a hand gets
-  // past 5-6 - and this game deals up to 13. Keep only a light tilt for
-  // style, and let CSS's small negative margin (not this rotation) do the
-  // only real overlapping, so every card's corner stays readable.
-  const maxAngle = n > 8 ? 4 : n > 4 ? 8 : 12;
+  // Straight row, evenly spaced by the flex layout + each card's CSS
+  // margin - no per-card rotation. The earlier fan-style tilt read as
+  // "uneven" rather than card-game-stylish once hands got past a few
+  // cards, and it added nothing readability-wise now that CSS's gap (not
+  // overlap) is what keeps every card's corner visible anyway.
   cards.forEach((card, i) => {
-    const angle = n > 1 ? -maxAngle + ((2 * maxAngle) / (n - 1)) * i : 0;
     const el = renderCard(card, {
       selected: selectedKeys.has(cardKey(card)),
       wild: isWild(card, wildRank),
       onClick,
     });
-    el.style.transform = `rotate(${angle}deg)`;
     el.style.zIndex = String(i);
     wrap.appendChild(el);
   });
