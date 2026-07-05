@@ -38,6 +38,26 @@ Deno.serve(async (req: Request) => {
     if (playersError || !players?.length) throw new HttpError("No players in room", 500);
     if (players.length < 2) throw new HttpError("Need at least 2 players to start", 400);
 
+    // A brief client-side render race (right after a page reload, before the
+    // real hand state has loaded) can show the "Deal next hand" button as
+    // clickable even while the room's current hand is still being played.
+    // The client gates on this too, but that gate is only advisory - it's
+    // exactly the kind of thing a real click during that window would slip
+    // past. Confirm server-side that the current hand (if any) has actually
+    // finished before dealing the next one.
+    if (room.current_hand_number > 0) {
+      const { data: currentHand, error: currentHandError } = await admin
+        .from("hands")
+        .select("phase")
+        .eq("room_id", roomId)
+        .eq("hand_number", room.current_hand_number)
+        .single();
+      if (currentHandError || !currentHand) throw new HttpError("Current hand not found", 500);
+      if (currentHand.phase !== "complete") {
+        throw new HttpError("The current hand hasn't finished yet", 409);
+      }
+    }
+
     const nextHandNumber = room.current_hand_number + 1;
     if (nextHandNumber > TOTAL_HANDS) throw new HttpError("All 11 hands have been played", 409);
 
