@@ -63,6 +63,7 @@ export function renderLobby(root) {
     // Realtime channels open for the same room in this tab.
     joinBtn.disabled = true;
     createBtn.disabled = true;
+    setState({ error: null }); // clear any stale error from a previous attempt
     try {
       const { roomId, playerId } = await joinRoom(codeInput.value.trim(), nameInput.value.trim());
       await enterRoom(roomId, playerId);
@@ -85,6 +86,7 @@ export function renderLobby(root) {
   createBtn.addEventListener("click", async () => {
     joinBtn.disabled = true;
     createBtn.disabled = true;
+    setState({ error: null }); // clear any stale error from a previous attempt
     try {
       const { roomId, playerId } = await createRoom(nameInput.value.trim() || "Host");
       await enterRoom(roomId, playerId);

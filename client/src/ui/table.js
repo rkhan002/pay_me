@@ -34,7 +34,14 @@ function isMyTurn(state) {
 // screen looks exactly like "nothing happened", which invites exactly the
 // kind of repeated re-clicking that causes duplicate actions. So every
 // guarded call refreshes this client's own state directly after success.
+//
+// Clearing the error up front (rather than only on success) means a stale
+// message from a previous failed attempt disappears the moment the player
+// tries anything else, instead of sitting on screen indefinitely - it
+// used to only clear if the player clicked the banner itself, so it could
+// linger through several successful actions afterward.
 async function guard(fn, refresh) {
+  setState({ error: null });
   try {
     await fn();
     if (refresh) await refresh();
