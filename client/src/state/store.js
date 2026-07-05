@@ -20,6 +20,10 @@ let state = {
   melds: [], // [{ id, ownerPlayerId, meldType, cards: [{rank,suit,deckIndex,position,addedByPlayerId}] }]
 
   selectedCardKeys: new Set(),
+
+  standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first
+  standingsHandsPlayed: 0,
+  showStandings: false,
 };
 
 export function getState() {

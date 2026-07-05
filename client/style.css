@@ -188,11 +188,146 @@ body {
 .table-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 1rem;
   font-family: "Bungee", cursive;
   font-size: 0.85rem;
   color: var(--cyan);
+}
+
+.scores-btn {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.7rem;
+  border-color: var(--purple);
+  flex-shrink: 0;
+}
+
+/* ---------- Scores ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 14, 26, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 200;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 2px solid var(--purple);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-title {
+  font-family: "Bungee", cursive;
+  font-size: 1.1rem;
+  color: var(--cyan);
+  margin-bottom: 0.4rem;
+}
+
+.modal-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+
+.standings-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Grid with fixed-width badge/score columns - each row is its own grid
+   instance, but since those two columns are a fixed size (not content-
+   sized) rather than auto, they still land in the same place whether or
+   not that particular row actually has a badge, so the star/score line up
+   down the list instead of the score shifting per row. */
+.standings-row {
+  display: grid;
+  grid-template-columns: 1fr 3.75rem 2.75rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--surface2);
+}
+
+.standings-name {
+  font-weight: 700;
+}
+
+.standings-badge-slot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.standings-score {
+  font-family: "Bungee", cursive;
+  color: var(--cyan);
+  font-size: 1.1rem;
+  text-align: right;
+}
+
+/* A small solid pill rather than inline "· Pay Me!" text - reads as a
+   proper achievement marker instead of a stray label bolted onto a name. */
+.badge-payme {
+  display: inline-flex;
+  align-items: center;
+  background: var(--amber);
+  color: #2a1a00;
+  font-family: "Bungee", cursive;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.45);
+}
+
+.hand-score-summary {
+  width: 100%;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.hand-score-summary-title {
+  font-family: "Bungee", cursive;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.hand-score-row {
+  display: grid;
+  grid-template-columns: 1fr 3.75rem 2.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.hand-score-row-score {
+  text-align: right;
+}
+
+.hand-score-row--caller .hand-score-row-score {
+  color: var(--amber);
+  font-weight: 700;
 }
 
 .opponents-row {

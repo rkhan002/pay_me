@@ -47,6 +47,59 @@ export async function loadRoom(roomId) {
   }
 }
 
+/**
+ * Cumulative standings across every hand played so far in this room -
+ * separate from publicHandInfo (which only ever holds the CURRENT hand's
+ * per-hand scores). Players can't read other players' hand_players rows
+ * directly (owner-only RLS), so this goes through the same
+ * hand_player_public view loadHand() uses, just across every completed
+ * hand instead of one.
+ */
+export async function loadStandings(roomId) {
+  const [{ data: players }, { data: completedHands }] = await Promise.all([
+    supabase
+      .from("players")
+      .select("id, display_name")
+      .eq("room_id", roomId)
+      .order("seat_index", { ascending: true }),
+    supabase
+      .from("hands")
+      .select("id, hand_number, pay_me_caller_id")
+      .eq("room_id", roomId)
+      .eq("phase", "complete"),
+  ]);
+
+  const totals = new Map(
+    (players ?? []).map((p) => [
+      p.id,
+      { playerId: p.id, displayName: p.display_name, cumulativeScore: 0, payMeWins: 0 },
+    ]),
+  );
+
+  if (completedHands?.length) {
+    const { data: scores } = await supabase
+      .from("hand_player_public")
+      .select("hand_id, player_id, score")
+      .in(
+        "hand_id",
+        completedHands.map((h) => h.id),
+      );
+    for (const row of scores ?? []) {
+      const entry = totals.get(row.player_id);
+      if (entry) entry.cumulativeScore += row.score ?? 0;
+    }
+    for (const hand of completedHands) {
+      const entry = hand.pay_me_caller_id && totals.get(hand.pay_me_caller_id);
+      if (entry) entry.payMeWins += 1;
+    }
+  }
+
+  setState({
+    standings: [...totals.values()].sort((a, b) => a.cumulativeScore - b.cumulativeScore),
+    standingsHandsPlayed: completedHands?.length ?? 0,
+  });
+}
+
 export async function loadHand(handId) {
   const { getState } = await import("../state/store.js");
   const { myPlayerId } = getState();

@@ -15,7 +15,7 @@ import {
   layOffCard,
   passLayoff,
 } from "../network/intents.js";
-import { loadRoom, loadHand } from "../network/queries.js";
+import { loadRoom, loadHand, loadStandings } from "../network/queries.js";
 
 function selectedCards() {
   const { myCards, selectedCardKeys } = getState();
@@ -105,6 +105,80 @@ function renderMelds(root, state) {
   root.appendChild(section);
 }
 
+function renderStandingsModal(root, state) {
+  if (!state.showStandings) return;
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  // Clicking the dimmed backdrop (not the card itself) closes it, same as
+  // any standard modal - clicking inside the card must not bubble here.
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) setState({ showStandings: false });
+  });
+
+  const card = document.createElement("div");
+  card.className = "modal-card";
+
+  const title = document.createElement("div");
+  title.className = "modal-title";
+  title.textContent = "Scores";
+  card.appendChild(title);
+
+  const subtitle = document.createElement("div");
+  subtitle.className = "modal-subtitle";
+  subtitle.textContent =
+    state.standingsHandsPlayed === 0
+      ? "No hands completed yet"
+      : `Lower score is better · ${state.standingsHandsPlayed} hand${
+          state.standingsHandsPlayed === 1 ? "" : "s"
+        } played`;
+  card.appendChild(subtitle);
+
+  const table = document.createElement("div");
+  table.className = "standings-table";
+  for (const entry of state.standings) {
+    const row = document.createElement("div");
+    row.className = "standings-row";
+
+    const name = document.createElement("span");
+    name.className = "standings-name";
+    name.textContent = entry.displayName;
+    row.appendChild(name);
+
+    // Always render this slot, even empty - it's a fixed-width grid column
+    // (see CSS) so every row's badge and score line up in neat columns
+    // instead of the score shifting left/right depending on whether that
+    // particular row happens to have a badge.
+    const badgeSlot = document.createElement("span");
+    badgeSlot.className = "standings-badge-slot";
+    if (entry.payMeWins > 0) {
+      const badge = document.createElement("span");
+      badge.className = "badge-payme";
+      badge.textContent = `★ ${entry.payMeWins}`;
+      badge.title = `${entry.payMeWins} Pay Me call${entry.payMeWins === 1 ? "" : "s"}`;
+      badgeSlot.appendChild(badge);
+    }
+    row.appendChild(badgeSlot);
+
+    const score = document.createElement("span");
+    score.className = "standings-score";
+    score.textContent = String(entry.cumulativeScore);
+    row.appendChild(score);
+
+    table.appendChild(row);
+  }
+  card.appendChild(table);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn--primary";
+  closeBtn.textContent = "Close";
+  closeBtn.addEventListener("click", () => setState({ showStandings: false }));
+  card.appendChild(closeBtn);
+
+  overlay.appendChild(card);
+  root.appendChild(overlay);
+}
+
 function renderPayMeBanner(root, state) {
   if (!state.hand?.payMeCallerId) return;
   const caller = state.players.find((p) => p.id === state.hand.payMeCallerId);
@@ -120,6 +194,51 @@ function renderControls(root, state) {
 
   const noActiveHand = !state.hand || state.hand.phase === "complete";
   if (noActiveHand && state.room) {
+    // The hand that just finished still has its (already-loaded)
+    // publicHandInfo scores sitting in state - show them here instead of
+    // silently jumping straight to "deal the next one" with no recap.
+    if (state.hand?.phase === "complete" && state.publicHandInfo.length) {
+      const summary = document.createElement("div");
+      summary.className = "hand-score-summary";
+
+      const title = document.createElement("div");
+      title.className = "hand-score-summary-title";
+      title.textContent = `Hand ${state.hand.handNumber} scores`;
+      summary.appendChild(title);
+
+      for (const info of state.publicHandInfo) {
+        const player = state.players.find((p) => p.id === info.playerId);
+        const isCaller = info.playerId === state.hand.payMeCallerId;
+        const row = document.createElement("div");
+        row.className = "hand-score-row" + (isCaller ? " hand-score-row--caller" : "");
+
+        const name = document.createElement("span");
+        name.className = "hand-score-row-name";
+        name.textContent = player?.displayName ?? "?";
+        row.appendChild(name);
+
+        // Fixed-width slot (see CSS) so the score column lines up whether
+        // or not this row has a badge, same as the standings modal.
+        const badgeSlot = document.createElement("span");
+        badgeSlot.className = "standings-badge-slot";
+        if (isCaller) {
+          const badge = document.createElement("span");
+          badge.className = "badge-payme";
+          badge.textContent = "Pay Me";
+          badgeSlot.appendChild(badge);
+        }
+        row.appendChild(badgeSlot);
+
+        const score = document.createElement("span");
+        score.className = "hand-score-row-score";
+        score.textContent = String(info.score ?? 0);
+        row.appendChild(score);
+
+        summary.appendChild(row);
+      }
+      bar.appendChild(summary);
+    }
+
     const label = state.room.currentHandNumber === 0 ? "Deal hand 1" : "Deal next hand";
     const btn = document.createElement("button");
     btn.className = "btn btn--primary";
@@ -243,6 +362,17 @@ export function renderTable(root) {
         : "Waiting to deal"
     }</div>
   `;
+  const scoresBtn = document.createElement("button");
+  scoresBtn.className = "btn scores-btn";
+  scoresBtn.textContent = "Scores";
+  // Always available, in every phase - not gated on a hand being in
+  // progress - so it works as a standings reference at any point, not
+  // just once a game has started.
+  scoresBtn.addEventListener("click", async () => {
+    if (state.room) await loadStandings(state.room.id);
+    setState({ showStandings: true });
+  });
+  header.appendChild(scoresBtn);
   wrap.appendChild(header);
 
   renderOpponents(wrap, state);
@@ -279,4 +409,5 @@ export function renderTable(root) {
   }
 
   root.appendChild(wrap);
+  renderStandingsModal(root, state);
 }
