@@ -500,10 +500,36 @@ body {
   box-shadow: 0 0 14px rgba(200, 255, 61, 0.45);
 }
 
+/* The lift alone (used to be the only signal) was too close to the
+   hover lift below to read as a distinct state - a white ring reads as
+   "selected" regardless of the card's own border color (cyan, pink, or
+   lime for wilds), and the corner badge (see .card-selected-badge)
+   adds a second, unambiguous cue. */
 .card--selected {
   transform: translateY(-14px);
+  box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(255, 255, 255, 0.35);
 }
 
 .card:hover {
   transform: translateY(-6px);
+}
+
+.card-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.card-selected-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(200, 255, 61, 0.6);
+  pointer-events: none;
 }

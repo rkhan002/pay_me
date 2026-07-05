@@ -98,7 +98,26 @@ export function renderCard(card, { selected = false, wild = false, onClick, tabI
   }
 
   if (onClick) el.addEventListener("click", () => onClick(card));
-  return el;
+
+  if (!selected) return el;
+
+  // Wrap only when selected, so the corner badge has a positioning
+  // anchor without changing every card's DOM shape - the ring itself
+  // (see .card--selected in style.css) needs no wrapper, only the
+  // badge does. .card-wrap is a plain inline-flex span, so it doesn't
+  // disturb the flex layouts (.hand-fan, .meld, .discard-pile) that
+  // render cards directly today.
+  const wrap = document.createElement("span");
+  wrap.className = "card-wrap";
+  wrap.appendChild(el);
+
+  const badge = document.createElement("span");
+  badge.className = "card-selected-badge";
+  badge.setAttribute("aria-hidden", "true");
+  badge.innerHTML =
+    '<svg viewBox="0 0 16 16" width="11" height="11"><path d="M13 4L6 11L3 8" stroke="#0b0e1a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  wrap.appendChild(badge);
+  return wrap;
 }
 
 export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
