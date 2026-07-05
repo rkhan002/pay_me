@@ -1,6 +1,15 @@
 import { cardKey } from "../state/store.js";
 
-const RED_SUITS = new Set(["H", "D"]);
+// Each suit gets its own color (see the matching rules in style.css) rather
+// than the old red/black-only split, so all four are distinguishable at a
+// glance instead of hearts and diamonds (or spades and clubs) looking
+// identical.
+const SUIT_CLASS = {
+  H: "card--suit-h",
+  D: "card--suit-d",
+  C: "card--suit-c",
+  S: "card--suit-s",
+};
 
 // Rendered as inline SVG rather than the Unicode suit characters (♠♥♦♣).
 // Those glyphs aren't guaranteed to exist in whatever font a browser falls
@@ -15,8 +24,9 @@ const RED_SUITS = new Set(["H", "D"]);
 // CC0/public domain) on their native 40x40 viewBox - fuller, more
 // traditional silhouettes than the earlier placeholder glyphs. Their
 // original flat red (#d40000) fill is dropped in favor of
-// fill="currentColor" so each suit still picks up this app's neon
-// palette (cyan/pink per suit, lime when wild) via CSS, same as before.
+// fill="currentColor" so each suit still picks up its own color (see
+// SUIT_CLASS/style.css - a distinct neon per suit, lime when wild) via
+// CSS, same as before.
 const SUIT_PATH = {
   S: "m9.9958 40c7.2112-1.603 7.9872-5.826 8.5312-13.594-1.253 2.075-3.531 3.607-7.25 3.594-6.1124-0.021-10.207-3.576-8.75-11.25 1.4688-7.737 12.469-10.737 17.469-18.75 5 8.0128 16 11.013 17.469 18.75 1.456 7.674-2.469 11.228-8.75 11.25-3.719 0.013-5.997-1.519-7.25-3.594 0.544 7.768 1.319 11.991 8.531 13.594h-20z",
   H: "m20 10c0.97-5 2.911-10 9.702-10 6.792 0 12.128 5 9.703 15-2.426 10-13.584 15-19.405 25-5.821-10-16.979-15-19.405-25-2.4254-10 2.9109-15 9.703-15 6.791 0 8.732 5 9.702 10z",
@@ -85,7 +95,7 @@ export function renderCard(card, { selected = false, wild = false, onClick, tabI
   const el = document.createElement("button");
   el.type = "button";
   el.className = "card" + (selected ? " card--selected" : "") + (wild ? " card--wild" : "");
-  if (card.rank !== "JOKER" && RED_SUITS.has(card.suit)) el.classList.add("card--red");
+  if (card.rank !== "JOKER") el.classList.add(SUIT_CLASS[card.suit]);
   el.setAttribute("aria-label", cardLabel(card));
   el.dataset.cardKey = cardKey(card);
   el.tabIndex = tabIndex;

@@ -16,6 +16,13 @@
      doesn't visually blend into the surrounding buttons. */
   --amber: #ffaa00;
   --radius: 10px;
+
+  /* One distinct color per suit, so hearts/diamonds and spades/clubs no
+     longer share a color pairwise. */
+  --suit-hearts: #ff0000;
+  --suit-diamonds: #ffb8ff;
+  --suit-clubs: #00ffff;
+  --suit-spades: #ffb852;
 }
 
 * {
@@ -517,10 +524,30 @@ body {
   display: block;
 }
 
-.card--red {
-  border-color: var(--pink);
-  color: var(--pink);
-  box-shadow: 0 0 10px rgba(255, 61, 138, 0.25);
+/* Each suit gets its own color rather than the old red/black split, so all
+   four are distinguishable at a glance rather than just two pairs. */
+.card--suit-h {
+  border-color: var(--suit-hearts);
+  color: var(--suit-hearts);
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+}
+
+.card--suit-d {
+  border-color: var(--suit-diamonds);
+  color: var(--suit-diamonds);
+  box-shadow: 0 0 10px rgba(255, 184, 255, 0.3);
+}
+
+.card--suit-c {
+  border-color: var(--suit-clubs);
+  color: var(--suit-clubs);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.card--suit-s {
+  border-color: var(--suit-spades);
+  color: var(--suit-spades);
+  box-shadow: 0 0 10px rgba(255, 184, 82, 0.3);
 }
 
 .card--wild {
