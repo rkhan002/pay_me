@@ -165,6 +165,33 @@ export function proposeMeld(
   };
 }
 
+/**
+ * Undoes a meld the player changed their mind about, returning every card
+ * in it to their hand. Only available before anyone has called Pay Me
+ * (state.payMeCallerId is still null) - melds are private to their owner
+ * up to that point (see the RLS policies in supabase/migrations), so
+ * there's no cross-player lay-off to unwind: nobody else could have
+ * touched a meld they couldn't see. Once Pay Me is declared, melds are
+ * revealed and locked for good, mirroring a real Rummy hand where you
+ * can't take a card back off the table once everyone's seen it.
+ */
+export function unmeld(state: HandState, playerId: string, meldId: string): Result<HandState> {
+  if (state.payMeCallerId !== null) {
+    return { ok: false, error: "Melds are locked in once Pay Me has been declared" };
+  }
+  const meld = state.melds.find((m) => m.id === meldId);
+  if (!meld) return { ok: false, error: "No such meld on the table" };
+  if (meld.ownerId !== playerId) return { ok: false, error: "You can only unmeld your own meld" };
+
+  // wildAs only means anything while the card is sitting in a RUN meld -
+  // strip it back off before it returns to the hand.
+  const returnedCards = meld.cards.map(({ wildAs: _wildAs, ...rest }) => rest as Card);
+  const hands = { ...state.hands, [playerId]: [...state.hands[playerId], ...returnedCards] };
+  const melds = state.melds.filter((m) => m.id !== meldId);
+
+  return { ok: true, state: { ...state, hands, melds } };
+}
+
 export function layOffDuringTurn(
   state: HandState,
   playerId: string,
@@ -190,6 +217,18 @@ function applyLayoff(
   const meldIndex = state.melds.findIndex((m) => m.id === meldId);
   if (meldIndex === -1) return { ok: false, error: "No such meld on the table" };
   const meld = state.melds[meldIndex];
+
+  // Melds are private until someone calls Pay Me (see unmeld()'s comment) -
+  // so during ordinary play, a player can only build onto their own meld,
+  // never one they can't actually see. This only applies to the "playing"
+  // phase: layOffDuringLayoffPhase never runs with phase "playing" (it
+  // requires "layoff", by which point every meld is revealed), and
+  // layOffDuringTurn's "final_turns" branch only runs once Pay Me has
+  // already been declared, at which point everything is revealed too.
+  if (state.phase === "playing" && meld.ownerId !== playerId) {
+    return { ok: false, error: "You can only add to your own melds before Pay Me is declared" };
+  }
+
   if (!canLayOff(meld.cards, meld.type, card, state.wildRank)) {
     return { ok: false, error: "That card can't be added to this meld" };
   }

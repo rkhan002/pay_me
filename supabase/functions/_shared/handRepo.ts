@@ -145,6 +145,15 @@ export async function saveHandState(
     if (error) throw new HttpError("Failed to save hand cards", 500);
   }
 
+  // unmeld() removes a meld from state entirely - delete its row (meld_cards
+  // cascades via its FK) so it doesn't keep coming back on the next load.
+  const nextMeldIds = new Set(next.melds.map((m) => m.id));
+  for (const meld of prev.melds) {
+    if (nextMeldIds.has(meld.id)) continue;
+    const { error } = await admin.from("melds").delete().eq("id", meld.id);
+    if (error) throw new HttpError("Failed to remove meld", 500);
+  }
+
   const prevMeldIds = new Set(prev.melds.map((m) => m.id));
   for (const meld of next.melds) {
     if (!prevMeldIds.has(meld.id)) {

@@ -30,6 +30,14 @@ Deno.serve(async (req: Request) => {
     const meld = prevState.melds.find((m) => m.id === meldId);
     if (!meld) return errorResponse("No such meld on the table", 422);
 
+    // Fail fast on ownership before even offering a wild-designation picker -
+    // melds are private pre-reveal (see applyLayoff in handState.ts), so a
+    // player shouldn't learn anything about another player's meld (including
+    // "it's a RUN that needs a wild rank") before Pay Me is declared.
+    if (prevState.phase === "playing" && meld.ownerId !== playerId) {
+      return errorResponse("You can only add to your own melds before Pay Me is declared", 422);
+    }
+
     if (meld.type === "RUN" && isWildCard(card, prevState.wildRank) && !wildAssignedRank) {
       const candidateRanks = layoffWildCandidates(meld.cards, prevState.wildRank);
       if (candidateRanks.length === 0) {

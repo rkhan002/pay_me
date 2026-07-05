@@ -9,6 +9,7 @@ import {
   passLayoff,
   proposeMeld,
   skipStalePlayer,
+  unmeld,
 } from "../src/handState";
 import { cardKey } from "../src/deck";
 import { card, joker } from "./testHelpers";
@@ -64,8 +65,14 @@ describe("drawFromDiscard", () => {
 });
 
 describe("lay-off during a normal turn", () => {
+  // Owned by p1 (not the default fixture's p2) - during ordinary play,
+  // before Pay Me, a player can only lay off onto their own meld (see the
+  // "melds are private pre-reveal" describe block below), so these tests
+  // extend a meld the acting player themselves owns.
+  const ownMeld = () => baseState({ melds: [{ ...baseState().melds[0], ownerId: "p1" }] });
+
   it("lets the current player extend an existing meld after drawing", () => {
-    const drawn = unwrap(drawFromStock(baseState(), "p1"));
+    const drawn = unwrap(drawFromStock(ownMeld(), "p1"));
     const result = unwrap(layOffDuringTurn(drawn, "p1", card("6", "C"), "meld_1"));
     const meld = result.melds.find((m) => m.id === "meld_1")!;
     expect(meld.cards).toHaveLength(4);
@@ -73,20 +80,42 @@ describe("lay-off during a normal turn", () => {
   });
 
   it("rejects a card that doesn't fit the meld", () => {
-    const drawn = unwrap(drawFromStock(baseState(), "p1"));
+    const drawn = unwrap(drawFromStock(ownMeld(), "p1"));
     const result = layOffDuringTurn(drawn, "p1", card("4", "S"), "meld_1");
     expect(result.ok).toBe(false);
   });
 
   it("rejects laying off before drawing", () => {
-    const result = layOffDuringTurn(baseState(), "p1", card("6", "C"), "meld_1");
+    const result = layOffDuringTurn(ownMeld(), "p1", card("6", "C"), "meld_1");
     expect(result.ok).toBe(false);
   });
 
   it("rejects laying off onto a meld that doesn't exist", () => {
-    const drawn = unwrap(drawFromStock(baseState(), "p1"));
+    const drawn = unwrap(drawFromStock(ownMeld(), "p1"));
     const result = layOffDuringTurn(drawn, "p1", card("6", "C"), "no-such-meld");
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("melds are private pre-reveal", () => {
+  it("rejects laying off onto another player's meld before Pay Me is declared", () => {
+    // Default fixture: meld_1 is owned by p2, phase is "playing" (Pay Me
+    // not yet declared) - p1 can't see or touch it.
+    const drawn = unwrap(drawFromStock(baseState(), "p1"));
+    const result = layOffDuringTurn(drawn, "p1", card("6", "C"), "meld_1");
+    expect(result.ok).toBe(false);
+  });
+
+  it("allows laying off onto any meld once Pay Me has been declared", () => {
+    const state = baseState({
+      phase: "final_turns",
+      payMeCallerId: "p3",
+      pendingFinalTurns: ["p1", "p2"],
+      currentPlayerIndex: 0,
+      hasDrawnThisTurn: true,
+    });
+    const result = unwrap(layOffDuringTurn(state, "p1", card("6", "C"), "meld_1"));
+    expect(result.melds.find((m) => m.id === "meld_1")!.cards).toHaveLength(4);
   });
 });
 
@@ -259,9 +288,12 @@ describe("proposeMeld with wild cards in a run", () => {
 });
 
 describe("laying off a wild card onto an existing run", () => {
+  // Owned by p1, the acting player in these tests - melds are private
+  // pre-reveal (see "melds are private pre-reveal" above), so a lay-off
+  // during ordinary play only works on your own meld.
   const runMeld = {
     id: "run_1",
-    ownerId: "p2",
+    ownerId: "p1",
     type: "RUN" as const,
     cards: [card("4", "S"), card("5", "S"), card("6", "S")],
   };
@@ -318,6 +350,57 @@ describe("propose meld failure paths", () => {
     // depends on what was drawn, so just assert the meld with 2 jokers + 1 natural
     // (still short of the 2-natural floor) is rejected regardless of the 4th card.
     const result = proposeMeld(drawn, "p1", [joker(), joker(), card("2", "H")], "SET");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("unmeld", () => {
+  it("returns every card in the meld to the owner's hand and removes it", () => {
+    const state = baseState({ melds: [{ ...baseState().melds[0], ownerId: "p1" }] });
+    const result = unwrap(unmeld(state, "p1", "meld_1"));
+    expect(result.melds).toHaveLength(0);
+    expect(result.hands.p1).toEqual(
+      expect.arrayContaining([card("6", "S"), card("6", "H"), card("6", "D")]),
+    );
+    expect(result.hands.p1).toHaveLength(state.hands.p1.length + 3);
+  });
+
+  it("strips a resolved run's wildAs designation off before returning it to hand", () => {
+    const wild = { ...joker(), wildAs: "7" as const };
+    const state = baseState({
+      melds: [
+        {
+          id: "run_1",
+          ownerId: "p1",
+          type: "RUN",
+          cards: [card("4", "S"), card("5", "S"), card("6", "S"), wild],
+        },
+      ],
+    });
+    const result = unwrap(unmeld(state, "p1", "run_1"));
+    const returnedWild = result.hands.p1.find((c) => c.rank === "JOKER")!;
+    expect(returnedWild.wildAs).toBeUndefined();
+  });
+
+  it("rejects unmelding another player's meld", () => {
+    // Default fixture: meld_1 is owned by p2.
+    const result = unmeld(baseState(), "p1", "meld_1");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects unmelding a meld that doesn't exist", () => {
+    const result = unmeld(baseState(), "p2", "no-such-meld");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects unmelding once Pay Me has been declared", () => {
+    const state = baseState({
+      melds: [{ ...baseState().melds[0], ownerId: "p2" }],
+      phase: "final_turns",
+      payMeCallerId: "p1",
+      pendingFinalTurns: ["p2", "p3"],
+    });
+    const result = unmeld(state, "p2", "meld_1");
     expect(result.ok).toBe(false);
   });
 });

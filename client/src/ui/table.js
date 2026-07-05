@@ -15,6 +15,7 @@ import {
   layOffCard,
   passLayoff,
   skipStalePlayer,
+  unmeld,
 } from "../network/intents.js";
 import { loadRoom, loadHand, loadStandings } from "../network/queries.js";
 
@@ -49,6 +50,16 @@ async function proposeRun(state) {
     }
     await loadHand(state.hand.id);
     clearSelection();
+  } catch (e) {
+    setState({ error: e.message });
+  }
+}
+
+async function unmeldMeld(state, meldId) {
+  setState({ error: null });
+  try {
+    await unmeld(state.hand.id, meldId);
+    await loadHand(state.hand.id);
   } catch (e) {
     setState({ error: e.message });
   }
@@ -172,6 +183,10 @@ function renderOpponents(root, state) {
 function renderMelds(root, state) {
   const section = document.createElement("div");
   section.className = "melds";
+  // Pay Me hasn't been declared yet - melds are still private (each
+  // player's own melds only, per RLS - see supabase/migrations), and the
+  // owner can still change their mind and take one back.
+  const canUnmeld = !state.hand?.payMeCallerId;
   for (const meld of state.melds) {
     const meldEl = document.createElement("div");
     meldEl.className = "meld";
@@ -180,6 +195,19 @@ function renderMelds(root, state) {
       meldEl.appendChild(
         renderCard(card, { wild: card.rank === "JOKER" || card.rank === state.hand?.wildRank }),
       );
+    }
+    if (canUnmeld && meld.ownerPlayerId === state.myPlayerId) {
+      const unmeldBtn = document.createElement("button");
+      unmeldBtn.type = "button";
+      unmeldBtn.className = "btn btn--secondary unmeld-btn";
+      unmeldBtn.textContent = "Unmeld";
+      unmeldBtn.addEventListener("click", (e) => {
+        // Otherwise this bubbles up to meldEl's own click listener below,
+        // which would try to lay a selected card off onto this meld instead.
+        e.stopPropagation();
+        unmeldMeld(state, meld.id);
+      });
+      meldEl.appendChild(unmeldBtn);
     }
     meldEl.addEventListener("click", () => layOffOntoMeld(state, meld.id));
     section.appendChild(meldEl);
