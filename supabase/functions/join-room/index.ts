@@ -28,7 +28,7 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", userId)
       .maybeSingle();
     if (existing) {
-      await admin.from("players").update({ connected: true }).eq("id", existing.id);
+      await admin.from("players").update({ last_seen_at: new Date().toISOString() }).eq("id", existing.id);
       return json({ ok: true, roomId: room.id, playerId: existing.id, rejoined: true });
     }
 

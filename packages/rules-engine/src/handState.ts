@@ -281,6 +281,71 @@ export function passLayoff(state: HandState, playerId: string): Result<HandState
   };
 }
 
+/**
+ * Skips the current actor's pending action because they've gone stale
+ * (disconnected past the heartbeat threshold). Unlike advanceTurn - which is
+ * folded into the normal flow of ending a turn - nothing else re-evaluates
+ * whoever's currently up once they've gone stale mid-turn, so this only
+ * ever runs when another player explicitly triggers it. Staleness itself
+ * isn't checked here: the caller (the edge function) has already confirmed
+ * targetPlayerId's last_seen_at is past the threshold. Keeping this a pure
+ * state transition (like every other function here) keeps it deterministic
+ * and unit-testable.
+ */
+export function skipStalePlayer(state: HandState, targetPlayerId: string): Result<HandState> {
+  if (state.phase !== "playing" && state.phase !== "final_turns" && state.phase !== "layoff") {
+    return { ok: false, error: "No one's turn to skip right now" };
+  }
+  if (currentPlayer(state) !== targetPlayerId) {
+    return { ok: false, error: "That player isn't who we're waiting on" };
+  }
+
+  if (state.phase === "playing") {
+    return { ok: true, state: advanceTurn(state) };
+  }
+
+  if (state.phase === "final_turns") {
+    const pendingFinalTurns = state.pendingFinalTurns.filter((id) => id !== targetPlayerId);
+    if (pendingFinalTurns.length === 0) {
+      const pendingLayoffs = state.playerOrder.filter((id) => id !== state.payMeCallerId);
+      if (pendingLayoffs.length === 0) {
+        return { ok: true, state: { ...state, pendingFinalTurns, phase: "scoring" } };
+      }
+      return {
+        ok: true,
+        state: {
+          ...state,
+          pendingFinalTurns,
+          phase: "layoff",
+          pendingLayoffs,
+          currentPlayerIndex: state.playerOrder.indexOf(pendingLayoffs[0]),
+        },
+      };
+    }
+    const nextPlayerId = pendingFinalTurns[0];
+    return {
+      ok: true,
+      state: {
+        ...state,
+        pendingFinalTurns,
+        currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId),
+        hasDrawnThisTurn: false,
+      },
+    };
+  }
+
+  // layoff phase
+  const pendingLayoffs = state.pendingLayoffs.filter((id) => id !== targetPlayerId);
+  if (pendingLayoffs.length === 0) {
+    return { ok: true, state: { ...state, pendingLayoffs, phase: "scoring" } };
+  }
+  const nextPlayerId = pendingLayoffs[0];
+  return {
+    ok: true,
+    state: { ...state, pendingLayoffs, currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId) },
+  };
+}
+
 export function isHandComplete(state: HandState): boolean {
   return state.phase === "scoring" || state.phase === "complete";
 }

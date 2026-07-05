@@ -13,6 +13,13 @@
 import { supabase } from "./supabaseClient.js";
 import { getState } from "../state/store.js";
 import { loadRoom, loadHand } from "./queries.js";
+import { heartbeat } from "./intents.js";
+
+// How often this client tells the server it's still around. Well under
+// handRepo.ts's 45s STALE_MS, so a single missed tick (a slow request, a
+// backgrounded tab briefly throttled) never falsely reads as disconnected -
+// it takes several misses in a row before the server calls it stale.
+const HEARTBEAT_INTERVAL_MS = 15_000;
 
 // saveHandState() (in the edge functions) writes to `hands`, `hand_players`,
 // and sometimes `melds`/`meld_cards` as separate, non-transactional
@@ -70,5 +77,16 @@ export function subscribeToRoom(roomId) {
     .on("postgres_changes", { event: "*", schema: "public", table: "meld_cards" }, refreshHand)
     .subscribe();
 
-  return () => supabase.removeChannel(channel);
+  // Fire one immediately (don't wait a full interval for the first ping -
+  // otherwise a player who joins and instantly gets disconnected before the
+  // first tick would never have shown up as connected at all), then repeat.
+  heartbeat(roomId).catch(() => {});
+  const heartbeatTimer = setInterval(() => {
+    heartbeat(roomId).catch(() => {});
+  }, HEARTBEAT_INTERVAL_MS);
+
+  return () => {
+    clearInterval(heartbeatTimer);
+    supabase.removeChannel(channel);
+  };
 }

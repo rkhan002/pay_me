@@ -43,3 +43,8 @@ export const layOffCard = (handId, card, meldId) =>
   callFunction("layoff-card", { handId, card, meldId });
 
 export const passLayoff = (handId) => callFunction("pass-layoff", { handId });
+
+export const heartbeat = (roomId) => callFunction("heartbeat", { roomId });
+
+export const skipStalePlayer = (handId, targetPlayerId) =>
+  callFunction("skip-stale-player", { handId, targetPlayerId });

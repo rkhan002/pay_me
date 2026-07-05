@@ -14,6 +14,7 @@ import {
   proposeMeld,
   layOffCard,
   passLayoff,
+  skipStalePlayer,
 } from "../network/intents.js";
 import { loadRoom, loadHand, loadStandings } from "../network/queries.js";
 
@@ -268,6 +269,32 @@ function renderControls(root, state) {
   const myTurn = isMyTurn(state);
   const inLayoff = state.hand.phase === "layoff";
   const myLayoffTurn = inLayoff && state.hand.pendingLayoffs[0] === state.myPlayerId;
+
+  // turnPlayerId tracks whoever's action is currently expected in all three
+  // active phases (playing/final_turns/layoff), not just normal turns - see
+  // handRepo.ts's saveHandState. If that player has gone stale, nothing else
+  // in the UI can ever move the game past them (they're not going to click
+  // anything), so surface an explicit way for someone else to do it.
+  const waitingOnPlayerId = state.hand.turnPlayerId;
+  const waitingOnPlayer = state.players.find((p) => p.id === waitingOnPlayerId);
+  const canSkipStale =
+    ["playing", "final_turns", "layoff"].includes(state.hand.phase) &&
+    waitingOnPlayer &&
+    waitingOnPlayer.id !== state.myPlayerId &&
+    !waitingOnPlayer.connected;
+
+  if (canSkipStale) {
+    const skipBtn = document.createElement("button");
+    skipBtn.className = "btn btn--secondary";
+    skipBtn.textContent = `Skip ${waitingOnPlayer.displayName} (disconnected)`;
+    skipBtn.addEventListener("click", () =>
+      guard(
+        () => skipStalePlayer(state.hand.id, waitingOnPlayerId),
+        () => loadHand(state.hand.id),
+      ),
+    );
+    bar.appendChild(skipBtn);
+  }
 
   const drawStockBtn = document.createElement("button");
   drawStockBtn.className = "btn";

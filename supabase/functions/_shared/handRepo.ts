@@ -10,6 +10,12 @@ import { HttpError } from "./http.ts";
 // deno-lint-ignore no-explicit-any
 type SupabaseAdmin = any;
 
+// A player counts as connected if we've heard from them (via the heartbeat
+// endpoint) within this window. Generous enough to tolerate a missed ping or
+// two over a flaky connection, short enough that a genuinely closed tab
+// becomes skippable well within the same minute.
+export const STALE_MS = 45_000;
+
 export async function loadHandState(admin: SupabaseAdmin, handId: string): Promise<HandState> {
   const { data: hand, error: handError } = await admin
     .from("hands")
@@ -30,7 +36,7 @@ export async function loadHandState(admin: SupabaseAdmin, handId: string): Promi
   ] = await Promise.all([
     admin
       .from("players")
-      .select("id, seat_index, connected")
+      .select("id, seat_index, last_seen_at")
       .eq("room_id", hand.room_id)
       .order("seat_index", { ascending: true }),
     admin.from("hand_stock").select("stock").eq("hand_id", handId).single(),
@@ -60,8 +66,11 @@ export async function loadHandState(admin: SupabaseAdmin, handId: string): Promi
   }));
 
   const playerOrder: string[] = players.map((p: any) => p.id as string);
+  const now = Date.now();
   const connectedPlayers = new Set<string>(
-    players.filter((p: any) => p.connected).map((p: any) => p.id as string),
+    players
+      .filter((p: any) => now - new Date(p.last_seen_at).getTime() < STALE_MS)
+      .map((p: any) => p.id as string),
   );
 
   return {

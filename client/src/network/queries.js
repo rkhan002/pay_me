@@ -5,6 +5,17 @@
 import { supabase } from "./supabaseClient.js";
 import { setState } from "../state/store.js";
 
+// Mirrors STALE_MS in supabase/functions/_shared/handRepo.ts - this copy is
+// purely cosmetic (whether an avatar looks dimmed), so it doesn't need to
+// match exactly, but keeping the same number means the client's idea of
+// "looks disconnected" lines up with the server's idea of "skippable."
+const STALE_MS = 45_000;
+
+function isConnected(lastSeenAt) {
+  if (!lastSeenAt) return false;
+  return Date.now() - new Date(lastSeenAt).getTime() < STALE_MS;
+}
+
 export async function loadRoom(roomId) {
   // room and players are independent reads - fire them together instead of
   // waiting on one before starting the other.
@@ -31,7 +42,7 @@ export async function loadRoom(roomId) {
       id: p.id,
       seatIndex: p.seat_index,
       displayName: p.display_name,
-      connected: p.connected,
+      connected: isConnected(p.last_seen_at),
       userId: p.user_id,
     })),
   });

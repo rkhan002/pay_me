@@ -8,6 +8,7 @@ import {
   layOffDuringTurn,
   passLayoff,
   proposeMeld,
+  skipStalePlayer,
 } from "../src/handState";
 import { card, joker } from "./testHelpers";
 
@@ -132,6 +133,83 @@ describe("disconnected players are skipped in turn order", () => {
     });
     const afterDiscard = unwrap(discard(state, "p1", card("5", "S")));
     expect(afterDiscard.playerOrder[afterDiscard.currentPlayerIndex]).toBe("p3");
+  });
+});
+
+describe("skipStalePlayer", () => {
+  it("rejects skipping someone who isn't currently up", () => {
+    const result = skipStalePlayer(baseState(), "p2");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects skipping outside playing/final_turns/layoff phases", () => {
+    const result = skipStalePlayer(baseState({ phase: "scoring" }), "p1");
+    expect(result.ok).toBe(false);
+  });
+
+  it("playing phase: behaves like advancing past a disconnected current player", () => {
+    const state = baseState({ connectedPlayers: new Set(["p2", "p3"]) }); // p1 (current) stale
+    const result = unwrap(skipStalePlayer(state, "p1"));
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p2");
+    expect(result.hasDrawnThisTurn).toBe(false);
+  });
+
+  it("final_turns phase: removes the target and moves to the next pending player", () => {
+    const state = baseState({
+      phase: "final_turns",
+      payMeCallerId: "p1",
+      pendingFinalTurns: ["p2", "p3"],
+      currentPlayerIndex: 1, // p2's final turn
+    });
+    const result = unwrap(skipStalePlayer(state, "p2"));
+    expect(result.pendingFinalTurns).toEqual(["p3"]);
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p3");
+    expect(result.phase).toBe("final_turns");
+  });
+
+  it("final_turns phase: cascades into layoff when the pending list empties", () => {
+    const state = baseState({
+      phase: "final_turns",
+      payMeCallerId: "p1",
+      pendingFinalTurns: ["p2"],
+      currentPlayerIndex: 1,
+    });
+    const result = unwrap(skipStalePlayer(state, "p2"));
+    expect(result.pendingFinalTurns).toEqual([]);
+    expect(result.phase).toBe("layoff");
+    // pendingLayoffs is built the same way discard()'s cascade builds it -
+    // everyone but the caller, without re-filtering out whoever was just
+    // skipped here. p2 (just skipped) still owes a lay-off turn and will
+    // need its own skip click when that turn comes up - the two phases'
+    // stale-checks are independent, same as they are for any other player.
+    expect(result.pendingLayoffs).toEqual(["p2", "p3"]);
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p2");
+  });
+
+
+  it("layoff phase: removes the target and moves to the next pending player", () => {
+    const state = baseState({
+      phase: "layoff",
+      payMeCallerId: "p1",
+      pendingLayoffs: ["p2", "p3"],
+      currentPlayerIndex: 1,
+    });
+    const result = unwrap(skipStalePlayer(state, "p2"));
+    expect(result.pendingLayoffs).toEqual(["p3"]);
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p3");
+    expect(result.phase).toBe("layoff");
+  });
+
+  it("layoff phase: cascades to scoring once the pending list empties", () => {
+    const state = baseState({
+      phase: "layoff",
+      payMeCallerId: "p1",
+      pendingLayoffs: ["p2"],
+      currentPlayerIndex: 1,
+    });
+    const result = unwrap(skipStalePlayer(state, "p2"));
+    expect(result.pendingLayoffs).toEqual([]);
+    expect(result.phase).toBe("scoring");
   });
 });
 
