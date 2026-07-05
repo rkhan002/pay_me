@@ -149,8 +149,9 @@ body {
   gap: 0.6em;
 }
 
-.suit-icon {
-  display: inline-block;
+.lobby-suit-icon {
+  width: 22px;
+  height: 22px;
   opacity: 0;
   animation: suit-flicker-on 0.7s steps(1, end) forwards;
   animation-delay: 1.05s;
@@ -158,31 +159,43 @@ body {
 
 /* Same catch-and-hold flicker shape as the title, but shorter (these are
    secondary elements) and glowing in `currentColor` so each suit lights up
-   in its own color instead of the title's pink. */
+   in its own color instead of the title's pink. `filter: drop-shadow`
+   rather than `text-shadow` since these are SVG icons, not text - see
+   cards.js's suitIcon(). */
 @keyframes suit-flicker-on {
   0% {
     opacity: 0;
-    text-shadow: none;
+    filter: none;
   }
   15% {
     opacity: 1;
-    text-shadow: 0 0 12px currentColor;
+    filter: drop-shadow(0 0 6px currentColor);
   }
   30% {
     opacity: 0.15;
-    text-shadow: none;
+    filter: none;
   }
   45% {
     opacity: 1;
-    text-shadow: 0 0 12px currentColor;
+    filter: drop-shadow(0 0 6px currentColor);
   }
-  60% {
+  /* The last dip and final catch both land well before 100% (rather than
+     right up against it) so there's a solid stretch of full brightness
+     before the animation ends - with steps(1, end), a dip placed close to
+     100% would hold that dim, glow-less value for a disproportionately
+     long final stretch, which read as "stuck dim" if you weren't watching
+     the very last instant it flipped over. */
+  65% {
     opacity: 0.2;
-    text-shadow: none;
+    filter: none;
+  }
+  78% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px currentColor);
   }
   100% {
     opacity: 1;
-    text-shadow: 0 0 12px currentColor;
+    filter: drop-shadow(0 0 6px currentColor);
   }
 }
 
@@ -190,22 +203,22 @@ body {
    catches fire in sequence right after the title's own flicker settles -
    staggered animation-delay so they light up left to right rather than
    all at once. */
-.suit-icon--s {
+.lobby-suit-icon--s {
   color: var(--suit-spades);
   animation-delay: 1.05s;
 }
 
-.suit-icon--h {
+.lobby-suit-icon--h {
   color: var(--suit-hearts);
   animation-delay: 1.2s;
 }
 
-.suit-icon--d {
+.lobby-suit-icon--d {
   color: var(--suit-diamonds);
   animation-delay: 1.35s;
 }
 
-.suit-icon--c {
+.lobby-suit-icon--c {
   color: var(--suit-clubs);
   animation-delay: 1.5s;
 }

@@ -42,7 +42,7 @@ const SUIT_PATH = {
 // weight rather than their literal bounding box.
 const SUIT_SCALE = { D: 1.3 };
 
-function suitIcon(suit) {
+export function suitIcon(suit) {
   const svgns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgns, "svg");
   svg.setAttribute("viewBox", "0 0 40 40");

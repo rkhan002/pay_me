@@ -2,6 +2,7 @@ import { createRoom, joinRoom } from "../network/intents.js";
 import { setState } from "../state/store.js";
 import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
+import { suitIcon } from "./cards.js";
 
 async function enterRoom(roomId, playerId) {
   // Load the room's actual state BEFORE switching screens. Flipping to
@@ -25,7 +26,27 @@ export function renderLobby(root) {
 
   const logo = document.createElement("div");
   logo.className = "logo";
-  logo.innerHTML = `<h1>PAY ME</h1><div class="suits"><span class="suit-icon suit-icon--s">♠</span><span class="suit-icon suit-icon--h">♥</span><span class="suit-icon suit-icon--d">♦</span><span class="suit-icon suit-icon--c">♣</span></div>`;
+  logo.innerHTML = `<h1>PAY ME</h1>`;
+
+  // Built from the same SVG suit icons the cards use, not the Unicode
+  // suit characters - see cards.js's suitIcon() comment: those glyphs
+  // aren't guaranteed to exist in whatever font a browser falls back to,
+  // and silently render as a blank/default-colored glyph instead of
+  // triggering a visible fallback (bit us here first on the diamond,
+  // which came out a flat gray instead of pink).
+  const suits = document.createElement("div");
+  suits.className = "suits";
+  [
+    ["S", "lobby-suit-icon--s"],
+    ["H", "lobby-suit-icon--h"],
+    ["D", "lobby-suit-icon--d"],
+    ["C", "lobby-suit-icon--c"],
+  ].forEach(([suit, className]) => {
+    const icon = suitIcon(suit);
+    icon.classList.add("lobby-suit-icon", className);
+    suits.appendChild(icon);
+  });
+  logo.appendChild(suits);
   wrap.appendChild(logo);
 
   const card = document.createElement("div");
