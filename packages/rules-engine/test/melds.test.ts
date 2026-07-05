@@ -35,9 +35,9 @@ describe("validateSet", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("rejects duplicate suits among naturals (from a second deck)", () => {
+  it("accepts duplicate suits among naturals (from a second deck)", () => {
     const result = validateSet([card("7", "S", 0), card("7", "S", 1), card("7", "H")], "9");
-    expect(result.valid).toBe(false);
+    expect(result.valid).toBe(true);
   });
 
   it("rejects mismatched ranks", () => {

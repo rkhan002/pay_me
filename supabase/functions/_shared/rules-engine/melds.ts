@@ -37,8 +37,10 @@ function partition(cards: Card[], wildRank: Rank) {
 }
 
 /**
- * Set: 3-4 cards, same rank, different suits. At least 2 natural cards.
- * No maximum-wild-proportion cap (house ruling) - the only wild limit is
+ * Set: 3-4 cards, same rank. At least 2 natural cards. Naturals do not need
+ * distinct suits - with multiple decks in play, two 8 of Hearts (one from
+ * each deck) are legitimate duplicates and can sit in the same set (house
+ * ruling). No maximum-wild-proportion cap either - the only wild limit is
  * the shared "at least 2 naturals" floor, which a 4-card set already
  * satisfies at up to 2 wilds.
  */
@@ -57,10 +59,6 @@ export function validateSet(cards: Card[], wildRank: Rank): MeldValidationResult
   const rank = naturals[0].rank;
   if (!naturals.every((c) => c.rank === rank)) {
     return { valid: false, reason: "All natural cards in a set must share a rank" };
-  }
-  const suits = naturals.map((c) => c.suit);
-  if (new Set(suits).size !== suits.length) {
-    return { valid: false, reason: "Natural cards in a set must have different suits" };
   }
   return { valid: true };
 }
