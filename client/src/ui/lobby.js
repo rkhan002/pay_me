@@ -36,7 +36,7 @@ export function renderLobby(root) {
   nameField.innerHTML = `<label for="displayName">Your name</label>`;
   const nameInput = document.createElement("input");
   nameInput.id = "displayName";
-  nameInput.placeholder = "e.g. Rahim";
+  nameInput.placeholder = "e.g. Hercules Mulligan";
   nameInput.maxLength = 24;
   nameField.appendChild(nameInput);
   card.appendChild(nameField);
