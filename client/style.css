@@ -80,13 +80,134 @@ body {
   color: var(--text);
   text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
   letter-spacing: 1px;
+  animation: neon-sign-on 1.8s steps(1, end) forwards;
+}
+
+/* Neon "OPEN" sign flicker-on: an irregular burst of catches/misses before
+   the tube holds a steady glow - modeled on the classic gas-station-sign
+   startup flicker rather than a smooth/linear fade. Runs once whenever the
+   lobby mounts (i.e. whenever someone lands on the home screen). */
+@keyframes neon-sign-on {
+  0% {
+    opacity: 0.2;
+    text-shadow: none;
+  }
+  3% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  7% {
+    opacity: 0.25;
+    text-shadow: none;
+  }
+  10% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  13% {
+    opacity: 0.2;
+    text-shadow: none;
+  }
+  16% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  19% {
+    opacity: 0.3;
+    text-shadow: none;
+  }
+  24% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  38% {
+    opacity: 0.2;
+    text-shadow: none;
+  }
+  42% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  60% {
+    opacity: 0.3;
+    text-shadow: none;
+  }
+  64% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgba(255, 61, 138, 0.55);
+  }
 }
 
 .logo .suits {
   margin-top: 0.4rem;
-  letter-spacing: 0.6em;
-  text-indent: 0.6em;
-  color: var(--text-dim);
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+}
+
+.suit-icon {
+  display: inline-block;
+  opacity: 0;
+  animation: suit-flicker-on 0.7s steps(1, end) forwards;
+  animation-delay: 1.05s;
+}
+
+/* Same catch-and-hold flicker shape as the title, but shorter (these are
+   secondary elements) and glowing in `currentColor` so each suit lights up
+   in its own color instead of the title's pink. */
+@keyframes suit-flicker-on {
+  0% {
+    opacity: 0;
+    text-shadow: none;
+  }
+  15% {
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor;
+  }
+  30% {
+    opacity: 0.15;
+    text-shadow: none;
+  }
+  45% {
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor;
+  }
+  60% {
+    opacity: 0.2;
+    text-shadow: none;
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor;
+  }
+}
+
+/* Each suit uses the same per-suit colors as the cards on the table, and
+   catches fire in sequence right after the title's own flicker settles -
+   staggered animation-delay so they light up left to right rather than
+   all at once. */
+.suit-icon--s {
+  color: var(--suit-spades);
+  animation-delay: 1.05s;
+}
+
+.suit-icon--h {
+  color: var(--suit-hearts);
+  animation-delay: 1.2s;
+}
+
+.suit-icon--d {
+  color: var(--suit-diamonds);
+  animation-delay: 1.35s;
+}
+
+.suit-icon--c {
+  color: var(--suit-clubs);
+  animation-delay: 1.5s;
 }
 
 .lobby-card {

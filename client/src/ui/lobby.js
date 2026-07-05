@@ -25,7 +25,7 @@ export function renderLobby(root) {
 
   const logo = document.createElement("div");
   logo.className = "logo";
-  logo.innerHTML = `<h1>PAY ME</h1><div class="suits">♠ ♥ ♦ ♣</div>`;
+  logo.innerHTML = `<h1>PAY ME</h1><div class="suits"><span class="suit-icon suit-icon--s">♠</span><span class="suit-icon suit-icon--h">♥</span><span class="suit-icon suit-icon--d">♦</span><span class="suit-icon suit-icon--c">♣</span></div>`;
   wrap.appendChild(logo);
 
   const card = document.createElement("div");
