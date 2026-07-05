@@ -11,6 +11,10 @@
   --lime: #c8ff3d;
   --purple: #7b2ff7;
   --red: #ff5470;
+  /* Reserved for the "Pay Me" declaration - distinct from lime (which
+     means "primary action"/wild card elsewhere) so the caller's moment
+     doesn't visually blend into the surrounding buttons. */
+  --amber: #ffaa00;
   --radius: 10px;
 }
 
@@ -214,7 +218,7 @@ body {
 }
 
 .seat--pay-me {
-  box-shadow: 0 0 0 2px var(--lime);
+  box-shadow: 0 0 0 2px var(--amber);
 }
 
 .avatar {
@@ -248,11 +252,11 @@ body {
   font-family: "Bungee", cursive;
   text-align: center;
   color: #0b0e1a;
-  background: var(--lime);
+  background: var(--amber);
   padding: 0.7rem;
   border-radius: 8px;
   transform: rotate(-2deg);
-  box-shadow: 0 0 30px rgba(200, 255, 61, 0.6);
+  box-shadow: 0 0 45px rgba(255, 170, 0, 0.85);
   margin-bottom: 1.5rem;
 }
 
