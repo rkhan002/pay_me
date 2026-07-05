@@ -9,6 +9,17 @@
 // does nothing until that first gesture arrives, at which point it
 // resumes the (until-then-suspended) AudioContext and starts the music
 // loop if the player has left music enabled.
+//
+// Music plays through Web Audio (decoded AudioBuffer + a looping
+// AudioBufferSourceNode), NOT a native `<audio loop>` element. That's
+// deliberate: MP3 encoding adds a few dozen milliseconds of silent
+// "priming" padding at the start of the file (an artifact of the codec,
+// not of our synthesis), and a plain `<audio loop>` element replays that
+// padding as an audible gap/click every single time the track wraps.
+// `decodeAudioData` strips that padding when it decodes to raw PCM, so
+// looping the decoded buffer via Web Audio is sample-accurate and gapless
+// - this is what made the loop sound "abrupt" before, independent of the
+// music itself.
 
 const MUSIC_KEY = "payme:musicEnabled";
 const SFX_KEY = "payme:sfxEnabled";
@@ -41,7 +52,10 @@ let sfxGain = null;
 const sfxBuffers = new Map(); // name -> decoded AudioBuffer
 let sfxLoadPromise = null;
 
-let musicEl = null;
+let musicGain = null;
+let musicBuffer = null; // decoded AudioBuffer, once loaded
+let musicLoadPromise = null;
+let musicSource = null; // currently-playing AudioBufferSourceNode, or null
 let unlocked = false;
 
 function getAudioCtx() {
@@ -51,6 +65,9 @@ function getAudioCtx() {
     sfxGain = audioCtx.createGain();
     sfxGain.gain.value = 0.6;
     sfxGain.connect(audioCtx.destination);
+    musicGain = audioCtx.createGain();
+    musicGain.gain.value = 0.35;
+    musicGain.connect(audioCtx.destination);
   }
   return audioCtx;
 }
@@ -72,16 +89,21 @@ async function loadSfxBuffers() {
   );
 }
 
-/** Call once at boot. Kicks off SFX decoding and prepares (but doesn't play) the music element. */
+async function loadMusicBuffer() {
+  const ctx = getAudioCtx();
+  try {
+    const res = await fetch(MUSIC_URL);
+    const arrayBuffer = await res.arrayBuffer();
+    musicBuffer = await ctx.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    console.warn("Failed to load background music", e);
+  }
+}
+
+/** Call once at boot. Kicks off SFX + music decoding (doesn't play anything yet). */
 export function initAudio() {
   if (!sfxLoadPromise) sfxLoadPromise = loadSfxBuffers();
-
-  if (!musicEl) {
-    musicEl = new Audio(MUSIC_URL);
-    musicEl.loop = true;
-    musicEl.volume = 0.35;
-    musicEl.preload = "auto";
-  }
+  if (!musicLoadPromise) musicLoadPromise = loadMusicBuffer();
 }
 
 /** Plays a one-shot SFX by name if sound effects are enabled. Silently no-ops otherwise (missing sound, not yet loaded, disabled, or not yet unlocked). */
@@ -104,17 +126,30 @@ export function unlockOnFirstGesture() {
   if (musicEnabled) startMusic();
 }
 
-function startMusic() {
-  if (!musicEl) initAudio();
-  musicEl.play().catch(() => {
-    // Autoplay can still be refused in edge cases (e.g. a gesture that
-    // doesn't count) - the music toggle button gives the player a manual
-    // retry, so this is safe to just swallow.
-  });
+async function startMusic() {
+  if (!musicLoadPromise) initAudio();
+  await musicLoadPromise;
+  if (!musicBuffer || musicSource) return; // already playing, or failed to load
+  const ctx = getAudioCtx();
+  const source = ctx.createBufferSource();
+  source.buffer = musicBuffer;
+  // Looping the decoded AudioBuffer directly (rather than a native <audio
+  // loop> element playing the compressed file) is what makes this gapless:
+  // decodeAudioData already stripped the MP3 encoder's silent padding, so
+  // the loop point here is the exact last sample flowing into the exact
+  // first sample of our synthesized track, not the codec's added silence.
+  source.loop = true;
+  source.connect(musicGain);
+  source.start(0);
+  musicSource = source;
 }
 
 function stopMusic() {
-  if (musicEl) musicEl.pause();
+  if (musicSource) {
+    musicSource.stop();
+    musicSource.disconnect();
+    musicSource = null;
+  }
 }
 
 export function isMusicEnabled() {
