@@ -432,25 +432,37 @@ function renderControls(root, state) {
     bar.appendChild(skipBtn);
   }
 
+  // Which draw source is "active" this turn - only meaningful once this
+  // player has actually drawn, so a leftover drawnSource from a previous
+  // turn never lights up the wrong button.
+  const drawnStock = myTurn && state.hand.hasDrawnThisTurn && state.drawnSource === "stock";
+  const drawnDiscard = myTurn && state.hand.hasDrawnThisTurn && state.drawnSource === "discard";
+
   const drawStockBtn = document.createElement("button");
-  drawStockBtn.className = "btn";
+  drawStockBtn.className = "btn" + (drawnStock ? " btn--selected" : "");
   drawStockBtn.textContent = "Draw from stock";
   drawStockBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
   drawStockBtn.addEventListener("click", () =>
     guard(
-      () => drawStock(state.hand.id),
+      async () => {
+        await drawStock(state.hand.id);
+        setState({ drawnSource: "stock" });
+      },
       () => loadHand(state.hand.id),
     ),
   );
   bar.appendChild(drawStockBtn);
 
   const drawDiscardBtn = document.createElement("button");
-  drawDiscardBtn.className = "btn";
+  drawDiscardBtn.className = "btn" + (drawnDiscard ? " btn--selected" : "");
   drawDiscardBtn.textContent = "Draw from discard";
   drawDiscardBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
   drawDiscardBtn.addEventListener("click", () =>
     guard(
-      () => drawDiscard(state.hand.id),
+      async () => {
+        await drawDiscard(state.hand.id);
+        setState({ drawnSource: "discard" });
+      },
       () => loadHand(state.hand.id),
     ),
   );
@@ -513,7 +525,7 @@ export function renderTable(root) {
   const header = document.createElement("div");
   header.className = "table-header";
   header.innerHTML = `
-    <div class="room-code">Room ${state.room?.code ?? ""}</div>
+    <div class="room-code">Room: <span class="room-code-value">${state.room?.code ?? ""}</span></div>
     <div class="hand-info">${
       state.hand
         ? `Hand ${state.hand.handNumber}/11 &middot; wild: ${state.hand.wildRank}`

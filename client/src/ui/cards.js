@@ -52,9 +52,12 @@ function starIcon() {
   const svgns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgns, "svg");
   svg.setAttribute("viewBox", "0 0 16 16");
-  svg.setAttribute("width", "16");
-  svg.setAttribute("height", "16");
-  svg.classList.add("suit-icon");
+  // Noticeably larger than the 12px suit icons (and given its own class,
+  // not just "suit-icon") so a wild card reads as a wild card at a glance
+  // instead of looking like a fourth, oddly-shaped suit.
+  svg.setAttribute("width", "26");
+  svg.setAttribute("height", "26");
+  svg.classList.add("suit-icon", "wild-star-icon");
   const path = document.createElementNS(svgns, "path");
   path.setAttribute(
     "d",

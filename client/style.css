@@ -165,6 +165,20 @@ body {
   border-color: var(--pink);
 }
 
+/* Same white ring used for a selected card (see .card--selected) - marks
+   whichever draw button this player just used, so "I drew from the stock"
+   stays visible the same way a selected card does, until the turn ends. */
+.btn--selected {
+  box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(255, 255, 255, 0.35);
+}
+
+.btn--selected:disabled {
+  /* Stays a disabled (unclickable) button, same as any other button once
+     the turn's draw is used up, but shouldn't fade into illegibility like
+     a normal disabled button - the whole point is that it stays visible. */
+  opacity: 0.85;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -203,6 +217,14 @@ body {
   font-size: 0.7rem;
   border-color: var(--purple);
   flex-shrink: 0;
+}
+
+/* "Room" label stays the header's default cyan; the code itself gets its
+   own accent color so it visually stands out as the specific value (the
+   thing you'd actually read out to a friend) rather than blending into
+   the label around it. */
+.room-code-value {
+  color: var(--lime);
 }
 
 /* ---------- Scores ---------- */
@@ -505,6 +527,13 @@ body {
   border-color: var(--lime);
   color: var(--lime);
   box-shadow: 0 0 14px rgba(200, 255, 61, 0.45);
+}
+
+/* The star itself gets its own glow on top of .card--wild's card-level
+   glow, so the symbol - not just the card's border - reads as "this is
+   the wild" at a glance. */
+.wild-star-icon {
+  filter: drop-shadow(0 0 6px rgba(200, 255, 61, 0.85));
 }
 
 /* No lift here (dropped it - it put selected cards at a different

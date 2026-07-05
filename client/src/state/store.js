@@ -21,6 +21,14 @@ let state = {
 
   selectedCardKeys: new Set(),
 
+  // Which draw button this player last used ("stock" | "discard" | null) -
+  // purely cosmetic, so the button stays visibly "selected" the same way a
+  // chosen card does. Never explicitly cleared: it's only ever read behind
+  // a myTurn && hasDrawnThisTurn check (see table.js), both of which go
+  // false again the moment this turn ends, so a stale value here can never
+  // show through on a later turn.
+  drawnSource: null,
+
   standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first
   standingsHandsPlayed: 0,
   showStandings: false,
