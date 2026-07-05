@@ -27,6 +27,92 @@ function isMyTurn(state) {
   return state.hand && state.hand.turnPlayerId === state.myPlayerId;
 }
 
+function isWildCard(card, wildRank) {
+  return card.rank === "JOKER" || card.rank === wildRank;
+}
+
+// A RUN meld/lay-off involving a wild card comes back from the server as
+// { ok: false, needsWildDesignation: true, ... } instead of erroring or
+// guessing - see propose-meld/layoff-card's edge functions. This opens the
+// picker modal (see renderWildPickerModal) instead of treating it as either
+// a success or a rejected move.
+async function proposeRun(state) {
+  const cards = selectedCards();
+  setState({ error: null });
+  try {
+    const result = await proposeMeld(state.hand.id, cards, "RUN");
+    if (result.needsWildDesignation) {
+      setState({
+        wildPicker: { kind: "meld", handId: state.hand.id, cards, arrangements: result.arrangements },
+      });
+      return;
+    }
+    await loadHand(state.hand.id);
+    clearSelection();
+  } catch (e) {
+    setState({ error: e.message });
+  }
+}
+
+async function layOffOntoMeld(state, meldId) {
+  const [card] = selectedCards();
+  if (!card) {
+    setState({
+      error: "Select one card from your hand first, then click a meld to lay it off.",
+    });
+    return;
+  }
+  setState({ error: null });
+  try {
+    const result = await layOffCard(state.hand.id, card, meldId);
+    if (result.needsWildDesignation) {
+      setState({
+        wildPicker: {
+          kind: "layoff",
+          handId: state.hand.id,
+          card,
+          meldId,
+          candidateRanks: result.candidateRanks,
+        },
+      });
+      return;
+    }
+    await loadHand(state.hand.id);
+    clearSelection();
+  } catch (e) {
+    setState({ error: e.message });
+  }
+}
+
+/**
+ * Submits the player's choice from the wild-designation picker: for a meld,
+ * pairs each wild card (in hand-selection order) with the chosen
+ * arrangement's wild ranks (ascending) - which physical wild gets which
+ * rank doesn't matter to the server, only that the multiset matches (see
+ * validateWildAssignments), and sortRunCards places each card correctly by
+ * its own assigned rank regardless of that pairing.
+ */
+async function submitWildPicker(picker, choice) {
+  setState({ error: null });
+  try {
+    if (picker.kind === "meld") {
+      const wilds = picker.cards.filter((c) => isWildCard(c, getState().hand.wildRank));
+      const wildAssignments = {};
+      wilds.forEach((w, i) => {
+        wildAssignments[cardKey(w)] = choice.wildRanks[i];
+      });
+      await proposeMeld(picker.handId, picker.cards, "RUN", wildAssignments);
+    } else {
+      await layOffCard(picker.handId, picker.card, picker.meldId, choice);
+    }
+    setState({ wildPicker: null });
+    await loadHand(picker.handId);
+    clearSelection();
+  } catch (e) {
+    setState({ error: e.message, wildPicker: null });
+  }
+}
+
 // Realtime eventually tells every other player about a successful action,
 // but the player who just took the action shouldn't have to wait on a
 // round trip through Postgres Changes to see their own move reflected -
@@ -95,19 +181,7 @@ function renderMelds(root, state) {
         renderCard(card, { wild: card.rank === "JOKER" || card.rank === state.hand?.wildRank }),
       );
     }
-    meldEl.addEventListener("click", () => {
-      const [card] = selectedCards();
-      if (!card) {
-        setState({
-          error: "Select one card from your hand first, then click a meld to lay it off.",
-        });
-        return;
-      }
-      guard(
-        () => layOffCard(state.hand.id, card, meld.id),
-        () => loadHand(state.hand.id),
-      ).then(clearSelection);
-    });
+    meldEl.addEventListener("click", () => layOffOntoMeld(state, meld.id));
     section.appendChild(meldEl);
   }
   root.appendChild(section);
@@ -182,6 +256,61 @@ function renderStandingsModal(root, state) {
   closeBtn.textContent = "Close";
   closeBtn.addEventListener("click", () => setState({ showStandings: false }));
   card.appendChild(closeBtn);
+
+  overlay.appendChild(card);
+  root.appendChild(overlay);
+}
+
+function renderWildPickerModal(root, state) {
+  const picker = state.wildPicker;
+  if (!picker) return;
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+
+  const card = document.createElement("div");
+  card.className = "modal-card";
+
+  const title = document.createElement("div");
+  title.className = "modal-title";
+  title.textContent = "What's the wild card?";
+  card.appendChild(title);
+
+  const subtitle = document.createElement("div");
+  subtitle.className = "modal-subtitle";
+  subtitle.textContent =
+    picker.kind === "meld"
+      ? "This run has more than one way to complete it - pick which one."
+      : "Which end of the run is this card extending?";
+  card.appendChild(subtitle);
+
+  const options = document.createElement("div");
+  options.className = "wild-picker-options";
+
+  if (picker.kind === "meld") {
+    for (const arrangement of picker.arrangements) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn--primary";
+      btn.textContent = arrangement.orderedRanks.join(", ");
+      btn.addEventListener("click", () => submitWildPicker(picker, arrangement));
+      options.appendChild(btn);
+    }
+  } else {
+    for (const rank of picker.candidateRanks) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn--primary";
+      btn.textContent = rank;
+      btn.addEventListener("click", () => submitWildPicker(picker, rank));
+      options.appendChild(btn);
+    }
+  }
+  card.appendChild(options);
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => setState({ wildPicker: null }));
+  card.appendChild(cancelBtn);
 
   overlay.appendChild(card);
   root.appendChild(overlay);
@@ -343,12 +472,7 @@ function renderControls(root, state) {
   runBtn.className = "btn";
   runBtn.textContent = "Meld as run";
   runBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length < 3;
-  runBtn.addEventListener("click", () =>
-    guard(
-      () => proposeMeld(state.hand.id, selectedCards(), "RUN"),
-      () => loadHand(state.hand.id),
-    ).then(clearSelection),
-  );
+  runBtn.addEventListener("click", () => proposeRun(state));
   bar.appendChild(runBtn);
 
   const discardBtn = document.createElement("button");
@@ -444,4 +568,5 @@ export function renderTable(root) {
 
   root.appendChild(wrap);
   renderStandingsModal(root, state);
+  renderWildPickerModal(root, state);
 }

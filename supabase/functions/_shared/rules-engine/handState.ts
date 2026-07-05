@@ -1,6 +1,13 @@
-import { cardKey, type Card, type Rank } from "./deck.ts";
+import { cardKey, isWildCard, type Card, type Rank } from "./deck.ts";
 import { reshuffleDiscardIntoStock as reshuffle, dealCards } from "./deal.ts";
-import { validateMeld, canLayOff, type MeldType } from "./melds.ts";
+import {
+  validateMeld,
+  canLayOff,
+  validateWildAssignments,
+  sortRunCards,
+  layoffWildCandidates,
+  type MeldType,
+} from "./melds.ts";
 
 export type HandPhase = "playing" | "final_turns" | "layoff" | "scoring" | "complete";
 
@@ -115,6 +122,7 @@ export function proposeMeld(
   playerId: string,
   cards: Card[],
   meldType: MeldType,
+  wildAssignments?: Record<string, Rank>,
 ): Result<HandState> {
   if (state.phase !== "playing" && state.phase !== "final_turns") {
     return { ok: false, error: "Melding isn't allowed right now" };
@@ -125,10 +133,28 @@ export function proposeMeld(
   const validation = validateMeld(cards, meldType, state.wildRank);
   if (!validation.valid) return { ok: false, error: validation.reason ?? "Invalid meld" };
 
+  // A run's wild card(s) need to be pinned to a specific rank before the
+  // meld can be stored - see melds.ts's runArrangements/validateWildAssignments.
+  // A set never needs this: every natural in a set already shares one rank,
+  // so a wild in a set has nothing ambiguous to resolve.
+  if (meldType === "RUN") {
+    const wildCheck = validateWildAssignments(cards, state.wildRank, wildAssignments ?? {});
+    if (!wildCheck.valid) {
+      return { ok: false, error: wildCheck.reason ?? "Invalid wild card assignment" };
+    }
+  }
+
   const remainingHand = removeCardsFromHand(state.hands[playerId], cards);
   if (!remainingHand) return { ok: false, error: "You don't hold all of those cards" };
 
-  const meld: TableMeld = { id: nextMeldId(), type: meldType, ownerId: playerId, cards };
+  const resolvedCards = cards.map((c) =>
+    meldType === "RUN" && isWildCard(c, state.wildRank) && wildAssignments?.[cardKey(c)]
+      ? { ...c, wildAs: wildAssignments[cardKey(c)] }
+      : c,
+  );
+  const finalCards = meldType === "RUN" ? sortRunCards(resolvedCards, state.wildRank) : resolvedCards;
+
+  const meld: TableMeld = { id: nextMeldId(), type: meldType, ownerId: playerId, cards: finalCards };
   return {
     ok: true,
     state: {
@@ -144,13 +170,14 @@ export function layOffDuringTurn(
   playerId: string,
   card: Card,
   meldId: string,
+  wildAssignedRank?: Rank,
 ): Result<HandState> {
   if (state.phase !== "playing" && state.phase !== "final_turns") {
     return { ok: false, error: "Lay-off isn't allowed right now" };
   }
   if (currentPlayer(state) !== playerId) return { ok: false, error: "Not your turn" };
   if (!state.hasDrawnThisTurn) return { ok: false, error: "Draw a card before laying off" };
-  return applyLayoff(state, playerId, card, meldId);
+  return applyLayoff(state, playerId, card, meldId, wildAssignedRank);
 }
 
 function applyLayoff(
@@ -158,6 +185,7 @@ function applyLayoff(
   playerId: string,
   card: Card,
   meldId: string,
+  wildAssignedRank?: Rank,
 ): Result<HandState> {
   const meldIndex = state.melds.findIndex((m) => m.id === meldId);
   if (meldIndex === -1) return { ok: false, error: "No such meld on the table" };
@@ -165,10 +193,29 @@ function applyLayoff(
   if (!canLayOff(meld.cards, meld.type, card, state.wildRank)) {
     return { ok: false, error: "That card can't be added to this meld" };
   }
+
+  // Same reasoning as proposeMeld: a wild going onto a RUN needs its rank
+  // pinned before it can be appended and the run re-sorted. A wild onto a
+  // SET has nothing ambiguous - it just represents the set's one shared rank.
+  let resolvedCard = card;
+  if (meld.type === "RUN" && isWildCard(card, state.wildRank)) {
+    if (!wildAssignedRank) {
+      return { ok: false, error: "This wild card needs a rank assigned" };
+    }
+    const candidates = layoffWildCandidates(meld.cards, state.wildRank);
+    if (!candidates.includes(wildAssignedRank)) {
+      return { ok: false, error: "That rank doesn't extend this run" };
+    }
+    resolvedCard = { ...card, wildAs: wildAssignedRank };
+  }
+
   const remainingHand = removeCardsFromHand(state.hands[playerId], [card]);
   if (!remainingHand) return { ok: false, error: "You don't hold that card" };
 
-  const updatedMeld: TableMeld = { ...meld, cards: [...meld.cards, card] };
+  const updatedCards = [...meld.cards, resolvedCard];
+  const finalCards =
+    meld.type === "RUN" ? sortRunCards(updatedCards, state.wildRank) : updatedCards;
+  const updatedMeld: TableMeld = { ...meld, cards: finalCards };
   const melds = [...state.melds];
   melds[meldIndex] = updatedMeld;
 
@@ -255,10 +302,11 @@ export function layOffDuringLayoffPhase(
   playerId: string,
   card: Card,
   meldId: string,
+  wildAssignedRank?: Rank,
 ): Result<HandState> {
   if (state.phase !== "layoff") return { ok: false, error: "Not in the lay-off phase" };
   if (currentPlayer(state) !== playerId) return { ok: false, error: "Not your lay-off turn" };
-  return applyLayoff(state, playerId, card, meldId);
+  return applyLayoff(state, playerId, card, meldId, wildAssignedRank);
 }
 
 export function passLayoff(state: HandState, playerId: string): Result<HandState> {

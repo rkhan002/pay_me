@@ -1,11 +1,56 @@
+// Special-cased like pass-layoff/skip-stale-player rather than routed
+// through the generic action handler: a RUN meld containing a wild card
+// has no single correct arrangement (see melds.ts's runArrangements) until
+// the player says what each wild stands for. Rather than guess, or
+// duplicate the arrangement math in client JS, this responds with a
+// distinguishable "needsWildDesignation" payload so the client can show a
+// picker and resubmit the same request with wildAssignments filled in.
 import { proposeMeld } from "../_shared/rules-engine/handState.ts";
-import { handleAction } from "../_shared/actionHandler.ts";
+import { runArrangements } from "../_shared/rules-engine/melds.ts";
+import { isWildCard } from "../_shared/rules-engine/deck.ts";
+import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
+import { resolvePlayerIdForHand } from "../_shared/playerLookup.ts";
+import { loadHandState, saveHandState, logMove } from "../_shared/handRepo.ts";
 
-Deno.serve(
-  handleAction("propose_meld", (state, playerId, body) => {
-    if (!Array.isArray(body.cards) || !body.meldType) {
-      return { ok: false, error: "Missing cards or meldType" };
+Deno.serve(async (req: Request) => {
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
+
+  try {
+    if (req.method !== "POST") throw new HttpError("POST only", 405);
+    const userId = await requireUserId(req);
+    const body = await req.json();
+    const { handId, cards, meldType, wildAssignments } = body;
+    if (!handId) throw new HttpError("Missing handId", 400);
+    if (!Array.isArray(cards) || !meldType) {
+      return errorResponse("Missing cards or meldType", 400);
     }
-    return proposeMeld(state, playerId, body.cards, body.meldType);
-  }),
-);
+
+    const admin = supabaseAdmin();
+    const { playerId } = await resolvePlayerIdForHand(admin, handId, userId);
+    const prevState = await loadHandState(admin, handId);
+
+    if (meldType === "RUN" && cards.some((c: any) => isWildCard(c, prevState.wildRank))) {
+      if (!wildAssignments) {
+        const arrangements = runArrangements(cards, prevState.wildRank);
+        if (arrangements.length === 0) {
+          return errorResponse("Cards don't form a valid run", 422);
+        }
+        return json({ ok: false, needsWildDesignation: true, arrangements });
+      }
+    }
+
+    const result = proposeMeld(prevState, playerId, cards, meldType, wildAssignments);
+    if (!result.ok) return errorResponse(result.error, 422);
+
+    await saveHandState(admin, handId, prevState, result.state, playerId);
+    await logMove(admin, handId, playerId, "propose_meld", body);
+
+    return json({ ok: true });
+  } catch (e) {
+    if (e instanceof HttpError) return errorResponse(e.message, e.status);
+    console.error(e);
+    return errorResponse("Internal error", 500);
+  }
+});

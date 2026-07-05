@@ -248,6 +248,13 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.wild-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
 /* Grid with fixed-width badge/score columns - each row is its own grid
    instance, but since those two columns are a fixed size (not content-
    sized) rather than auto, they still land in the same place whether or

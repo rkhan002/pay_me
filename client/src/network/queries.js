@@ -131,7 +131,7 @@ export async function loadHand(handId) {
       supabase
         .from("melds")
         .select(
-          "id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position, added_by_player_id)",
+          "id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position, added_by_player_id, wild_as_rank)",
         )
         .eq("hand_id", handId),
     ]);
@@ -169,6 +169,7 @@ export async function loadHand(handId) {
           suit: c.suit,
           deckIndex: c.deck_index,
           addedByPlayerId: c.added_by_player_id,
+          wildAs: c.wild_as_rank ?? undefined,
         })),
     })),
   });

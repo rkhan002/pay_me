@@ -43,7 +43,9 @@ export async function loadHandState(admin: SupabaseAdmin, handId: string): Promi
     admin.from("hand_players").select("player_id, hand_cards").eq("hand_id", handId),
     admin
       .from("melds")
-      .select("id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position)")
+      .select(
+        "id, owner_player_id, meld_type, meld_cards(rank, suit, deck_index, position, wild_as_rank)",
+      )
       .eq("hand_id", handId),
   ]);
   if (playersError || !players?.length) throw new HttpError("Room has no players", 500);
@@ -62,7 +64,12 @@ export async function loadHandState(admin: SupabaseAdmin, handId: string): Promi
     type: m.meld_type,
     cards: [...m.meld_cards]
       .sort((a: any, b: any) => a.position - b.position)
-      .map((c: any) => ({ rank: c.rank, suit: c.suit, deckIndex: c.deck_index })),
+      .map((c: any) => ({
+        rank: c.rank,
+        suit: c.suit,
+        deckIndex: c.deck_index,
+        wildAs: c.wild_as_rank ?? undefined,
+      })),
   }));
 
   const playerOrder: string[] = players.map((p: any) => p.id as string);
@@ -157,24 +164,54 @@ export async function saveHandState(
         suit: card.suit,
         deck_index: card.deckIndex,
         position,
+        wild_as_rank: card.wildAs ?? null,
         added_by_player_id: meld.ownerId,
       }));
       const { error: cardsError } = await admin.from("meld_cards").insert(rows);
       if (cardsError) throw new HttpError("Failed to save meld cards", 500);
     } else {
       const prevMeld = prev.melds.find((m) => m.id === meld.id)!;
-      const newCards = meld.cards.slice(prevMeld.cards.length);
-      if (newCards.length === 0) continue;
-      const rows = newCards.map((card, i) => ({
-        meld_id: meld.id,
-        rank: card.rank,
-        suit: card.suit,
-        deck_index: card.deckIndex,
-        position: prevMeld.cards.length + i,
-        added_by_player_id: playerId,
-      }));
-      const { error } = await admin.from("meld_cards").insert(rows);
-      if (error) throw new HttpError("Failed to save lay-off", 500);
+      if (JSON.stringify(prevMeld.cards) === JSON.stringify(meld.cards)) continue;
+
+      // A lay-off onto a RUN can land at either end (see sortRunCards), so
+      // the new card isn't always a tail append - existing cards can shift
+      // position too. Rather than trust a length-based diff (which breaks
+      // the moment anything reorders), rewrite every row for this meld:
+      // fetch what's there now to preserve added_by/added_at for cards that
+      // already existed, then delete and reinsert in the final order.
+      const { data: existingRows, error: fetchError } = await admin
+        .from("meld_cards")
+        .select("rank, suit, deck_index, added_by_player_id, added_at")
+        .eq("meld_id", meld.id);
+      if (fetchError) throw new HttpError("Failed to load meld cards", 500);
+
+      const existingByKey = new Map<string, { added_by_player_id: string; added_at: string }>();
+      for (const row of existingRows ?? []) {
+        existingByKey.set(`${row.rank}|${row.suit ?? ""}|${row.deck_index}`, row);
+      }
+
+      const rows = meld.cards.map((card, position) => {
+        const key = `${card.rank}|${card.suit ?? ""}|${card.deckIndex}`;
+        const existing = existingByKey.get(key);
+        return {
+          meld_id: meld.id,
+          rank: card.rank,
+          suit: card.suit,
+          deck_index: card.deckIndex,
+          position,
+          wild_as_rank: card.wildAs ?? null,
+          added_by_player_id: existing?.added_by_player_id ?? playerId,
+          added_at: existing?.added_at ?? new Date().toISOString(),
+        };
+      });
+
+      const { error: deleteError } = await admin
+        .from("meld_cards")
+        .delete()
+        .eq("meld_id", meld.id);
+      if (deleteError) throw new HttpError("Failed to save lay-off", 500);
+      const { error: insertError } = await admin.from("meld_cards").insert(rows);
+      if (insertError) throw new HttpError("Failed to save lay-off", 500);
     }
   }
 }

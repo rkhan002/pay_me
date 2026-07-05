@@ -24,6 +24,12 @@ let state = {
   standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first
   standingsHandsPlayed: 0,
   showStandings: false,
+
+  // Set whenever the server responds to a propose-meld/layoff-card call with
+  // needsWildDesignation - see network/intents.js. Null the rest of the time.
+  // { kind: "meld", handId, cards, meldType, arrangements } |
+  // { kind: "layoff", handId, card, meldId, candidateRanks }
+  wildPicker: null,
 };
 
 export function getState() {

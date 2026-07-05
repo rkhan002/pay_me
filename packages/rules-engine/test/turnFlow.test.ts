@@ -10,6 +10,7 @@ import {
   proposeMeld,
   skipStalePlayer,
 } from "../src/handState";
+import { cardKey } from "../src/deck";
 import { card, joker } from "./testHelpers";
 
 function unwrap<T>(result: { ok: boolean; state?: T; error?: string }): T {
@@ -210,6 +211,87 @@ describe("skipStalePlayer", () => {
     const result = unwrap(skipStalePlayer(state, "p2"));
     expect(result.pendingLayoffs).toEqual([]);
     expect(result.phase).toBe("scoring");
+  });
+});
+
+describe("proposeMeld with wild cards in a run", () => {
+  it("requires a wild assignment for a run and stores the run sorted", () => {
+    const wild = joker();
+    const state = baseState({
+      hands: {
+        p1: [card("4", "S"), card("5", "S"), wild, card("2", "H")],
+        p2: [],
+        p3: [],
+      },
+      hasDrawnThisTurn: true,
+    });
+
+    const withoutAssignment = proposeMeld(
+      state,
+      "p1",
+      [card("4", "S"), card("5", "S"), wild],
+      "RUN",
+    );
+    expect(withoutAssignment.ok).toBe(false);
+
+    const result = unwrap(
+      proposeMeld(state, "p1", [card("4", "S"), card("5", "S"), wild], "RUN", {
+        [cardKey(wild)]: "6",
+      }),
+    );
+    const meld = result.melds.find((m) => m.id !== "meld_1")!;
+    expect(meld.type).toBe("RUN");
+    expect(meld.cards.map((c) => c.rank)).toEqual(["4", "5", "JOKER"]);
+    expect(meld.cards[2].wildAs).toBe("6");
+  });
+
+  it("rejects an assignment that doesn't complete a valid run", () => {
+    const wild = joker();
+    const state = baseState({
+      hands: { p1: [card("4", "S"), card("5", "S"), wild], p2: [], p3: [] },
+      hasDrawnThisTurn: true,
+    });
+    const result = proposeMeld(state, "p1", [card("4", "S"), card("5", "S"), wild], "RUN", {
+      [cardKey(wild)]: "K",
+    });
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("laying off a wild card onto an existing run", () => {
+  const runMeld = {
+    id: "run_1",
+    ownerId: "p2",
+    type: "RUN" as const,
+    cards: [card("4", "S"), card("5", "S"), card("6", "S")],
+  };
+
+  it("requires a wild rank assignment and extends the run", () => {
+    const wild = joker();
+    const state = baseState({
+      hands: { p1: [wild], p2: [], p3: [] },
+      melds: [runMeld],
+      hasDrawnThisTurn: true,
+    });
+
+    const withoutAssignment = layOffDuringTurn(state, "p1", wild, "run_1");
+    expect(withoutAssignment.ok).toBe(false);
+
+    const result = unwrap(layOffDuringTurn(state, "p1", wild, "run_1", "7"));
+    const meld = result.melds.find((m) => m.id === "run_1")!;
+    expect(meld.cards.map((c) => c.rank)).toEqual(["4", "5", "6", "JOKER"]);
+    expect(meld.cards[3].wildAs).toBe("7");
+  });
+
+  it("rejects a rank that doesn't extend the run", () => {
+    const wild = joker();
+    const state = baseState({
+      hands: { p1: [wild], p2: [], p3: [] },
+      melds: [runMeld],
+      hasDrawnThisTurn: true,
+    });
+    const result = layOffDuringTurn(state, "p1", wild, "run_1", "K");
+    expect(result.ok).toBe(false);
   });
 });
 

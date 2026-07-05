@@ -7,6 +7,14 @@ export interface Card {
   suit: Suit | null; // null only for JOKER
   /** Distinguishes duplicate physical cards across multiple shuffled decks. */
   deckIndex: number;
+  /**
+   * Only meaningful for a wild card (JOKER or the hand's wild rank) that's
+   * currently part of a RUN meld: which rank it's standing in for, so the
+   * run can be displayed in sequence instead of with the wild sitting in
+   * an arbitrary spot. Undefined everywhere else (in a hand, in the
+   * discard pile, in a SET meld, or on a wild not yet placed in a run).
+   */
+  wildAs?: Rank;
 }
 
 const SUITS: Suit[] = ["S", "H", "D", "C"];

@@ -17,7 +17,10 @@ async function callFunction(name, body) {
     body: JSON.stringify(body),
   });
   const json = await res.json();
-  if (!res.ok || json.ok === false) {
+  // propose-meld/layoff-card can come back { ok: false, needsWildDesignation:
+  // true, ... } - that's not a rejected move, it's a request for more
+  // information, so it's handed back to the caller instead of thrown.
+  if ((!res.ok || json.ok === false) && !json.needsWildDesignation) {
     throw new Error(json.error || `${name} failed`);
   }
   return json;
@@ -36,11 +39,11 @@ export const drawDiscard = (handId) => callFunction("draw-card", { handId, sourc
 
 export const discardCard = (handId, card) => callFunction("discard-card", { handId, card });
 
-export const proposeMeld = (handId, cards, meldType) =>
-  callFunction("propose-meld", { handId, cards, meldType });
+export const proposeMeld = (handId, cards, meldType, wildAssignments) =>
+  callFunction("propose-meld", { handId, cards, meldType, wildAssignments });
 
-export const layOffCard = (handId, card, meldId) =>
-  callFunction("layoff-card", { handId, card, meldId });
+export const layOffCard = (handId, card, meldId, wildAssignedRank) =>
+  callFunction("layoff-card", { handId, card, meldId, wildAssignedRank });
 
 export const passLayoff = (handId) => callFunction("pass-layoff", { handId });
 
