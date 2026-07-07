@@ -29,7 +29,7 @@ let state = {
   // show through on a later turn.
   drawnSource: null,
 
-  standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first
+  standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first (ties: most Pay Me's)
   standingsHandsPlayed: 0,
   showStandings: false,
 

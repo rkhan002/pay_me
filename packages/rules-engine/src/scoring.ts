@@ -46,9 +46,10 @@ export interface PlayerTotals {
 }
 
 /**
- * Rolls per-hand results across all 11 hands into standings.
- * Winner = lowest cumulative score. Pay Me wins are tracked as a separate,
- * non-tiebreaking honor per the House Rules ("recognized as a separate tally").
+ * Rolls per-hand results across all 11 hands into standings, best first.
+ * Winner = lowest cumulative score; a tie is broken by most Pay Me calls
+ * (times a player went out), per the House Rules. payMeWins is still exposed
+ * as its own tally for display.
  */
 export function computeStandings(handResults: HandScoreEntry[][]): PlayerTotals[] {
   const totals = new Map<string, PlayerTotals>();
@@ -64,7 +65,9 @@ export function computeStandings(handResults: HandScoreEntry[][]): PlayerTotals[
       totals.set(entry.playerId, existing);
     }
   }
-  return [...totals.values()].sort((a, b) => a.cumulativeScore - b.cumulativeScore);
+  return [...totals.values()].sort(
+    (a, b) => a.cumulativeScore - b.cumulativeScore || b.payMeWins - a.payMeWins,
+  );
 }
 
 export function gameWinner(handResults: HandScoreEntry[][]): PlayerTotals | undefined {

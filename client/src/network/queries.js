@@ -117,7 +117,9 @@ export async function loadStandings(roomId) {
   }
 
   setState({
-    standings: [...totals.values()].sort((a, b) => a.cumulativeScore - b.cumulativeScore),
+    standings: [...totals.values()].sort(
+      (a, b) => a.cumulativeScore - b.cumulativeScore || b.payMeWins - a.payMeWins,
+    ),
     standingsHandsPlayed: completedHands?.length ?? 0,
   });
 }
@@ -136,7 +138,15 @@ function cardIdentity(c) {
  * is what keeps a page reload or reconnect from replaying every sound
  * that already happened).
  */
-function fireHandSfx(prevHand, prevMyCards, prevMelds, nextHand, nextMyCards, nextMelds, myPlayerId) {
+function fireHandSfx(
+  prevHand,
+  prevMyCards,
+  prevMelds,
+  nextHand,
+  nextMyCards,
+  nextMelds,
+  myPlayerId,
+) {
   if (!prevHand || prevHand.id !== nextHand.id) return;
 
   // Draw: only ever observable for this client's own hand - an opponent's

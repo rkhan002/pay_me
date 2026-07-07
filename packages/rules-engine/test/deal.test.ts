@@ -8,17 +8,12 @@ function fixedRng(seedSeq: number[]) {
 }
 
 describe("decksForPlayerCount", () => {
-  it("uses 2 decks for 2-4 players", () => {
-    expect(decksForPlayerCount(2)).toBe(2);
-    expect(decksForPlayerCount(4)).toBe(2);
-  });
-  it("uses 3 decks for 5-8 players", () => {
-    expect(decksForPlayerCount(5)).toBe(3);
-    expect(decksForPlayerCount(8)).toBe(3);
+  it("uses 2 decks for every supported player count (2-6)", () => {
+    for (const n of [2, 3, 4, 5, 6]) expect(decksForPlayerCount(n)).toBe(2);
   });
   it("rejects out-of-range player counts", () => {
     expect(() => decksForPlayerCount(1)).toThrow();
-    expect(() => decksForPlayerCount(9)).toThrow();
+    expect(() => decksForPlayerCount(7)).toThrow();
   });
 });
 
@@ -44,7 +39,7 @@ describe("dealCards", () => {
     const players = ["p1", "p2", "p3", "p4", "p5"];
     const { hands, stock, discardPile } = dealCards(players, 5, Math.random);
     const dealt = Object.values(hands).reduce((sum, h) => sum + h.length, 0);
-    expect(dealt + stock.length + discardPile.length).toBe(162);
+    expect(dealt + stock.length + discardPile.length).toBe(108);
   });
 });
 

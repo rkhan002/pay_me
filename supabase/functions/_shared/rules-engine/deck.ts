@@ -37,13 +37,15 @@ const RANKS: Exclude<Rank, "JOKER">[] = [
 ];
 
 /**
- * 2-4 players -> 2 decks (+4 jokers). 5-8 players -> 3 decks (+6 jokers).
+ * Two decks (108 cards, incl. 4 jokers) for every supported game. Capped at
+ * 6 players: at the largest hand (deal size 13) even 6 players leaves only
+ * ~29 stock cards, and 7+ would run the deck dry.
  */
 export function decksForPlayerCount(playerCount: number): number {
-  if (playerCount < 2 || playerCount > 8) {
-    throw new Error("Pay Me supports 2-8 players");
+  if (playerCount < 2 || playerCount > 6) {
+    throw new Error("Pay Me supports 2-6 players");
   }
-  return playerCount <= 4 ? 2 : 3;
+  return 2;
 }
 
 export function buildDeck(numDecks: number): Card[] {

@@ -52,10 +52,28 @@ describe("computeStandings / mostPayMeCalls", () => {
     expect(standings[1].cumulativeScore).toBe(50);
   });
 
-  it("tracks Pay Me wins as a separate, non-tiebreaking tally", () => {
+  it("tracks Pay Me wins as a separate tally", () => {
     const top = mostPayMeCalls(results);
     expect(top).toHaveLength(1);
     expect(top[0].playerId).toBe("p1");
     expect(top[0].payMeWins).toBe(2);
+  });
+
+  it("breaks a cumulative-score tie by most Pay Me calls", () => {
+    const tied = [
+      [
+        { playerId: "a", score: 10, isPayMeCaller: true },
+        { playerId: "b", score: 0, isPayMeCaller: false },
+      ],
+      [
+        { playerId: "a", score: 0, isPayMeCaller: true },
+        { playerId: "b", score: 10, isPayMeCaller: false },
+      ],
+    ];
+    // Both total 10; a went out twice, b never -> a ranks first.
+    const standings = computeStandings(tied);
+    expect(standings[0].playerId).toBe("a");
+    expect(standings[0].payMeWins).toBe(2);
+    expect(standings[1].playerId).toBe("b");
   });
 });

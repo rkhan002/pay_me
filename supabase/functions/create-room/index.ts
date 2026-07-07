@@ -9,11 +9,11 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method !== "POST") throw new HttpError("POST only", 405);
     const userId = await requireUserId(req);
-    const { displayName, maxPlayers = 8 } = await req.json();
+    const { displayName, maxPlayers = 6 } = await req.json();
     if (!displayName || typeof displayName !== "string") {
       throw new HttpError("Missing displayName", 400);
     }
-    if (maxPlayers < 2 || maxPlayers > 8) throw new HttpError("maxPlayers must be 2-8", 400);
+    if (maxPlayers < 2 || maxPlayers > 6) throw new HttpError("maxPlayers must be 2-6", 400);
 
     const admin = supabaseAdmin();
 
