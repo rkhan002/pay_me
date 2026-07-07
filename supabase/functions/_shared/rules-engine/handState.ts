@@ -1,3 +1,5 @@
+// AUTO-GENERATED from packages/rules-engine/src/handState.ts — DO NOT EDIT.
+// Edit the source there, then run: npm run rules:sync
 import { cardKey, isWildCard, type Card, type Rank } from "./deck.ts";
 import { reshuffleDiscardIntoStock as reshuffle, dealCards } from "./deal.ts";
 import {
@@ -157,9 +159,15 @@ export function proposeMeld(
       ? { ...c, wildAs: wildAssignments[cardKey(c)] }
       : c,
   );
-  const finalCards = meldType === "RUN" ? sortRunCards(resolvedCards, state.wildRank) : resolvedCards;
+  const finalCards =
+    meldType === "RUN" ? sortRunCards(resolvedCards, state.wildRank) : resolvedCards;
 
-  const meld: TableMeld = { id: nextMeldId(), type: meldType, ownerId: playerId, cards: finalCards };
+  const meld: TableMeld = {
+    id: nextMeldId(),
+    type: meldType,
+    ownerId: playerId,
+    cards: finalCards,
+  };
   return {
     ok: true,
     state: {
@@ -238,13 +246,13 @@ function applyLayoff(
     return { ok: false, error: "That card can't be added to this meld" };
   }
 
+  let resolvedCard = card;
   // Same reasoning as proposeMeld: a wild going onto a RUN needs its rank
   // pinned before it can be appended and the run re-sorted. A wild onto a
   // SET has nothing ambiguous - it just represents the set's one shared rank.
-  let resolvedCard = card;
   if (meld.type === "RUN" && isWildCard(card, state.wildRank)) {
     if (!wildAssignedRank) {
-      return { ok: false, error: "This wild card needs a rank assigned" };
+      return { ok: false, error: "This wild card needs a rank assigned to join the run" };
     }
     const candidates = layoffWildCandidates(meld.cards, state.wildRank);
     if (!candidates.includes(wildAssignedRank)) {
@@ -433,7 +441,11 @@ export function skipStalePlayer(state: HandState, targetPlayerId: string): Resul
   const nextPlayerId = pendingLayoffs[0];
   return {
     ok: true,
-    state: { ...state, pendingLayoffs, currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId) },
+    state: {
+      ...state,
+      pendingLayoffs,
+      currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId),
+    },
   };
 }
 

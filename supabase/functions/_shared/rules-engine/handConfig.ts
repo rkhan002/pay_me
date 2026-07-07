@@ -1,3 +1,5 @@
+// AUTO-GENERATED from packages/rules-engine/src/handConfig.ts — DO NOT EDIT.
+// Edit the source there, then run: npm run rules:sync
 import type { Rank } from "./deck.ts";
 
 export interface HandConfig {

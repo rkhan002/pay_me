@@ -1,3 +1,5 @@
+// AUTO-GENERATED from packages/rules-engine/src/deal.ts — DO NOT EDIT.
+// Edit the source there, then run: npm run rules:sync
 import { buildDeck, decksForPlayerCount, shuffle, type Card } from "./deck.ts";
 
 export interface DealResult {

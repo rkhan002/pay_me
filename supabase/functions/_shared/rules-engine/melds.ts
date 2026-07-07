@@ -1,3 +1,5 @@
+// AUTO-GENERATED from packages/rules-engine/src/melds.ts — DO NOT EDIT.
+// Edit the source there, then run: npm run rules:sync
 import { isWildCard, cardKey, type Card, type Rank } from "./deck.ts";
 
 export type MeldType = "SET" | "RUN";

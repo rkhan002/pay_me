@@ -9,7 +9,10 @@
   "scripts": {
     "test": "npm run test --workspace=@pay-me/rules-engine",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "rules:sync": "node scripts/sync-rules-engine.mjs",
+    "rules:check": "node scripts/sync-rules-engine.mjs --check",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
     "prettier": "^3.3.3"

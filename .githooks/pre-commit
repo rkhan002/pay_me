@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Fails the commit if the vendored Deno copy of the rules engine has drifted
+# from packages/rules-engine/src. Fix with: npm run rules:sync
+node scripts/sync-rules-engine.mjs --check || {
+  echo "pre-commit: rules-engine copies are out of sync. Run 'npm run rules:sync' and stage the result." >&2
+  exit 1
+}

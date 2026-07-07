@@ -1,19 +1,29 @@
-# Vendored copy - do not edit directly
+# Vendored copy — AUTO-GENERATED, do not edit
 
-This is a synced copy of `packages/rules-engine/src`. It exists only because
-Supabase's Edge Function deploy bundler can't reach outside the
-`supabase/functions/` directory tree (three-level-up imports like
-`../../../packages/rules-engine/src/x.ts` fail deployment with an internal
-error; one-level-up imports to a sibling `_shared/` folder work fine).
+These `.ts` files are a synced copy of `packages/rules-engine/src`, transformed
+for Deno (explicit `.ts` import extensions; `node:crypto` → the `crypto` global).
+They exist only because Supabase's Edge Function deploy bundler can't reach
+imports outside `supabase/functions/`.
 
-The canonical, unit-tested source of truth is `packages/rules-engine/src`
-(that's what `npm test` runs against). When that package changes, re-copy
-its files here before redeploying the Edge Functions:
+**The source of truth is `packages/rules-engine/src`** (that's what `npm test`
+runs against). Never hand-edit the files here — your change would be silently
+overwritten and the two copies would diverge.
+
+## Workflow
+
+After changing anything in `packages/rules-engine/src`:
 
 ```
-cp packages/rules-engine/src/*.ts supabase/functions/_shared/rules-engine/
+npm run rules:sync     # regenerate this folder, then commit the result
 ```
 
-A follow-up worth doing: a small script or CI step that does this copy
-automatically (or fails the build if the two are out of sync) so this can
-never silently drift.
+Guards that prevent drift:
+
+- **pre-commit hook** (`.githooks/pre-commit`, auto-configured by `npm install`
+  via the `prepare` script) runs `npm run rules:check` and blocks the commit if
+  this copy is stale.
+- **CI** (`.github/workflows/ci.yml`) runs `rules:check` + tests + Prettier.
+
+`npm run rules:check` exits non-zero and lists the offending files if this copy
+doesn't match what `rules:sync` would generate. `README.md` is preserved by the
+sync script; `index.ts` (the Node barrel export) is intentionally not copied.

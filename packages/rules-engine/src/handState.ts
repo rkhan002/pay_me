@@ -158,9 +158,15 @@ export function proposeMeld(
       ? { ...c, wildAs: wildAssignments[cardKey(c)] }
       : c,
   );
-  const finalCards = meldType === "RUN" ? sortRunCards(resolvedCards, state.wildRank) : resolvedCards;
+  const finalCards =
+    meldType === "RUN" ? sortRunCards(resolvedCards, state.wildRank) : resolvedCards;
 
-  const meld: TableMeld = { id: nextMeldId(), type: meldType, ownerId: playerId, cards: finalCards };
+  const meld: TableMeld = {
+    id: nextMeldId(),
+    type: meldType,
+    ownerId: playerId,
+    cards: finalCards,
+  };
   return {
     ok: true,
     state: {
@@ -240,6 +246,9 @@ function applyLayoff(
   }
 
   let resolvedCard = card;
+  // Same reasoning as proposeMeld: a wild going onto a RUN needs its rank
+  // pinned before it can be appended and the run re-sorted. A wild onto a
+  // SET has nothing ambiguous - it just represents the set's one shared rank.
   if (meld.type === "RUN" && isWildCard(card, state.wildRank)) {
     if (!wildAssignedRank) {
       return { ok: false, error: "This wild card needs a rank assigned to join the run" };
@@ -255,7 +264,8 @@ function applyLayoff(
   if (!remainingHand) return { ok: false, error: "You don't hold that card" };
 
   const updatedCards = [...meld.cards, resolvedCard];
-  const finalCards = meld.type === "RUN" ? sortRunCards(updatedCards, state.wildRank) : updatedCards;
+  const finalCards =
+    meld.type === "RUN" ? sortRunCards(updatedCards, state.wildRank) : updatedCards;
   const updatedMeld: TableMeld = { ...meld, cards: finalCards };
   const melds = [...state.melds];
   melds[meldIndex] = updatedMeld;
@@ -430,7 +440,11 @@ export function skipStalePlayer(state: HandState, targetPlayerId: string): Resul
   const nextPlayerId = pendingLayoffs[0];
   return {
     ok: true,
-    state: { ...state, pendingLayoffs, currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId) },
+    state: {
+      ...state,
+      pendingLayoffs,
+      currentPlayerIndex: state.playerOrder.indexOf(nextPlayerId),
+    },
   };
 }
 

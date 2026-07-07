@@ -1,3 +1,5 @@
+// AUTO-GENERATED from packages/rules-engine/src/scoring.ts — DO NOT EDIT.
+// Edit the source there, then run: npm run rules:sync
 import { isWildCard, type Card, type Rank } from "./deck.ts";
 
 /**
