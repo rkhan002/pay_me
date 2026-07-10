@@ -6,6 +6,7 @@ import {
   cardKey,
 } from "../state/store.js";
 import { renderCard, renderCardFan } from "./cards.js";
+import { commitOrder, sortByRank, sortBySuit, makeHandFanDraggable } from "./handOrder.js";
 import {
   startHand,
   drawStock,
@@ -650,10 +651,41 @@ export function renderTable(root) {
     handLabel.textContent = "Your hand";
     wrap.appendChild(handLabel);
 
+    // Card order in hand is a private, local-only preference (see
+    // ui/handOrder.js) - drag to rearrange, or one-tap auto-sort. None of it
+    // touches game state, so it's committed straight to local state + storage.
+    const setOrder = (cards) => {
+      commitOrder(state.hand?.id, cards);
+      setState({ myCards: cards });
+    };
+
+    if (state.myCards.length > 1) {
+      const sortBar = document.createElement("div");
+      sortBar.className = "hand-sort";
+      const mkSort = (label, sortFn) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn hand-sort-btn";
+        b.textContent = label;
+        b.addEventListener("click", () => setOrder(sortFn(state.myCards, state.hand?.wildRank)));
+        return b;
+      };
+      sortBar.appendChild(mkSort("Sort by rank", sortByRank));
+      sortBar.appendChild(mkSort("Sort by suit", sortBySuit));
+      wrap.appendChild(sortBar);
+    }
+
     const fan = renderCardFan(state.myCards, {
       selectedKeys: state.selectedCardKeys,
       wildRank: state.hand?.wildRank,
       onClick: (card) => toggleCardSelection(card),
+    });
+    makeHandFanDraggable(fan, (keys) => {
+      const byKey = new Map(state.myCards.map((c) => [cardKey(c), c]));
+      const reordered = keys.map((k) => byKey.get(k)).filter(Boolean);
+      // Guard against a torn drag (e.g. a realtime re-render mid-drag): only
+      // commit when we still have exactly the same set of cards, reordered.
+      if (reordered.length === state.myCards.length) setOrder(reordered);
     });
     wrap.appendChild(fan);
   }

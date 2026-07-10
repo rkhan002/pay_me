@@ -5,6 +5,7 @@
 import { supabase } from "./supabaseClient.js";
 import { setState } from "../state/store.js";
 import { playSfx } from "../audio/audioManager.js";
+import { orderCards } from "../ui/handOrder.js";
 
 // Mirrors STALE_MS in supabase/functions/_shared/handRepo.ts - this copy is
 // purely cosmetic (whether an avatar looks dimmed), so it doesn't need to
@@ -230,7 +231,9 @@ export async function loadHand(handId) {
     pendingFinalTurns: hand.pending_final_turns ?? [],
     pendingLayoffs: hand.pending_layoffs ?? [],
   };
-  const nextMyCards = myHandPlayer?.hand_cards ?? [];
+  // Arrange the player's own hand by their saved drag/sort preference for
+  // this hand (purely local; see ui/handOrder.js). Deal order if none.
+  const nextMyCards = orderCards(hand.id, myHandPlayer?.hand_cards ?? []);
   const nextMelds = (melds ?? []).map((m) => ({
     id: m.id,
     ownerPlayerId: m.owner_player_id,

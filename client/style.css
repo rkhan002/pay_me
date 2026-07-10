@@ -750,6 +750,47 @@ body {
   transform: translateY(-6px);
 }
 
+/* ---------- Rearranging the hand (drag + auto-sort) ---------- */
+
+/* One-tap auto-sort buttons, sitting just above the hand. */
+.hand-sort {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.hand-sort-btn {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.6rem;
+  border-color: var(--pink);
+}
+
+/* Hand cards are draggable to rearrange. `touch-action: pan-y` lets a
+   vertical swipe still scroll the page while a horizontal drag is delivered
+   to our pointer handlers; `user-select: none` stops a drag from selecting
+   the rank text underneath. The grab cursor advertises the affordance. */
+.hand-fan .card {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The card currently being dragged: lifted, brightened, and above its
+   neighbours. Higher specificity than .card:hover so the hover lift doesn't
+   fight the drag. */
+.hand-fan .card--dragging,
+.hand-fan .card-wrap:has(.card--dragging) {
+  cursor: grabbing;
+  z-index: 100 !important;
+  transform: translateY(-10px) scale(1.05);
+  opacity: 0.92;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
 .card-wrap {
   position: relative;
   display: inline-flex;
