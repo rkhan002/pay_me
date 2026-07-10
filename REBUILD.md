@@ -8,9 +8,9 @@ server-authoritative architecture:
   meld/run validation, scoring, turn state machine). No I/O, fully unit tested,
   importable from both Supabase Edge Functions and this package's own test suite.
 - `supabase/` — Postgres schema + RLS policies, and Edge Functions that wrap the
-  rules engine to validate every player intent server-side. *(coming next)*
+  rules engine to validate every player intent server-side. _(coming next)_
 - `client/` — vanilla JS/ES module client, "Neon tabletop" visual direction. Renders
-  state and sends intents only; holds no game logic. *(coming next)*
+  state and sends intents only; holds no game logic. _(coming next)_
 
 Run the rules engine tests:
 

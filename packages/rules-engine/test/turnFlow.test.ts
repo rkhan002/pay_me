@@ -246,7 +246,6 @@ describe("skipStalePlayer", () => {
     expect(result.playerOrder[result.currentPlayerIndex]).toBe("p2");
   });
 
-
   it("layoff phase: removes the target and moves to the next pending player", () => {
     const state = baseState({
       phase: "layoff",

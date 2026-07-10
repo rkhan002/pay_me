@@ -125,9 +125,7 @@ describe("runArrangements", () => {
     // case: the wild could be a 9 (9-10-J-Q) or a K (10-J-Q-K).
     const cards = [card("Q", "H"), card("10", "H"), joker(), card("J", "H")];
     const arrangements = runArrangements(cards, "3");
-    const summarized = arrangements
-      .map((a) => a.orderedRanks.join(","))
-      .sort();
+    const summarized = arrangements.map((a) => a.orderedRanks.join(",")).sort();
     expect(summarized).toEqual(["10,J,Q,K", "9,10,J,Q"].sort());
     for (const arrangement of arrangements) {
       expect(arrangement.wildRanks).toHaveLength(1);

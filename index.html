@@ -156,7 +156,10 @@
         font-family: inherit;
         cursor: pointer;
         font-weight: 600;
-        transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+        transition:
+          opacity 0.15s,
+          transform 0.1s,
+          box-shadow 0.15s;
       }
 
       .btn:hover {
@@ -319,7 +322,12 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        background: radial-gradient(ellipse 150% 80% at 50% 0%, #346838 0%, #1e4c22 55%, #142e18 100%);
+        background: radial-gradient(
+          ellipse 150% 80% at 50% 0%,
+          #346838 0%,
+          #1e4c22 55%,
+          #142e18 100%
+        );
       }
 
       .opponents-area {
@@ -353,8 +361,20 @@
         height: 40px;
         background-color: var(--card-back);
         background-image:
-          repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.07) 4px, rgba(255,255,255,0.07) 5px),
-          repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.07) 4px, rgba(255,255,255,0.07) 5px);
+          repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 4px,
+            rgba(255, 255, 255, 0.07) 4px,
+            rgba(255, 255, 255, 0.07) 5px
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 4px,
+            rgba(255, 255, 255, 0.07) 4px,
+            rgba(255, 255, 255, 0.07) 5px
+          );
         border-radius: 4px;
         border: 1.5px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
@@ -410,7 +430,9 @@
         position: relative;
         box-shadow: var(--card-shadow);
         flex-shrink: 0;
-        transition: transform 0.15s, box-shadow 0.15s;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
       }
 
       .card.clickable {
@@ -419,7 +441,9 @@
 
       .card.clickable:hover {
         transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28), 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow:
+          0 8px 22px rgba(0, 0, 0, 0.28),
+          0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
       .card.red {
@@ -434,7 +458,9 @@
         outline: 3px solid var(--accent);
         outline-offset: 1px;
         transform: translateY(-10px);
-        box-shadow: 0 10px 26px rgba(26, 86, 160, 0.32), 0 2px 5px rgba(0, 0, 0, 0.14);
+        box-shadow:
+          0 10px 26px rgba(26, 86, 160, 0.32),
+          0 2px 5px rgba(0, 0, 0, 0.14);
       }
 
       .card.wild-card {
@@ -495,21 +521,41 @@
         border-radius: 9px;
         background-color: var(--card-back);
         background-image:
-          repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.07) 6px, rgba(255,255,255,0.07) 7px),
-          repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(255,255,255,0.07) 6px, rgba(255,255,255,0.07) 7px);
+          repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 6px,
+            rgba(255, 255, 255, 0.07) 6px,
+            rgba(255, 255, 255, 0.07) 7px
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 6px,
+            rgba(255, 255, 255, 0.07) 6px,
+            rgba(255, 255, 255, 0.07) 7px
+          );
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        box-shadow: 4px 4px 0 rgba(0,0,0,0.18), 2px 2px 0 rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.35);
-        transition: transform 0.12s, box-shadow 0.12s;
+        box-shadow:
+          4px 4px 0 rgba(0, 0, 0, 0.18),
+          2px 2px 0 rgba(0, 0, 0, 0.12),
+          0 4px 16px rgba(0, 0, 0, 0.35);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
         border: 1.5px solid rgba(255, 255, 255, 0.18);
         position: relative;
       }
 
       .stock-pile:hover {
         transform: translateY(-4px);
-        box-shadow: 4px 8px 0 rgba(0,0,0,0.14), 2px 4px 0 rgba(0,0,0,0.1), 0 10px 24px rgba(0,0,0,0.4);
+        box-shadow:
+          4px 8px 0 rgba(0, 0, 0, 0.14),
+          2px 4px 0 rgba(0, 0, 0, 0.1),
+          0 10px 24px rgba(0, 0, 0, 0.4);
       }
 
       .my-hand-area {
@@ -591,8 +637,13 @@
       }
 
       @keyframes pulse-turn {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(39, 107, 17, 0.25); }
-        50% { box-shadow: 0 0 0 6px rgba(39, 107, 17, 0); }
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(39, 107, 17, 0.25);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(39, 107, 17, 0);
+        }
       }
 
       .turn-indicator.waiting {
@@ -648,7 +699,12 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        background: radial-gradient(ellipse 150% 80% at 50% 0%, #346838 0%, #1e4c22 55%, #142e18 100%);
+        background: radial-gradient(
+          ellipse 150% 80% at 50% 0%,
+          #346838 0%,
+          #1e4c22 55%,
+          #142e18 100%
+        );
       }
 
       .layoff-status {
@@ -964,7 +1020,9 @@
         color: var(--text2);
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
         z-index: 50;
-        transition: transform 0.15s, box-shadow 0.15s;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
       }
 
       .help-btn:hover {
@@ -986,16 +1044,9 @@
         <h2>Start or join a game</h2>
         <div class="field">
           <label>Your name</label
-          ><input
-            type="text"
-            id="player-name"
-            placeholder="Enter your name"
-            maxlength="20"
-          />
+          ><input type="text" id="player-name" placeholder="Enter your name" maxlength="20" />
         </div>
-        <button class="btn btn-primary" onclick="hostGame()">
-          Create new game
-        </button>
+        <button class="btn btn-primary" onclick="hostGame()">Create new game</button>
         <div class="divider">— or —</div>
         <div class="field">
           <label>Room code</label
@@ -1007,9 +1058,7 @@
             style="text-transform: uppercase; letter-spacing: 0.15em"
           />
         </div>
-        <button class="btn btn-secondary" onclick="joinGame()">
-          Join game
-        </button>
+        <button class="btn btn-secondary" onclick="joinGame()">Join game</button>
       </div>
       <div class="lobby-card" id="lobby-waiting" style="display: none">
         <h2 id="waiting-title">Waiting for players...</h2>
@@ -1025,19 +1074,10 @@
         >
           + Add bot player
         </button>
-        <button
-          class="btn btn-primary"
-          id="start-btn"
-          style="display: none"
-          onclick="startGame()"
-        >
+        <button class="btn btn-primary" id="start-btn" style="display: none" onclick="startGame()">
           Start game
         </button>
-        <button
-          class="btn btn-secondary"
-          style="margin-top: 0.5rem"
-          onclick="leaveGame()"
-        >
+        <button class="btn btn-secondary" style="margin-top: 0.5rem" onclick="leaveGame()">
           Leave
         </button>
       </div>
@@ -1045,16 +1085,11 @@
     <div id="game" class="screen">
       <div class="game-header">
         <div class="hand-info">
-          Hand <strong id="hdr-hand">1</strong> of 11 ·
-          <span id="hdr-cards">3</span> cards
+          Hand <strong id="hdr-hand">1</strong> of 11 · <span id="hdr-cards">3</span> cards
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center">
           <span class="wild-badge" id="hdr-wild"></span
-          ><button
-            class="action-btn"
-            onclick="showScores()"
-            style="padding: 4px 9px"
-          >
+          ><button class="action-btn" onclick="showScores()" style="padding: 4px 9px">
             Scores
           </button>
           <button
@@ -1127,23 +1162,11 @@
           </div>
           <div class="my-hand-cards" id="my-hand"></div>
           <div class="hand-actions">
-            <span class="turn-indicator waiting" id="turn-indicator"
-              >Waiting</span
-            >
-            <button
-              class="action-btn"
-              id="btn-discard"
-              disabled
-              onclick="discardSelected()"
-            >
+            <span class="turn-indicator waiting" id="turn-indicator">Waiting</span>
+            <button class="action-btn" id="btn-discard" disabled onclick="discardSelected()">
               Discard
             </button>
-            <button
-              class="action-btn danger"
-              id="btn-pay-me"
-              disabled
-              onclick="declarePay()"
-            >
+            <button class="action-btn danger" id="btn-pay-me" disabled onclick="declarePay()">
               Pay Me!
             </button>
           </div>
@@ -1154,20 +1177,12 @@
     <div id="layoff" class="screen">
       <div class="layoff-header">
         <h2>Lay-off phase</h2>
-        <button
-          class="action-btn"
-          onclick="showScores()"
-          style="padding: 4px 9px"
-        >
-          Scores
-        </button>
+        <button class="action-btn" onclick="showScores()" style="padding: 4px 9px">Scores</button>
       </div>
       <div class="layoff-body">
         <div class="layoff-status" id="layoff-status"></div>
         <div class="caller-melds-section">
-          <div class="section-title" id="caller-melds-title">
-            Caller's melds
-          </div>
+          <div class="section-title" id="caller-melds-title">Caller's melds</div>
           <div id="caller-melds-display"></div>
         </div>
         <div id="all-players-layoff"></div>
@@ -1184,13 +1199,7 @@
         <div class="subtitle" id="end-hand-sub"></div>
         <div id="end-hand-content"></div>
         <div class="modal-actions">
-          <button
-            class="btn btn-primary"
-            id="end-hand-btn"
-            onclick="nextHand()"
-          >
-            Next hand
-          </button>
+          <button class="btn btn-primary" id="end-hand-btn" onclick="nextHand()">Next hand</button>
         </div>
       </div>
     </div>
@@ -1200,12 +1209,7 @@
         <div class="subtitle">Lower score is better · $ = declared Pay Me</div>
         <div id="scores-content"></div>
         <div class="modal-actions">
-          <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-scores')"
-          >
-            Close
-          </button>
+          <button class="btn btn-secondary" onclick="closeModal('modal-scores')">Close</button>
         </div>
       </div>
     </div>
@@ -1215,9 +1219,7 @@
         <div class="subtitle">All 11 hands have been played.</div>
         <div id="game-over-content"></div>
         <div class="modal-actions">
-          <button class="btn btn-primary" onclick="returnToLobby()">
-            New game
-          </button>
+          <button class="btn btn-primary" onclick="returnToLobby()">New game</button>
         </div>
       </div>
     </div>
@@ -1228,42 +1230,21 @@
           Select 3+ cards → Add meld. Mark one leftover as discard if needed.
         </div>
         <div class="pin-hint" id="pin-hint" style="display: none">
-          Wild-rank cards show a green "nat" badge — they play as naturals by
-          default. Select one alone and click "Force as wild" to use it as a
-          wild substitute instead.
+          Wild-rank cards show a green "nat" badge — they play as naturals by default. Select one
+          alone and click "Force as wild" to use it as a wild substitute instead.
         </div>
         <div
-          style="
-            font-size: calc(0.8rem * var(--fs));
-            color: var(--text2);
-            margin-bottom: 0.5rem;
-          "
+          style="font-size: calc(0.8rem * var(--fs)); color: var(--text2); margin-bottom: 0.5rem"
         >
           Remaining cards:
         </div>
         <div
           id="meld-hand"
-          style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            min-height: 56px;
-            margin-bottom: 0.75rem;
-          "
+          style="display: flex; flex-wrap: wrap; gap: 5px; min-height: 56px; margin-bottom: 0.75rem"
         ></div>
-        <div
-          style="
-            background: var(--surface2);
-            border-radius: var(--radius-sm);
-            padding: 0.75rem;
-          "
-        >
+        <div style="background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem">
           <div
-            style="
-              font-size: calc(0.75rem * var(--fs));
-              color: var(--text3);
-              margin-bottom: 0.5rem;
-            "
+            style="font-size: calc(0.75rem * var(--fs)); color: var(--text3); margin-bottom: 0.5rem"
           >
             CONFIRMED MELDS
           </div>
@@ -1290,9 +1271,7 @@
           <button class="btn btn-primary" id="btn-meld-submit" onclick="handleMeldSubmit()">
             Submit & call Pay Me!
           </button>
-          <button class="btn btn-secondary" onclick="cancelMeld()">
-            &#8592; Back
-          </button>
+          <button class="btn btn-secondary" onclick="cancelMeld()">&#8592; Back</button>
         </div>
       </div>
     </div>
@@ -1300,191 +1279,212 @@
       <div class="modal">
         <h2>Pay Me — Quick Rules</h2>
         <div class="subtitle">Contract Rummy for 2–8 players · 11 hands</div>
-        <div
-          style="
-            font-size: calc(0.875rem * var(--fs));
-            line-height: 1.7;
-            color: var(--text2);
-          "
-        >
+        <div style="font-size: calc(0.875rem * var(--fs)); line-height: 1.7; color: var(--text2)">
           <p>
-            <strong style="color: var(--text)">Object:</strong> Be first to form
-            your entire hand into melds.
+            <strong style="color: var(--text)">Object:</strong> Be first to form your entire hand
+            into melds.
+          </p>
+          <br />
+          <p><strong style="color: var(--text)">Hands:</strong> Hand 1 = 3 cards … Hand 11 = 13.</p>
+          <br />
+          <p>
+            <strong style="color: var(--text)">Wilds:</strong> Jokers always wild. Wild-rank cards
+            default to natural; use "Force as wild" to change. Max half of any meld can be wild. At
+            least 2 natural cards per meld.
           </p>
           <br />
           <p>
-            <strong style="color: var(--text)">Hands:</strong> Hand 1 = 3 cards
-            … Hand 11 = 13.
+            <strong style="color: var(--text)">Melds:</strong> Set = 3–4 same rank, different suits.
+            Run = 3+ consecutive same suit.
           </p>
           <br />
           <p>
-            <strong style="color: var(--text)">Wilds:</strong> Jokers always
-            wild. Wild-rank cards default to natural; use "Force as wild" to
-            change. Max half of any meld can be wild. At least 2 natural cards
-            per meld.
+            <strong style="color: var(--text)">Turn:</strong> Draw from stock or discard, then
+            discard one card.
           </p>
           <br />
           <p>
-            <strong style="color: var(--text)">Melds:</strong> Set = 3–4 same
-            rank, different suits. Run = 3+ consecutive same suit.
+            <strong style="color: var(--text)">Going out:</strong> Whole hand melds → "Pay Me!"
+            Caller scores 0 ($). One final turn each. Then lay-off phase.
           </p>
           <br />
           <p>
-            <strong style="color: var(--text)">Turn:</strong> Draw from stock or
-            discard, then discard one card.
-          </p>
-          <br />
-          <p>
-            <strong style="color: var(--text)">Going out:</strong> Whole hand
-            melds → "Pay Me!" Caller scores 0 ($). One final turn each. Then
-            lay-off phase.
-          </p>
-          <br />
-          <p>
-            <strong style="color: var(--text)">Scoring:</strong> Caller=$0.
-            Others: Wild=0, A=15, K–10=10, 9–2=face value.
+            <strong style="color: var(--text)">Scoring:</strong> Caller=$0. Others: Wild=0, A=15,
+            K–10=10, 9–2=face value.
           </p>
         </div>
         <div class="modal-actions">
-          <button class="btn btn-primary" onclick="closeModal('modal-help')">
-            Got it
-          </button>
+          <button class="btn btn-primary" onclick="closeModal('modal-help')">Got it</button>
         </div>
       </div>
     </div>
     <button class="help-btn" onclick="showHelp()" title="Rules">?</button>
     <script>
       // ─── Supabase realtime multiplayer ────────────────────────────────────────
-      const SUPABASE_URL      = 'https://zyvxibowrftsxjmetero.supabase.co'; // ← replace
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5dnhpYm93cmZ0c3hqbWV0ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTgzNzIsImV4cCI6MjA4OTE5NDM3Mn0.4SELs5G7XHyfMbLxVBJ2Q9wap12lXTT3rl80law2ARE';                    // ← replace
+      const SUPABASE_URL = "https://zyvxibowrftsxjmetero.supabase.co"; // ← replace
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5dnhpYm93cmZ0c3hqbWV0ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTgzNzIsImV4cCI6MjA4OTE5NDM3Mn0.4SELs5G7XHyfMbLxVBJ2Q9wap12lXTT3rl80law2ARE"; // ← replace
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const _urlParams = new URLSearchParams(location.search);
-      let myPlayerId = _urlParams.get('pid') || crypto.randomUUID();
-      let sbChannel  = null;
-      let _lastSyncAt = '';
+      let myPlayerId = _urlParams.get("pid") || crypto.randomUUID();
+      let sbChannel = null;
+      let _lastSyncAt = "";
 
       function setUrlParams(code) {
-        history.replaceState(null, '', `?room=${code}&pid=${myPlayerId}`);
+        history.replaceState(null, "", `?room=${code}&pid=${myPlayerId}`);
       }
       function clearUrlParams() {
-        history.replaceState(null, '', location.pathname);
+        history.replaceState(null, "", location.pathname);
       }
       async function restoreSession() {
-        const code = _urlParams.get('room');
-        const pid  = _urlParams.get('pid');
+        const code = _urlParams.get("room");
+        const pid = _urlParams.get("pid");
         if (!code || !pid) return;
-        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
-        if (error || !data) { clearUrlParams(); return; }
+        const { data, error } = await sb.from("rooms").select("state").eq("code", code).single();
+        if (error || !data) {
+          clearUrlParams();
+          return;
+        }
         applyRemoteState(data.state);
         G.roomCode = code;
-        const myPlayer = G.players.find(p => p.id === myPlayerId);
-        if (!myPlayer) { clearUrlParams(); return; }
+        const myPlayer = G.players.find((p) => p.id === myPlayerId);
+        if (!myPlayer) {
+          clearUrlParams();
+          return;
+        }
         playerName = myPlayer.name;
         subscribeRoom(code);
-        if (G.phase === 'lobby') {
+        if (G.phase === "lobby") {
           showWaitingLobby();
         } else {
           renderCurrentPhase();
-          if (G.isHost && G.phase === 'playing' && G.players[G.currentTurn]?.isBot)
+          if (G.isHost && G.phase === "playing" && G.players[G.currentTurn]?.isBot)
             setTimeout(botTurn, 1200);
         }
       }
 
       function serializeG() {
-        const { myIdx, isHost, selectedCards, confirmedMelds, meldSelecting,
-                layoffSelected, layoffDone, ...rest } = G;
+        const {
+          myIdx,
+          isHost,
+          selectedCards,
+          confirmedMelds,
+          meldSelecting,
+          layoffSelected,
+          layoffDone,
+          ...rest
+        } = G;
         return { ...rest, layoffDone: [...G.layoffDone], _updatedBy: myPlayerId };
       }
       function applyRemoteState(raw) {
         const { _updatedBy, layoffDone, ...rest } = raw;
         const save = {
           myIdx: G.myIdx,
-          sel: G.selectedCards, lSel: G.layoffSelected,
-          cm:  G.confirmedMelds, ms:  G.meldSelecting,
+          sel: G.selectedCards,
+          lSel: G.layoffSelected,
+          cm: G.confirmedMelds,
+          ms: G.meldSelecting,
         };
         Object.assign(G, rest);
-        G.layoffDone     = new Set(layoffDone || []);
-        G.selectedCards  = save.sel;
+        G.layoffDone = new Set(layoffDone || []);
+        G.selectedCards = save.sel;
         G.layoffSelected = save.lSel;
         G.confirmedMelds = save.cm;
-        G.meldSelecting  = save.ms;
-        const idx = G.players.findIndex(p => p.id === myPlayerId);
-        if (idx >= 0) { G.myIdx = idx; G.isHost = idx === 0; }
-        else if (save.myIdx >= 0) { G.myIdx = save.myIdx; }
+        G.meldSelecting = save.ms;
+        const idx = G.players.findIndex((p) => p.id === myPlayerId);
+        if (idx >= 0) {
+          G.myIdx = idx;
+          G.isHost = idx === 0;
+        } else if (save.myIdx >= 0) {
+          G.myIdx = save.myIdx;
+        }
       }
       async function syncState() {
         if (!G.roomCode) return;
-        await sb.from('rooms')
+        await sb
+          .from("rooms")
           .update({ state: serializeG(), updated_at: new Date().toISOString() })
-          .eq('code', G.roomCode);
+          .eq("code", G.roomCode);
       }
       function subscribeRoom(code) {
         if (sbChannel) sb.removeChannel(sbChannel);
-        sbChannel = sb.channel('room_' + code)
-          .on('postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
-            payload => {
+        sbChannel = sb
+          .channel("room_" + code)
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "rooms", filter: "code=eq." + code },
+            (payload) => {
               const raw = payload.new?.state;
               if (!raw || raw._updatedBy === myPlayerId) return;
               if (payload.new?.updated_at) _lastSyncAt = payload.new.updated_at;
               onRemoteState(raw);
-            })
-          .on('postgres_changes',
-            { event: 'DELETE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
-            () => location.reload())
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "DELETE", schema: "public", table: "rooms", filter: "code=eq." + code },
+            () => location.reload(),
+          )
           .subscribe();
       }
 
       async function backgroundSync() {
-        if (!G.roomCode || G.phase === 'lobby' || G.phase === 'game-over') return;
-        const { data } = await sb.from('rooms')
-          .select('state, updated_at')
-          .eq('code', G.roomCode)
+        if (!G.roomCode || G.phase === "lobby" || G.phase === "game-over") return;
+        const { data } = await sb
+          .from("rooms")
+          .select("state, updated_at")
+          .eq("code", G.roomCode)
           .single();
         if (!data?.state) return;
-        if (data.state._updatedBy === myPlayerId) return;   // our own last write
-        if (data.updated_at <= _lastSyncAt) return;          // already applied
+        if (data.state._updatedBy === myPlayerId) return; // our own last write
+        if (data.updated_at <= _lastSyncAt) return; // already applied
         _lastSyncAt = data.updated_at;
         onRemoteState(data.state);
       }
       setInterval(backgroundSync, 8000);
       async function afterAction() {
         await syncState();
-        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
+        if (
+          G.isHost &&
+          (G.phase === "playing" || G.phase === "pay-me") &&
+          G.players[G.currentTurn]?.isBot
+        )
           setTimeout(botTurn, 600 + Math.random() * 500);
       }
       function renderCurrentPhase() {
         switch (G.phase) {
-          case 'lobby':
+          case "lobby":
             renderPlayersList();
             break;
-          case 'playing':
-          case 'pay-me':
-            switchScreen('game');
+          case "playing":
+          case "pay-me":
+            switchScreen("game");
             renderGame();
             break;
-          case 'layoff':
-            switchScreen('layoff');
+          case "layoff":
+            switchScreen("layoff");
             renderLayoffScreen();
             if (G.isHost) {
               const next = G.layoffOrder[G.layoffIdx];
               if (next !== undefined && G.players[next]?.isBot) setTimeout(botLayoff, 700);
             }
             break;
-          case 'end-hand': {
-            switchScreen('game');
+          case "end-hand": {
+            switchScreen("game");
             renderGame();
-            const caller = G.payMeCaller, cn = caller >= 0 ? G.players[caller].name : 'Nobody';
-            document.getElementById('end-hand-title').textContent   = `Hand ${G.hand} complete`;
-            document.getElementById('end-hand-sub').textContent     = `${cn} called Pay Me!`;
-            document.getElementById('end-hand-content').innerHTML   = buildScorecardHTML(true);
-            document.getElementById('end-hand-btn').textContent     = G.hand === 11 ? 'See final results' : 'Next hand';
-            document.getElementById('end-hand-btn').disabled        = !G.isHost;
-            document.getElementById('modal-end-hand').style.display = 'flex';
+            const caller = G.payMeCaller,
+              cn = caller >= 0 ? G.players[caller].name : "Nobody";
+            document.getElementById("end-hand-title").textContent = `Hand ${G.hand} complete`;
+            document.getElementById("end-hand-sub").textContent = `${cn} called Pay Me!`;
+            document.getElementById("end-hand-content").innerHTML = buildScorecardHTML(true);
+            document.getElementById("end-hand-btn").textContent =
+              G.hand === 11 ? "See final results" : "Next hand";
+            document.getElementById("end-hand-btn").disabled = !G.isHost;
+            document.getElementById("modal-end-hand").style.display = "flex";
             break;
           }
-          case 'game-over':
-            switchScreen('game');
+          case "game-over":
+            switchScreen("game");
             showGameOver();
             break;
         }
@@ -1492,7 +1492,7 @@
       function onRemoteState(raw) {
         const prevPhase = G.phase;
         applyRemoteState(raw);
-        const isNewPayMe = G.phase === 'pay-me' && prevPhase !== 'pay-me';
+        const isNewPayMe = G.phase === "pay-me" && prevPhase !== "pay-me";
         renderCurrentPhase();
         if (isNewPayMe) {
           showToast(
@@ -1500,27 +1500,17 @@
             5000,
           );
         }
-        if (G.isHost && (G.phase === 'playing' || G.phase === 'pay-me') && G.players[G.currentTurn]?.isBot)
+        if (
+          G.isHost &&
+          (G.phase === "playing" || G.phase === "pay-me") &&
+          G.players[G.currentTurn]?.isBot
+        )
           setTimeout(botTurn, 800);
       }
       // ──────────────────────────────────────────────────────────────────────────
 
       const SUITS = ["♠", "♥", "♦", "♣"],
-        RANKS = [
-          "A",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9",
-          "10",
-          "J",
-          "Q",
-          "K",
-        ],
+        RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
         SUIT_COLOR = { "♠": "black", "♣": "black", "♥": "red", "♦": "red" },
         RANK_VAL = {
           A: 15,
@@ -1567,8 +1557,7 @@
         let d = [];
         for (let i = 0; i < n; i++) {
           for (let s of SUITS)
-            for (let r of RANKS)
-              d.push({ suit: s, rank: r, id: `${r}${s}-${i}` });
+            for (let r of RANKS) d.push({ suit: s, rank: r, id: `${r}${s}-${i}` });
           d.push({ suit: "★", rank: "JK", id: `JK1-${i}`, joker: true });
           d.push({ suit: "★", rank: "JK", id: `JK2-${i}`, joker: true });
         }
@@ -1597,8 +1586,7 @@
         return RANKS.indexOf(r);
       }
       function validateMeldCore(cards, hand, fw) {
-        if (cards.length < 3)
-          return { valid: false, msg: "A meld needs at least 3 cards." };
+        if (cards.length < 3) return { valid: false, msg: "A meld needs at least 3 cards." };
         const wilds = cards.filter((c) => effectivelyWild(c, hand, fw)),
           nats = cards.filter((c) => !effectivelyWild(c, hand, fw));
         if (nats.length < 2)
@@ -1610,24 +1598,21 @@
           return { valid: false, msg: "Too many wilds." };
         const ranks = nats.map((c) => c.rank);
         if (ranks.every((r) => r === ranks[0])) {
-        if (new Set(nats.map((c) => c.id)).size < nats.length)
-  return { valid: false, msg: "Duplicate cards in set." };
-          if (cards.length > 4)
-            return { valid: false, msg: "Set max 4 cards." };
+          if (new Set(nats.map((c) => c.id)).size < nats.length)
+            return { valid: false, msg: "Duplicate cards in set." };
+          if (cards.length > 4) return { valid: false, msg: "Set max 4 cards." };
           return { valid: true, type: "set" };
         }
         if (new Set(nats.map((c) => c.suit)).size !== 1)
           return { valid: false, msg: "Not a valid set or run." };
         const tryRun = (idxs) => {
           const sorted = [...idxs].sort((a, b) => a - b);
-          for (let i = 1; i < sorted.length; i++)
-            if (sorted[i] === sorted[i - 1]) return null; // duplicate
+          for (let i = 1; i < sorted.length; i++) if (sorted[i] === sorted[i - 1]) return null; // duplicate
           const needed = sorted[sorted.length - 1] - sorted[0] + 1 - nats.length;
           return wilds.length >= needed ? sorted : null;
         };
         const loIdxs = nats.map((c) => rankIndex(c.rank));
-        if (loIdxs.some((i) => i === -1))
-          return { valid: false, msg: "Unknown card rank." };
+        if (loIdxs.some((i) => i === -1)) return { valid: false, msg: "Unknown card rank." };
         // Try ace-low first; if Ace present also try ace-high (index 13)
         const hasAce = nats.some((c) => c.rank === "A");
         if (tryRun(loIdxs)) return { valid: true, type: "run" };
@@ -1642,9 +1627,7 @@
         if (r1.valid) return r1;
         const aw = new Set([
           ...fw,
-          ...cards
-            .filter((c) => !c.joker && c.rank === WILD_BY_HAND[hand])
-            .map((c) => c.id),
+          ...cards.filter((c) => !c.joker && c.rank === WILD_BY_HAND[hand]).map((c) => c.id),
         ]);
         const r2 = validateMeldCore(cards, hand, aw);
         if (r2.valid) return r2;
@@ -1735,13 +1718,19 @@
       }
       async function hostGame() {
         playerName = document.getElementById("player-name").value.trim();
-        if (!playerName) { alert("Please enter your name"); return; }
+        if (!playerName) {
+          alert("Please enter your name");
+          return;
+        }
         G.roomCode = genCode();
-        G.players  = [{ name: playerName, isHost: true, id: myPlayerId }];
-        G.myIdx    = 0;
-        G.isHost   = true;
-        const { error } = await sb.from('rooms').insert({ code: G.roomCode, state: serializeG() });
-        if (error) { alert('Could not create room: ' + error.message); return; }
+        G.players = [{ name: playerName, isHost: true, id: myPlayerId }];
+        G.myIdx = 0;
+        G.isHost = true;
+        const { error } = await sb.from("rooms").insert({ code: G.roomCode, state: serializeG() });
+        if (error) {
+          alert("Could not create room: " + error.message);
+          return;
+        }
         subscribeRoom(G.roomCode);
         setUrlParams(G.roomCode);
         showWaitingLobby();
@@ -1749,21 +1738,37 @@
       async function joinGame() {
         playerName = document.getElementById("player-name").value.trim();
         const code = document.getElementById("join-code").value.trim().toUpperCase();
-        if (!playerName) { alert("Enter your name"); return; }
-        if (code.length !== 4) { alert("Enter valid room code"); return; }
-        const { data, error } = await sb.from('rooms').select('state').eq('code', code).single();
-        if (error || !data) { alert('Room not found. Check the code.'); return; }
+        if (!playerName) {
+          alert("Enter your name");
+          return;
+        }
+        if (code.length !== 4) {
+          alert("Enter valid room code");
+          return;
+        }
+        const { data, error } = await sb.from("rooms").select("state").eq("code", code).single();
+        if (error || !data) {
+          alert("Room not found. Check the code.");
+          return;
+        }
         const raw = data.state;
-        if (raw.phase !== 'lobby') { alert('Game already in progress.'); return; }
+        if (raw.phase !== "lobby") {
+          alert("Game already in progress.");
+          return;
+        }
         applyRemoteState(raw);
         G.roomCode = code;
-        G.myIdx    = G.players.length;
-        G.isHost   = false;
+        G.myIdx = G.players.length;
+        G.isHost = false;
         G.players.push({ name: playerName, isBot: false, id: myPlayerId });
-        const { error: e2 } = await sb.from('rooms')
+        const { error: e2 } = await sb
+          .from("rooms")
           .update({ state: serializeG(), updated_at: new Date().toISOString() })
-          .eq('code', code);
-        if (e2) { alert('Could not join room.'); return; }
+          .eq("code", code);
+        if (e2) {
+          alert("Could not join room.");
+          return;
+        }
         subscribeRoom(code);
         setUrlParams(code);
         showWaitingLobby();
@@ -1772,17 +1777,22 @@
         document.getElementById("lobby-home").style.display = "none";
         document.getElementById("lobby-waiting").style.display = "";
         document.getElementById("room-code-show").textContent = G.roomCode;
-        document.getElementById("waiting-title").textContent = G.isHost ? "Your game room" : "Joined!";
+        document.getElementById("waiting-title").textContent = G.isHost
+          ? "Your game room"
+          : "Joined!";
         if (G.isHost) {
-          document.getElementById("start-btn").style.display   = "";
+          document.getElementById("start-btn").style.display = "";
           document.getElementById("add-bot-btn").style.display = "";
         }
         renderPlayersList();
       }
       function addBot() {
-        const names = ["Bot Alex","Bot Sam","Bot Jordan","Bot Taylor","Bot Morgan"];
-        const botCount = G.players.filter(p => p.isBot).length;
-        if (G.players.length >= 8) { alert("Max 8 players."); return; }
+        const names = ["Bot Alex", "Bot Sam", "Bot Jordan", "Bot Taylor", "Bot Morgan"];
+        const botCount = G.players.filter((p) => p.isBot).length;
+        if (G.players.length >= 8) {
+          alert("Max 8 players.");
+          return;
+        }
         G.players.push({ name: names[botCount] || `Bot ${botCount + 1}`, isBot: true });
         renderPlayersList();
         syncState();
@@ -1795,18 +1805,18 @@
           )
           .join("");
         document.getElementById("waiting-msg").textContent =
-          G.players.length < 2
-            ? "Waiting for players..."
-            : G.players.length + " players ready.";
+          G.players.length < 2 ? "Waiting for players..." : G.players.length + " players ready.";
       }
       function confirmLeave() {
-        if (confirm('Leave the game? This will end the game for all players.')) leaveGame();
+        if (confirm("Leave the game? This will end the game for all players.")) leaveGame();
       }
       async function leaveGame() {
         if (G.roomCode) {
-          await sb.from('rooms').delete().eq('code', G.roomCode);
+          await sb.from("rooms").delete().eq("code", G.roomCode);
         }
-        try { if (sbChannel) await sb.removeChannel(sbChannel); } catch(e) {}
+        try {
+          if (sbChannel) await sb.removeChannel(sbChannel);
+        } catch (e) {}
         clearUrlParams();
         location.reload();
       }
@@ -1825,12 +1835,8 @@
       }
       function switchScreen(id) {
         dismissToast();
-        document
-          .querySelectorAll(".modal-overlay")
-          .forEach((m) => (m.style.display = "none"));
-        document
-          .querySelectorAll(".screen")
-          .forEach((s) => s.classList.remove("active"));
+        document.querySelectorAll(".modal-overlay").forEach((m) => (m.style.display = "none"));
+        document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
         document.getElementById(id).classList.add("active");
       }
       function dealHand() {
@@ -1840,8 +1846,7 @@
         G.discard = [];
         const hs = HAND_SIZES[G.hand];
         G.hands = G.players.map(() => []);
-        for (let c = 0; c < hs; c++)
-          for (let p = 0; p < n; p++) G.hands[p].push(G.deck.pop());
+        for (let c = 0; c < hs; c++) for (let p = 0; p < n; p++) G.hands[p].push(G.deck.pop());
         G.discard.push(G.deck.pop());
         G.currentTurn = (G.hand - 1) % G.players.length;
         G.drawnThisTurn = false;
@@ -1859,8 +1864,7 @@
         const wc = WILD_BY_HAND[G.hand];
         document.getElementById("hdr-hand").textContent = G.hand;
         document.getElementById("hdr-cards").textContent = HAND_SIZES[G.hand];
-        document.getElementById("hdr-wild").textContent =
-          `${wc}s + Jokers wild`;
+        document.getElementById("hdr-wild").textContent = `${wc}s + Jokers wild`;
         document.getElementById("hand-count-label").textContent =
           `(${G.hands[G.myIdx]?.length || 0})`;
       }
@@ -1939,9 +1943,7 @@
       }
       function onDragEnd(e) {
         e.target.classList.remove("dragging");
-        document
-          .querySelectorAll("#my-hand .card")
-          .forEach((c) => c.classList.remove("drag-over"));
+        document.querySelectorAll("#my-hand .card").forEach((c) => c.classList.remove("drag-over"));
         dragSrcIdx = null;
       }
       function mkCard(c, hand, small, sel, noHover, fw) {
@@ -1985,9 +1987,7 @@
       }
       function toggleSelect(id) {
         if (G.currentTurn !== G.myIdx || !G.drawnThisTurn) return;
-        G.selectedCards.has(id)
-          ? G.selectedCards.delete(id)
-          : G.selectedCards.add(id);
+        G.selectedCards.has(id) ? G.selectedCards.delete(id) : G.selectedCards.add(id);
         renderMyHand();
       }
       function drawFromStock() {
@@ -2005,9 +2005,7 @@
         const card = G.deck.pop();
         G.hands[G.myIdx].push(card);
         G.drawnThisTurn = true;
-        setMsg(
-          `Drew ${card.rank}${card.suit}${isWild(card, G.hand) ? " (wild-rank)" : ""}`,
-        );
+        setMsg(`Drew ${card.rank}${card.suit}${isWild(card, G.hand) ? " (wild-rank)" : ""}`);
         renderGame();
         syncState();
       }
@@ -2052,19 +2050,16 @@
         meldHandSelected = new Set();
         meldDiscardId = null;
         layoffMeldMode = false;
-        document.getElementById('meld-modal-title').textContent = 'Arrange your melds';
-        document.getElementById('meld-modal-subtitle').textContent = 'Select 3+ cards → Add meld. Mark one leftover as discard if needed.';
-        document.getElementById('btn-meld-submit').textContent = 'Submit & call Pay Me!';
-        document.getElementById('btn-meld-set-discard').style.display = '';
+        document.getElementById("meld-modal-title").textContent = "Arrange your melds";
+        document.getElementById("meld-modal-subtitle").textContent =
+          "Select 3+ cards → Add meld. Mark one leftover as discard if needed.";
+        document.getElementById("btn-meld-submit").textContent = "Submit & call Pay Me!";
+        document.getElementById("btn-meld-set-discard").style.display = "";
         forcedWilds = new Set();
         G.meldSelecting = [...G.hands[G.myIdx]];
         document.getElementById("meld-msg").textContent = "";
-        const hasWR = G.meldSelecting.some(
-          (c) => !c.joker && isWild(c, G.hand),
-        );
-        document.getElementById("pin-hint").style.display = hasWR
-          ? "block"
-          : "none";
+        const hasWR = G.meldSelecting.some((c) => !c.joker && isWild(c, G.hand));
+        document.getElementById("pin-hint").style.display = hasWR ? "block" : "none";
         document.getElementById("modal-meld").style.display = "flex";
         renderMeldModal();
       }
@@ -2081,25 +2076,25 @@
         meldDiscardId = null;
         forcedWilds = new Set();
         G.meldSelecting = [...G.playerHands[pi]];
-        document.getElementById('meld-modal-title').textContent = 'Make your own melds';
-        document.getElementById('meld-modal-subtitle').textContent =
-          'Select 3+ cards → Add meld. Remaining cards count as deadwood.';
-        document.getElementById('btn-meld-submit').textContent = 'Submit melds';
-        document.getElementById('btn-meld-set-discard').style.display = 'none';
+        document.getElementById("meld-modal-title").textContent = "Make your own melds";
+        document.getElementById("meld-modal-subtitle").textContent =
+          "Select 3+ cards → Add meld. Remaining cards count as deadwood.";
+        document.getElementById("btn-meld-submit").textContent = "Submit melds";
+        document.getElementById("btn-meld-set-discard").style.display = "none";
         renderMeldModal();
-        document.getElementById('modal-meld').style.display = 'flex';
+        document.getElementById("modal-meld").style.display = "flex";
       }
       function submitLayoffMelds() {
         if (!G.confirmedMelds.length) {
-          document.getElementById('meld-msg').textContent = 'Add at least one meld first.';
+          document.getElementById("meld-msg").textContent = "Add at least one meld first.";
           return;
         }
         const pi = G.layoffOrder[G.layoffIdx];
         const usedIds = new Set(G.confirmedMelds.flat());
-        const newMelds = G.confirmedMelds.map(meldIds =>
-          meldIds.map(id => G.meldSelecting.find(c => c.id === id)).filter(Boolean)
+        const newMelds = G.confirmedMelds.map((meldIds) =>
+          meldIds.map((id) => G.meldSelecting.find((c) => c.id === id)).filter(Boolean),
         );
-        G.playerHands[pi] = G.playerHands[pi].filter(c => !usedIds.has(c.id));
+        G.playerHands[pi] = G.playerHands[pi].filter((c) => !usedIds.has(c.id));
         if (!G.playerMelds[pi]) G.playerMelds[pi] = [];
         G.playerMelds[pi].push(...newMelds);
         G.confirmedMelds = [];
@@ -2107,7 +2102,7 @@
         meldDiscardId = null;
         forcedWilds = new Set();
         layoffMeldMode = false;
-        closeModal('modal-meld');
+        closeModal("modal-meld");
         renderLayoffScreen();
         syncState();
       }
@@ -2156,9 +2151,7 @@
         if (singleWR) {
           const id = selArr[0];
           btn.style.display = "";
-          btn.textContent = forcedWilds.has(id)
-            ? "Use as natural rank"
-            : "Force as wild";
+          btn.textContent = forcedWilds.has(id) ? "Use as natural rank" : "Force as wild";
         } else btn.style.display = "none";
         const conf = document.getElementById("meld-confirmed");
         if (!G.confirmedMelds.length)
@@ -2182,9 +2175,7 @@
         } else dz.style.display = "none";
       }
       function toggleMeldCard(id) {
-        meldHandSelected.has(id)
-          ? meldHandSelected.delete(id)
-          : meldHandSelected.add(id);
+        meldHandSelected.has(id) ? meldHandSelected.delete(id) : meldHandSelected.add(id);
         renderMeldModal();
       }
       function forceAsWild() {
@@ -2200,13 +2191,10 @@
       function confirmMeld() {
         const selIds = [...meldHandSelected];
         if (selIds.length < 3) {
-          document.getElementById("meld-msg").textContent =
-            "Select at least 3 cards.";
+          document.getElementById("meld-msg").textContent = "Select at least 3 cards.";
           return;
         }
-        const cards = selIds
-          .map((id) => G.meldSelecting.find((c) => c.id === id))
-          .filter(Boolean);
+        const cards = selIds.map((id) => G.meldSelecting.find((c) => c.id === id)).filter(Boolean);
         const res = validateMeld(cards, G.hand, forcedWilds);
         if (!res.valid) {
           document.getElementById("meld-msg").textContent = res.msg;
@@ -2214,15 +2202,13 @@
         }
         G.confirmedMelds.push(selIds);
         meldHandSelected = new Set();
-        document.getElementById("meld-msg").textContent =
-          `Meld added (${res.type})!`;
+        document.getElementById("meld-msg").textContent = `Meld added (${res.type})!`;
         renderMeldModal();
       }
       function setMeldDiscard() {
         const selIds = [...meldHandSelected];
         if (selIds.length !== 1) {
-          document.getElementById("meld-msg").textContent =
-            "Select exactly one card.";
+          document.getElementById("meld-msg").textContent = "Select exactly one card.";
           return;
         }
         meldDiscardId = selIds[0];
@@ -2254,9 +2240,7 @@
           if (di !== -1) G.discard.push(G.hands[G.myIdx].splice(di, 1)[0]);
         }
         G.callerMelds = G.confirmedMelds.map((meld) =>
-          meld
-            .map((id) => G.meldSelecting.find((c) => c.id === id))
-            .filter(Boolean),
+          meld.map((id) => G.meldSelecting.find((c) => c.id === id)).filter(Boolean),
         );
         G.callerForcedWilds = [...forcedWilds];
         G.payMeCaller = G.myIdx;
@@ -2288,9 +2272,7 @@
         if (!G.players[G.currentTurn]?.isBot) return;
         const bi = G.currentTurn,
           hand = G.hands[bi];
-        const topDiscard = G.discard.length
-          ? G.discard[G.discard.length - 1]
-          : null;
+        const topDiscard = G.discard.length ? G.discard[G.discard.length - 1] : null;
         let drawnCardId = null,
           drewFromDiscard = false;
         if (topDiscard && !isWild(topDiscard, G.hand) && Math.random() > 0.5) {
@@ -2331,19 +2313,12 @@
           if (di === -1) di = hand.length - 1;
         }
         G.discard.push(hand.splice(di, 1)[0]);
-        if (
-          totalDeadwood(hand, G.hand) === 0 &&
-          G.phase === "playing" &&
-          G.payMeCaller === -1
-        ) {
+        if (totalDeadwood(hand, G.hand) === 0 && G.phase === "playing" && G.payMeCaller === -1) {
           G.callerMelds = [];
           G.payMeCaller = bi;
           G.phase = "pay-me";
           G.lastTurnsLeft = G.players.length;
-          showToast(
-            `${G.players[bi].name} called Pay Me! Each player gets one final turn.`,
-            4000,
-          );
+          showToast(`${G.players[bi].name} called Pay Me! Each player gets one final turn.`, 4000);
         }
         renderGame();
         setTimeout(advanceTurn, 400);
@@ -2374,8 +2349,7 @@
         let remaining = [...hand];
         const byRank = {};
         remaining.forEach((c) => {
-          if (!isWild(c, handNum))
-            (byRank[c.rank] = byRank[c.rank] || []).push(c);
+          if (!isWild(c, handNum)) (byRank[c.rank] = byRank[c.rank] || []).push(c);
         });
         for (const rank of Object.keys(byRank)) {
           if (byRank[rank].length >= 3) {
@@ -2393,13 +2367,10 @@
             (bySuit[c.suit] = bySuit[c.suit] || []).push(c);
           });
         for (const suit of Object.keys(bySuit)) {
-          const cards = bySuit[suit].sort(
-            (a, b) => rankIndex(a.rank) - rankIndex(b.rank),
-          );
+          const cards = bySuit[suit].sort((a, b) => rankIndex(a.rank) - rankIndex(b.rank));
           let run = [cards[0]];
           for (let i = 1; i < cards.length; i++) {
-            if (rankIndex(cards[i].rank) === rankIndex(cards[i - 1].rank) + 1)
-              run.push(cards[i]);
+            if (rankIndex(cards[i].rank) === rankIndex(cards[i - 1].rank) + 1) run.push(cards[i]);
             else {
               if (run.length >= 3) {
                 melds.push(run);
@@ -2451,29 +2422,21 @@
                 ? `<em style="color:var(--text3)">No cards remaining</em>`
                 : hand
                     .map((c) => {
-                      const sel =
-                        isActive && isHuman && G.layoffSelected.has(c.id);
-                      const oc =
-                        isActive && isHuman
-                          ? `onclick="toggleLayoffCard('${c.id}')"`
-                          : "";
+                      const sel = isActive && isHuman && G.layoffSelected.has(c.id);
+                      const oc = isActive && isHuman ? `onclick="toggleLayoffCard('${c.id}')"` : "";
                       return `<div class="card ${SUIT_COLOR[c.suit] || "black"} ${isWild(c, G.hand) ? "wild-card" : ""} ${sel ? "selected" : ""} ${!(isActive && isHuman) ? "no-hover" : ""} ${isActive && isHuman ? "clickable" : ""}" ${oc}><div class="card-corner">${c.rank}<br>${c.suit}</div><div class="card-center">${c.suit}</div><div class="card-corner br">${c.rank}<br>${c.suit}</div></div>`;
                     })
                     .join("")
-            }</div>${actionsHTML}${
-              (() => {
-                const ownMelds = (G.playerMelds || [])[pi] || [];
-                if (!ownMelds.length) return '';
-                return `<div style="margin-top:0.5rem"><div style="font-size:calc(0.72rem * var(--fs));color:var(--text3);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:.05em">Your melds</div>${ownMelds.map((meld, mi) => `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map(c => mkCard(c, G.hand, true, false, true, new Set())).join('')}</div></div>`).join('')}</div>`;
-              })()
-            }</div>`;
+            }</div>${actionsHTML}${(() => {
+              const ownMelds = (G.playerMelds || [])[pi] || [];
+              if (!ownMelds.length) return "";
+              return `<div style="margin-top:0.5rem"><div style="font-size:calc(0.72rem * var(--fs));color:var(--text3);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:.05em">Your melds</div>${ownMelds.map((meld, mi) => `<div class="meld-row"><span class="meld-index">Meld ${mi + 1}</span><div class="meld-cards-row">${meld.map((c) => mkCard(c, G.hand, true, false, true, new Set())).join("")}</div></div>`).join("")}</div>`;
+            })()}</div>`;
           })
           .join("");
       }
       function toggleLayoffCard(id) {
-        G.layoffSelected.has(id)
-          ? G.layoffSelected.delete(id)
-          : G.layoffSelected.add(id);
+        G.layoffSelected.has(id) ? G.layoffSelected.delete(id) : G.layoffSelected.add(id);
         renderLayoffScreen();
       }
       function humanLayoff() {
@@ -2569,12 +2532,9 @@
         G.roundLog.push(re);
         syncState();
         const cn = caller >= 0 ? G.players[caller].name : "Nobody";
-        document.getElementById("end-hand-title").textContent =
-          `Hand ${G.hand} complete`;
-        document.getElementById("end-hand-sub").textContent =
-          `${cn} called Pay Me!`;
-        document.getElementById("end-hand-content").innerHTML =
-          buildScorecardHTML(true);
+        document.getElementById("end-hand-title").textContent = `Hand ${G.hand} complete`;
+        document.getElementById("end-hand-sub").textContent = `${cn} called Pay Me!`;
+        document.getElementById("end-hand-content").innerHTML = buildScorecardHTML(true);
         document.getElementById("end-hand-btn").textContent =
           G.hand === 11 ? "See final results" : "Next hand";
         document.getElementById("end-hand-btn").disabled = !G.isHost;
@@ -2627,17 +2587,15 @@
         dealHand();
       }
       function showGameOver() {
-        if (G.phase !== 'game-over') {
-          G.phase = 'game-over';
+        if (G.phase !== "game-over") {
+          G.phase = "game-over";
           if (G.isHost) syncState();
         }
         const sorted = G.players
           .map((p, i) => ({ name: p.name, score: G.scores[i], isBot: p.isBot }))
           .sort((a, b) => a.score - b.score);
         const mp = Math.max(...G.payMeCount);
-        const pmL = G.players
-          .filter((_, i) => G.payMeCount[i] === mp)
-          .map((p) => p.name);
+        const pmL = G.players.filter((_, i) => G.payMeCount[i] === mp).map((p) => p.name);
         let html = buildScorecardHTML(false);
         html += `<div style="margin-top:1rem;padding:1rem;background:var(--success-bg);border-radius:var(--radius-sm);text-align:center;color:var(--success);font-weight:600">Winner: ${sorted[0].name} — ${sorted[0].score} pts!</div>`;
         html += `<div style="margin-top:0.5rem;padding:0.75rem;background:var(--gold-bg);border-radius:var(--radius-sm);text-align:center;color:var(--gold);font-weight:600">Most Pay Me calls: ${pmL.join(", ")} (${mp}×)</div>`;
@@ -2645,8 +2603,7 @@
         document.getElementById("modal-game-over").style.display = "flex";
       }
       function showScores() {
-        document.getElementById("scores-content").innerHTML =
-          buildScorecardHTML(false);
+        document.getElementById("scores-content").innerHTML = buildScorecardHTML(false);
         document.getElementById("modal-scores").style.display = "flex";
       }
       function returnToLobby() {

@@ -45,7 +45,12 @@ async function proposeRun(state) {
     const result = await proposeMeld(state.hand.id, cards, "RUN");
     if (result.needsWildDesignation) {
       setState({
-        wildPicker: { kind: "meld", handId: state.hand.id, cards, arrangements: result.arrangements },
+        wildPicker: {
+          kind: "meld",
+          handId: state.hand.id,
+          cards,
+          arrangements: result.arrangements,
+        },
       });
       return;
     }

@@ -157,14 +157,12 @@ export async function saveHandState(
   const prevMeldIds = new Set(prev.melds.map((m) => m.id));
   for (const meld of next.melds) {
     if (!prevMeldIds.has(meld.id)) {
-      const { error: meldError } = await admin
-        .from("melds")
-        .insert({
-          id: meld.id,
-          hand_id: handId,
-          owner_player_id: meld.ownerId,
-          meld_type: meld.type,
-        });
+      const { error: meldError } = await admin.from("melds").insert({
+        id: meld.id,
+        hand_id: handId,
+        owner_player_id: meld.ownerId,
+        meld_type: meld.type,
+      });
       if (meldError) throw new HttpError("Failed to save meld", 500);
 
       const rows = meld.cards.map((card, position) => ({
@@ -214,10 +212,7 @@ export async function saveHandState(
         };
       });
 
-      const { error: deleteError } = await admin
-        .from("meld_cards")
-        .delete()
-        .eq("meld_id", meld.id);
+      const { error: deleteError } = await admin.from("meld_cards").delete().eq("meld_id", meld.id);
       if (deleteError) throw new HttpError("Failed to save lay-off", 500);
       const { error: insertError } = await admin.from("meld_cards").insert(rows);
       if (insertError) throw new HttpError("Failed to save lay-off", 500);

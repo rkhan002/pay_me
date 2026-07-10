@@ -42,10 +42,8 @@ const NODE_SHIMS = [
 
 function addTsExtensions(code) {
   // Deno requires explicit extensions on relative specifiers.
-  return code.replace(
-    /(\bfrom\s+["'])(\.\.?\/[^"']+?)(["'])/g,
-    (m, pre, spec, post) =>
-      /\.(ts|js|mjs|cjs|json)$/.test(spec) ? m : `${pre}${spec}.ts${post}`,
+  return code.replace(/(\bfrom\s+["'])(\.\.?\/[^"']+?)(["'])/g, (m, pre, spec, post) =>
+    /\.(ts|js|mjs|cjs|json)$/.test(spec) ? m : `${pre}${spec}.ts${post}`,
   );
 }
 
@@ -70,7 +68,9 @@ function transform(name, raw) {
 }
 
 const srcFiles = readdirSync(SRC).filter((f) => f.endsWith(".ts") && !SKIP.has(f));
-const generated = new Map(srcFiles.map((f) => [f, transform(f, readFileSync(join(SRC, f), "utf8"))]));
+const generated = new Map(
+  srcFiles.map((f) => [f, transform(f, readFileSync(join(SRC, f), "utf8"))]),
+);
 
 // Orphans = .ts files in DST that no longer exist in SRC.
 const orphans = readdirSync(DST).filter(
@@ -97,11 +97,15 @@ for (const name of orphans) {
 
 if (check) {
   if (drift.length) {
-    console.error("rules-engine copy is OUT OF SYNC with packages/rules-engine/src:\n  " + drift.join("\n  "));
+    console.error(
+      "rules-engine copy is OUT OF SYNC with packages/rules-engine/src:\n  " + drift.join("\n  "),
+    );
     console.error("\nFix: npm run rules:sync   (then commit the regenerated files)");
     process.exit(1);
   }
   console.log("rules-engine copy is in sync ✓");
 } else {
-  console.log(drift.length ? `Synced ${drift.length} file(s):\n  ${drift.join("\n  ")}` : "Already in sync ✓");
+  console.log(
+    drift.length ? `Synced ${drift.length} file(s):\n  ${drift.join("\n  ")}` : "Already in sync ✓",
+  );
 }

@@ -310,7 +310,9 @@ body {
    whichever draw button this player just used, so "I drew from the stock"
    stays visible the same way a selected card does, until the turn ends. */
 .btn--selected {
-  box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 18px rgba(255, 255, 255, 0.35);
 }
 
 .btn--selected:disabled {
@@ -739,7 +741,9 @@ body {
    .card-selected-badge) adds a second, unambiguous cue - both stay
    level with the rest of the row. */
 .card--selected {
-  box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 18px rgba(255, 255, 255, 0.35);
 }
 
 .card:hover {
