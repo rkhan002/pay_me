@@ -212,14 +212,23 @@ function renderMelds(root, state) {
   // player's own melds only, per RLS - see supabase/migrations), and the
   // owner can still change their mind and take one back.
   const canUnmeld = !state.hand?.payMeCallerId;
+  const layable = canLayOffNow(state);
+  const hasSelection = state.selectedCardKeys.size >= 1;
   for (const meld of state.melds) {
     const meldEl = document.createElement("div");
-    meldEl.className = "meld";
+    meldEl.className =
+      "meld" + (layable ? " meld--layable" : "") + (layable && hasSelection ? " meld--target" : "");
     meldEl.dataset.meldId = meld.id;
     for (const card of meld.cards) {
       meldEl.appendChild(
         renderCard(card, { wild: card.rank === "JOKER" || card.rank === state.hand?.wildRank }),
       );
+    }
+    if (layable) {
+      const cue = document.createElement("div");
+      cue.className = "meld-layoff-cue";
+      cue.textContent = hasSelection ? "Tap to lay off here" : "Select a card, then tap";
+      meldEl.appendChild(cue);
     }
     if (canUnmeld && meld.ownerPlayerId === state.myPlayerId) {
       const unmeldBtn = document.createElement("button");
@@ -376,6 +385,52 @@ function renderPayMeBanner(root, state) {
   banner.className = "pay-me-banner";
   banner.textContent = `${caller ? caller.displayName : "A player"} called Pay Me!`;
   root.appendChild(banner);
+}
+
+// Whether the player can lay a card off onto a meld right now: on their own
+// turn after drawing (onto their own melds), or during their lay-off turn
+// (onto any meld). Used to signpost the otherwise-hidden "tap a card, then
+// tap a meld" interaction, which has no button of its own.
+function canLayOffNow(state) {
+  if (!state.hand || state.melds.length === 0) return false;
+  const inLayoff = state.hand.phase === "layoff";
+  const myLayoffTurn = inLayoff && state.hand.pendingLayoffs[0] === state.myPlayerId;
+  const myPlayTurn = isMyTurn(state) && state.hand.hasDrawnThisTurn && !inLayoff;
+  return myPlayTurn || myLayoffTurn;
+}
+
+// A one-line, touch-friendly explanation of what the player can do right now -
+// so a greyed-out Meld button (or the buttonless lay-off) isn't a mystery.
+function buildActionHint(state, myTurn, inLayoff, myLayoffTurn) {
+  let text = "";
+  if (myLayoffTurn) {
+    text = state.melds.length
+      ? "Lay-off round: tap a card in your hand, then tap a meld to add it. Tap Pass when you're done."
+      : "Lay-off round: tap Pass when you're done.";
+  } else if (myTurn && !state.hand.hasDrawnThisTurn) {
+    text =
+      "Your turn - draw a card first (Stock or Discard), then you can meld, lay off, or discard.";
+  } else if (myTurn && state.hand.hasDrawnThisTurn) {
+    const parts = [
+      selectedCards().length >= 3 ? "Meld the selected cards" : "select 3+ cards to Meld",
+    ];
+    if (state.melds.length) parts.push("tap a card then a meld to lay it off");
+    parts.push("or discard one card to end your turn");
+    text = parts.join(" \u00b7 ");
+  }
+  if (!text) return null;
+  const hint = document.createElement("div");
+  hint.className = "action-hint";
+  hint.textContent = text;
+  return hint;
+}
+
+// Why the Meld buttons are disabled (shown as a hover tooltip on desktop).
+function meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn) {
+  if (!myTurn && !myLayoffTurn) return "Wait for your turn";
+  if (myTurn && !inLayoff && !state.hand.hasDrawnThisTurn) return "Draw a card first";
+  if (selectedCards().length < 3) return "Select at least 3 cards";
+  return "";
 }
 
 function renderControls(root, state) {
@@ -538,6 +593,7 @@ function renderControls(root, state) {
   setBtn.className = "btn";
   setBtn.textContent = "Meld as set";
   setBtn.disabled = !canMeld || selectedCards().length < 3;
+  if (setBtn.disabled) setBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
   setBtn.addEventListener("click", () =>
     guard(
       () => proposeMeld(state.hand.id, selectedCards(), "SET"),
@@ -550,6 +606,7 @@ function renderControls(root, state) {
   runBtn.className = "btn";
   runBtn.textContent = "Meld as run";
   runBtn.disabled = !canMeld || selectedCards().length < 3;
+  if (runBtn.disabled) runBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
   runBtn.addEventListener("click", () => proposeRun(state));
   bar.appendChild(runBtn);
 
@@ -582,6 +639,9 @@ function renderControls(root, state) {
     );
     bar.appendChild(passBtn);
   }
+
+  const hint = buildActionHint(state, myTurn, inLayoff, myLayoffTurn);
+  if (hint) bar.appendChild(hint);
 
   root.appendChild(bar);
 }

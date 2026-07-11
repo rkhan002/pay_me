@@ -641,6 +641,53 @@ body {
   border-color: var(--cyan);
 }
 
+/* ---------- Action hint + lay-off signposting ---------- */
+
+/* One-line contextual guidance under the action buttons (full-width row in
+   the .controls flex wrap). Explains the draw-first gate and how to lay off. */
+.action-hint {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+/* A meld you can lay a card off onto right now. It wraps so the cue caption
+   below sits on its own line under the cards. */
+.meld--layable {
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+
+/* Emphasised once you've actually selected a card - "tap here to add it". */
+.meld--target {
+  border-style: solid;
+  border-color: var(--lime);
+  animation: meld-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes meld-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(200, 255, 61, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(200, 255, 61, 0.7);
+  }
+}
+
+.meld-layoff-cue {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--lime);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.35rem;
+}
+
 .hand-label {
   text-align: center;
   color: var(--text-dim);
