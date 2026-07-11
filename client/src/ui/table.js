@@ -189,9 +189,14 @@ function renderOpponents(root, state) {
     seat.appendChild(name);
 
     if (info) {
+      // For my own seat, count my actual hand (which updates instantly on an
+      // optimistic draw/discard) rather than the public snapshot, which only
+      // catches up on the next server refresh - otherwise my avatar's count
+      // briefly lags my own hand right after I draw or discard.
+      const n = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
       const count = document.createElement("div");
       count.className = "seat-count";
-      count.textContent = `${info.cardCount} card${info.cardCount === 1 ? "" : "s"}`;
+      count.textContent = `${n} card${n === 1 ? "" : "s"}`;
       seat.appendChild(count);
     }
 
