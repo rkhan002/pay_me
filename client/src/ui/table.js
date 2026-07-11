@@ -144,13 +144,26 @@ async function submitWildPicker(picker, choice) {
 // tries anything else, instead of sitting on screen indefinitely - it
 // used to only clear if the player clicked the banner itself, so it could
 // linger through several successful actions afterward.
-async function guard(fn, refresh) {
+// A single action is allowed in flight at a time, so a laggy round trip can't
+// be fired twice by an impatient re-click.
+let actionInFlight = false;
+async function guard(fn, refresh, optimistic) {
+  if (actionInFlight) return;
+  actionInFlight = true;
   setState({ error: null });
+  // Show the move immediately (optimistic), before the server round trip, so
+  // the click never *looks* like nothing happened. `refresh` then reconciles
+  // with the authoritative server state - and if the move is rejected, that
+  // same refresh restores the truth, undoing the optimistic change.
+  if (optimistic) setState(optimistic);
   try {
     await fn();
     if (refresh) await refresh();
   } catch (e) {
     setState({ error: e.message });
+    if (refresh) await refresh().catch(() => {});
+  } finally {
+    actionInFlight = false;
   }
 }
 
@@ -479,11 +492,12 @@ function renderControls(root, state) {
   drawStockBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
   drawStockBtn.addEventListener("click", () =>
     guard(
-      async () => {
-        await drawStock(state.hand.id);
-        setState({ drawnSource: "stock" });
-      },
+      () => drawStock(state.hand.id),
       () => loadHand(state.hand.id),
+      // The drawn card comes from the face-down stock, so we can't know it
+      // yet - but flipping hasDrawn instantly disables the draw buttons and
+      // lights up meld/discard, and the card itself pops in on refresh.
+      (st) => ({ hand: { ...st.hand, hasDrawnThisTurn: true }, drawnSource: "stock" }),
     ),
   );
   bar.appendChild(drawStockBtn);
@@ -494,11 +508,16 @@ function renderControls(root, state) {
   drawDiscardBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
   drawDiscardBtn.addEventListener("click", () =>
     guard(
-      async () => {
-        await drawDiscard(state.hand.id);
-        setState({ drawnSource: "discard" });
-      },
+      () => drawDiscard(state.hand.id),
       () => loadHand(state.hand.id),
+      (st) => {
+        const [top, ...rest] = st.hand.discardPile;
+        return {
+          hand: { ...st.hand, hasDrawnThisTurn: true, discardPile: rest },
+          myCards: top ? [...st.myCards, top] : st.myCards,
+          drawnSource: "discard",
+        };
+      },
     ),
   );
   bar.appendChild(drawDiscardBtn);
@@ -533,12 +552,17 @@ function renderControls(root, state) {
   discardBtn.className = "btn btn--primary";
   discardBtn.textContent = "Discard selected";
   discardBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length !== 1;
-  discardBtn.addEventListener("click", () =>
+  discardBtn.addEventListener("click", () => {
+    const card = selectedCards()[0];
     guard(
-      () => discardCard(state.hand.id, selectedCards()[0]),
+      () => discardCard(state.hand.id, card),
       () => loadHand(state.hand.id),
-    ).then(clearSelection),
-  );
+      (st) => ({
+        hand: { ...st.hand, discardPile: [card, ...st.hand.discardPile] },
+        myCards: st.myCards.filter((c) => cardKey(c) !== cardKey(card)),
+      }),
+    ).then(clearSelection);
+  });
   bar.appendChild(discardBtn);
 
   if (myLayoffTurn) {
