@@ -155,3 +155,45 @@ export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
   });
   return wrap;
 }
+
+/**
+ * A face-down card - the game's "Pay Me" house back, used for the stock
+ * deck, opponents' concealed hands, and any other hidden card. Pass
+ * `interactive: true` to get a real <button> (e.g. the top of the stock
+ * pile, which draws a card); otherwise it's a non-interactive, aria-hidden
+ * <div> for a purely decorative back. `onClick` here takes no card argument,
+ * unlike renderCard's - a face-down card has no identity to hand back.
+ */
+export function renderCardBack({
+  interactive = false,
+  disabled = false,
+  onClick,
+  small = false,
+  className = "",
+  ariaLabel = "Face-down card",
+} = {}) {
+  const el = document.createElement(interactive ? "button" : "div");
+  el.className =
+    "card card-back" + (small ? " card-back--sm" : "") + (className ? " " + className : "");
+  if (interactive) {
+    el.type = "button";
+    el.disabled = disabled;
+    el.setAttribute("aria-label", ariaLabel);
+    if (onClick) el.addEventListener("click", onClick);
+  } else {
+    el.setAttribute("aria-hidden", "true");
+  }
+
+  const logo = document.createElement("div");
+  logo.className = "card-back-logo";
+  const l1 = document.createElement("span");
+  l1.className = "cb-l1";
+  l1.textContent = "PAY";
+  const l2 = document.createElement("span");
+  l2.className = "cb-l2";
+  l2.textContent = "ME";
+  logo.appendChild(l1);
+  logo.appendChild(l2);
+  el.appendChild(logo);
+  return el;
+}

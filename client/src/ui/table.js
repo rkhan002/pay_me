@@ -5,7 +5,7 @@ import {
   clearSelection,
   cardKey,
 } from "../state/store.js";
-import { renderCard, renderCardFan } from "./cards.js";
+import { renderCard, renderCardFan, renderCardBack } from "./cards.js";
 import { commitOrder, sortByRank, sortBySuit, makeHandFanDraggable } from "./handOrder.js";
 import {
   startHand,
@@ -180,6 +180,47 @@ async function guard(fn, refresh, optimistic) {
   }
 }
 
+// A labeled column wrapper for a pile (Stock / Discard) in the center row.
+function makePile(label) {
+  const col = document.createElement("div");
+  col.className = "pile";
+  const lab = document.createElement("div");
+  lab.className = "pile-label";
+  lab.textContent = label;
+  col.appendChild(lab);
+  return col;
+}
+
+// Drawing a card has two entry points: the labeled buttons in the control
+// bar and a direct click on the pile graphics (the stock deck / the top of
+// the discard pile - see renderTable). Both route through these so the
+// optimistic update and refresh are identical no matter which one is used.
+function drawStockAction(state) {
+  return guard(
+    () => drawStock(state.hand.id),
+    () => loadHand(state.hand.id),
+    // The drawn card comes from the face-down stock, so we can't know it yet
+    // - but flipping hasDrawn instantly disables the draw affordances and
+    // lights up meld/discard, and the card itself pops in on refresh.
+    (st) => ({ hand: { ...st.hand, hasDrawnThisTurn: true }, drawnSource: "stock" }),
+  );
+}
+
+function drawDiscardAction(state) {
+  return guard(
+    () => drawDiscard(state.hand.id),
+    () => loadHand(state.hand.id),
+    (st) => {
+      const [top, ...rest] = st.hand.discardPile;
+      return {
+        hand: { ...st.hand, hasDrawnThisTurn: true, discardPile: rest },
+        myCards: top ? [...st.myCards, top] : st.myCards,
+        drawnSource: "discard",
+      };
+    },
+  );
+}
+
 function renderOpponents(root, state) {
   const row = document.createElement("div");
   row.className = "opponents-row";
@@ -207,6 +248,12 @@ function renderOpponents(root, state) {
       // catches up on the next server refresh - otherwise my avatar's count
       // briefly lags my own hand right after I draw or discard.
       const n = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
+      // Opponents' hands are concealed - show a small "Pay Me" card back to
+      // represent the cards they're holding. (My own hand is shown in full
+      // at the bottom of the screen, so no back for my own seat.)
+      if (player.id !== state.myPlayerId && n > 0) {
+        seat.appendChild(renderCardBack({ small: true }));
+      }
       const count = document.createElement("div");
       count.className = "seat-count";
       count.textContent = `${n} card${n === 1 ? "" : "s"}`;
@@ -572,36 +619,14 @@ function renderControls(root, state) {
   drawStockBtn.className = "btn" + (drawnStock ? " btn--selected" : "");
   drawStockBtn.textContent = "Draw from stock";
   drawStockBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawStockBtn.addEventListener("click", () =>
-    guard(
-      () => drawStock(state.hand.id),
-      () => loadHand(state.hand.id),
-      // The drawn card comes from the face-down stock, so we can't know it
-      // yet - but flipping hasDrawn instantly disables the draw buttons and
-      // lights up meld/discard, and the card itself pops in on refresh.
-      (st) => ({ hand: { ...st.hand, hasDrawnThisTurn: true }, drawnSource: "stock" }),
-    ),
-  );
+  drawStockBtn.addEventListener("click", () => drawStockAction(state));
   bar.appendChild(drawStockBtn);
 
   const drawDiscardBtn = document.createElement("button");
   drawDiscardBtn.className = "btn" + (drawnDiscard ? " btn--selected" : "");
   drawDiscardBtn.textContent = "Draw from discard";
   drawDiscardBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawDiscardBtn.addEventListener("click", () =>
-    guard(
-      () => drawDiscard(state.hand.id),
-      () => loadHand(state.hand.id),
-      (st) => {
-        const [top, ...rest] = st.hand.discardPile;
-        return {
-          hand: { ...st.hand, hasDrawnThisTurn: true, discardPile: rest },
-          myCards: top ? [...st.myCards, top] : st.myCards,
-          drawnSource: "discard",
-        };
-      },
-    ),
-  );
+  drawDiscardBtn.addEventListener("click", () => drawDiscardAction(state));
   bar.appendChild(drawDiscardBtn);
 
   // The layoff phase never involves drawing (it's a card-dump round after
@@ -744,11 +769,52 @@ export function renderTable(root) {
     const centerRow = document.createElement("div");
     centerRow.className = "center-row";
 
+    // A draw (from either pile) is only legal on your own turn, before
+    // you've drawn, and never in the layoff phase - the same gate the draw
+    // buttons use. The piles are always shown; the top card just isn't
+    // clickable when it isn't a legal draw.
+    const canDraw =
+      isMyTurn(state) && !state.hand.hasDrawnThisTurn && state.hand.phase !== "layoff";
+
+    // Stock pile: a face-down "Pay Me" deck. A couple of static backs behind
+    // the top one give it visible depth; the top back is the draw target.
+    const stockCol = makePile("Stock");
+    const stockStack = document.createElement("div");
+    stockStack.className = "stock-pile";
+    stockStack.appendChild(renderCardBack({ className: "card-back--under2" }));
+    stockStack.appendChild(renderCardBack({ className: "card-back--under1" }));
+    stockStack.appendChild(
+      renderCardBack({
+        interactive: true,
+        disabled: !canDraw,
+        ariaLabel: "Draw from stock",
+        onClick: () => drawStockAction(state),
+      }),
+    );
+    stockCol.appendChild(stockStack);
+    centerRow.appendChild(stockCol);
+
+    // Discard pile: top card is clickable to pick up (same as the button).
+    const discardCol = makePile("Discard");
     const discardPileEl = document.createElement("div");
     discardPileEl.className = "discard-pile";
     const topTwo = state.hand.discardPile.slice(0, 2).reverse();
-    for (const card of topTwo) discardPileEl.appendChild(renderCard(card, { tabIndex: -1 }));
-    centerRow.appendChild(discardPileEl);
+    topTwo.forEach((card, i) => {
+      const isTop = i === topTwo.length - 1;
+      const cardEl = renderCard(card, {
+        tabIndex: isTop && canDraw ? 0 : -1,
+        onClick: isTop && canDraw ? () => drawDiscardAction(state) : undefined,
+      });
+      if (isTop && canDraw) cardEl.classList.add("card--drawable");
+      discardPileEl.appendChild(cardEl);
+    });
+    if (topTwo.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "pile-empty";
+      discardPileEl.appendChild(empty);
+    }
+    discardCol.appendChild(discardPileEl);
+    centerRow.appendChild(discardCol);
 
     wrap.appendChild(centerRow);
     renderMelds(wrap, state);
