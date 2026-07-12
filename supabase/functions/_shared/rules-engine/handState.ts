@@ -60,6 +60,24 @@ function advanceTurn(state: HandState): HandState {
   return { ...state, currentPlayerIndex: idx, hasDrawnThisTurn: false };
 }
 
+/**
+ * Turn order starting immediately AFTER `playerId` and wrapping around the
+ * table, excluding `playerId` itself. The post-Pay-Me final turns and the
+ * lay-off round both use this so play continues from the seat after whoever
+ * called Pay Me - not from seat 0. (Building these with playerOrder.filter()
+ * instead started every post-Pay-Me sequence at seat 0 regardless of where
+ * the caller sat, so e.g. a caller in seat 1 of [A, B, C] handed the next
+ * final turn to A instead of C.)
+ */
+function rotationAfter(playerOrder: string[], playerId: string): string[] {
+  const start = playerOrder.indexOf(playerId);
+  const order: string[] = [];
+  for (let i = 1; i < playerOrder.length; i++) {
+    order.push(playerOrder[(start + i) % playerOrder.length]);
+  }
+  return order;
+}
+
 export function drawFromStock(state: HandState, playerId: string): Result<HandState> {
   if (state.phase !== "playing" && state.phase !== "final_turns") {
     return { ok: false, error: "Not in a drawing phase" };
@@ -299,7 +317,7 @@ export function discard(state: HandState, playerId: string, card: Card): Result<
 
   if (state.phase === "playing") {
     if (wentOut) {
-      const others = state.playerOrder.filter((id) => id !== playerId);
+      const others = rotationAfter(state.playerOrder, playerId);
       return {
         ok: true,
         state: {
@@ -320,7 +338,7 @@ export function discard(state: HandState, playerId: string, card: Card): Result<
   // final_turns phase: this player has now taken their one last turn.
   const pendingFinalTurns = state.pendingFinalTurns.filter((id) => id !== playerId);
   if (pendingFinalTurns.length === 0) {
-    const pendingLayoffs = state.playerOrder.filter((id) => id !== state.payMeCallerId);
+    const pendingLayoffs = rotationAfter(state.playerOrder, state.payMeCallerId ?? playerId);
     return {
       ok: true,
       state: {
@@ -406,7 +424,10 @@ export function skipStalePlayer(state: HandState, targetPlayerId: string): Resul
   if (state.phase === "final_turns") {
     const pendingFinalTurns = state.pendingFinalTurns.filter((id) => id !== targetPlayerId);
     if (pendingFinalTurns.length === 0) {
-      const pendingLayoffs = state.playerOrder.filter((id) => id !== state.payMeCallerId);
+      const pendingLayoffs = rotationAfter(
+        state.playerOrder,
+        state.payMeCallerId ?? targetPlayerId,
+      );
       if (pendingLayoffs.length === 0) {
         return { ok: true, state: { ...state, pendingFinalTurns, phase: "scoring" } };
       }

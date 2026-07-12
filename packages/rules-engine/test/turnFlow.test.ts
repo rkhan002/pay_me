@@ -185,6 +185,45 @@ describe("proposing a brand-new meld during the layoff phase", () => {
   });
 });
 
+describe("post-Pay-Me order starts from the seat after the caller", () => {
+  // Regression for the CECBT bug: with seat order [p1, p2, p3] and p2 calling
+  // Pay Me, the final turns (and the lay-off round) must run p3 -> p1, not the
+  // old seat-order p1 -> p3.
+  it("runs the final turns from the seat after the caller, wrapping around", () => {
+    const state = baseState({
+      currentPlayerIndex: 1, // p2's turn
+      hasDrawnThisTurn: true,
+      hands: {
+        p1: [card("4", "S")],
+        p2: [card("5", "S")], // p2 discards its last card -> goes out
+        p3: [card("7", "C")],
+      },
+    });
+    const result = unwrap(discard(state, "p2", card("5", "S")));
+    expect(result.phase).toBe("final_turns");
+    expect(result.payMeCallerId).toBe("p2");
+    expect(result.pendingFinalTurns).toEqual(["p3", "p1"]);
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p3");
+  });
+
+  it("runs the lay-off round from the seat after the caller too", () => {
+    // p2 called Pay Me; p1 is taking the last final turn. When it ends the
+    // lay-off round should run p3 -> p1 (same rotation), not seat order.
+    const state = baseState({
+      phase: "final_turns",
+      payMeCallerId: "p2",
+      pendingFinalTurns: ["p1"],
+      currentPlayerIndex: 0,
+      hasDrawnThisTurn: true,
+      hands: { p1: [card("4", "S"), card("5", "S")], p2: [], p3: [card("7", "C")] },
+    });
+    const result = unwrap(discard(state, "p1", card("5", "S")));
+    expect(result.phase).toBe("layoff");
+    expect(result.pendingLayoffs).toEqual(["p3", "p1"]);
+    expect(result.playerOrder[result.currentPlayerIndex]).toBe("p3");
+  });
+});
+
 describe("disconnected players are skipped in turn order", () => {
   it("advances past a disconnected player to the next connected one", () => {
     const state = baseState({
