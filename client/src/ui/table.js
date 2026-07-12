@@ -251,7 +251,7 @@ function renderOpponents(root, state) {
       // Opponents' hands are concealed - show a small "Pay Me" card back to
       // represent the cards they're holding. (My own hand is shown in full
       // at the bottom of the screen, so no back for my own seat.)
-      if (player.id !== state.myPlayerId && n > 0) {
+      if (player.id !== state.myPlayerId && n > 0 && state.hand?.phase !== "complete") {
         seat.appendChild(renderCardBack({ small: true }));
       }
       const count = document.createElement("div");
@@ -763,60 +763,66 @@ export function renderTable(root) {
   wrap.appendChild(header);
 
   renderOpponents(wrap, state);
-  renderPayMeBanner(wrap, state);
+  if (state.hand?.phase !== "complete") renderPayMeBanner(wrap, state);
 
   if (state.hand) {
-    const centerRow = document.createElement("div");
-    centerRow.className = "center-row";
+    // A finished hand shows a clean recap (opponents + revealed melds + the
+    // per-hand score tally from renderControls). Skip the draw piles then:
+    // there's nothing left to draw, and they'd otherwise push the tally off
+    // the bottom of the screen.
+    if (state.hand.phase !== "complete") {
+      const centerRow = document.createElement("div");
+      centerRow.className = "center-row";
 
-    // A draw (from either pile) is only legal on your own turn, before
-    // you've drawn, and never in the layoff phase - the same gate the draw
-    // buttons use. The piles are always shown; the top card just isn't
-    // clickable when it isn't a legal draw.
-    const canDraw =
-      isMyTurn(state) && !state.hand.hasDrawnThisTurn && state.hand.phase !== "layoff";
+      // A draw (from either pile) is only legal on your own turn, before
+      // you've drawn, and never in the layoff phase - the same gate the draw
+      // buttons use. The piles are always shown; the top card just isn't
+      // clickable when it isn't a legal draw.
+      const canDraw =
+        isMyTurn(state) && !state.hand.hasDrawnThisTurn && state.hand.phase !== "layoff";
 
-    // Stock pile: a face-down "Pay Me" deck. A couple of static backs behind
-    // the top one give it visible depth; the top back is the draw target.
-    const stockCol = makePile("Stock");
-    const stockStack = document.createElement("div");
-    stockStack.className = "stock-pile";
-    stockStack.appendChild(renderCardBack({ className: "card-back--under2" }));
-    stockStack.appendChild(renderCardBack({ className: "card-back--under1" }));
-    stockStack.appendChild(
-      renderCardBack({
-        interactive: true,
-        disabled: !canDraw,
-        ariaLabel: "Draw from stock",
-        onClick: () => drawStockAction(state),
-      }),
-    );
-    stockCol.appendChild(stockStack);
-    centerRow.appendChild(stockCol);
+      // Stock pile: a face-down "Pay Me" deck. A couple of static backs behind
+      // the top one give it visible depth; the top back is the draw target.
+      const stockCol = makePile("Stock");
+      const stockStack = document.createElement("div");
+      stockStack.className = "stock-pile";
+      stockStack.appendChild(renderCardBack({ className: "card-back--under2" }));
+      stockStack.appendChild(renderCardBack({ className: "card-back--under1" }));
+      stockStack.appendChild(
+        renderCardBack({
+          interactive: true,
+          disabled: !canDraw,
+          ariaLabel: "Draw from stock",
+          onClick: () => drawStockAction(state),
+        }),
+      );
+      stockCol.appendChild(stockStack);
+      centerRow.appendChild(stockCol);
 
-    // Discard pile: top card is clickable to pick up (same as the button).
-    const discardCol = makePile("Discard");
-    const discardPileEl = document.createElement("div");
-    discardPileEl.className = "discard-pile";
-    const topTwo = state.hand.discardPile.slice(0, 2).reverse();
-    topTwo.forEach((card, i) => {
-      const isTop = i === topTwo.length - 1;
-      const cardEl = renderCard(card, {
-        tabIndex: isTop && canDraw ? 0 : -1,
-        onClick: isTop && canDraw ? () => drawDiscardAction(state) : undefined,
+      // Discard pile: top card is clickable to pick up (same as the button).
+      const discardCol = makePile("Discard");
+      const discardPileEl = document.createElement("div");
+      discardPileEl.className = "discard-pile";
+      const topTwo = state.hand.discardPile.slice(0, 2).reverse();
+      topTwo.forEach((card, i) => {
+        const isTop = i === topTwo.length - 1;
+        const cardEl = renderCard(card, {
+          tabIndex: isTop && canDraw ? 0 : -1,
+          onClick: isTop && canDraw ? () => drawDiscardAction(state) : undefined,
+        });
+        if (isTop && canDraw) cardEl.classList.add("card--drawable");
+        discardPileEl.appendChild(cardEl);
       });
-      if (isTop && canDraw) cardEl.classList.add("card--drawable");
-      discardPileEl.appendChild(cardEl);
-    });
-    if (topTwo.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "pile-empty";
-      discardPileEl.appendChild(empty);
-    }
-    discardCol.appendChild(discardPileEl);
-    centerRow.appendChild(discardCol);
+      if (topTwo.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "pile-empty";
+        discardPileEl.appendChild(empty);
+      }
+      discardCol.appendChild(discardPileEl);
+      centerRow.appendChild(discardCol);
 
-    wrap.appendChild(centerRow);
+      wrap.appendChild(centerRow);
+    }
     renderMelds(wrap, state);
   }
 
