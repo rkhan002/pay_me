@@ -51,13 +51,27 @@ export function validateSet(cards: Card[], wildRank: Rank): MeldValidationResult
   if (cards.length < 3) {
     return { valid: false, reason: "A set must have at least 3 cards" };
   }
-  const { naturals } = partition(cards, wildRank);
-  if (naturals.length < MIN_NATURALS) {
-    return { valid: false, reason: "A meld needs at least 2 natural cards" };
+  // A card of the wild rank is dual-use: it counts as a NATURAL of its own
+  // rank when the set is of that rank (e.g. three 3s while 3 is wild), and as
+  // a wild filler otherwise. Jokers are always wild. So the set's rank is
+  // pinned by the non-wild-rank naturals if there are any; if there are none,
+  // the only possible set is one OF the wild rank, with those cards natural.
+  const hardNaturals = cards.filter((c) => c.rank !== "JOKER" && c.rank !== wildRank);
+  const wildRankCards = cards.filter((c) => c.rank === wildRank);
+
+  let naturalCount: number;
+  if (hardNaturals.length > 0) {
+    const rank = hardNaturals[0].rank;
+    if (!hardNaturals.every((c) => c.rank === rank)) {
+      return { valid: false, reason: "All natural cards in a set must share a rank" };
+    }
+    naturalCount = hardNaturals.length; // wild-rank cards + jokers are wild fillers
+  } else {
+    naturalCount = wildRankCards.length; // a set OF the wild rank; jokers are wild
   }
-  const rank = naturals[0].rank;
-  if (!naturals.every((c) => c.rank === rank)) {
-    return { valid: false, reason: "All natural cards in a set must share a rank" };
+
+  if (naturalCount < MIN_NATURALS) {
+    return { valid: false, reason: "A meld needs at least 2 natural cards" };
   }
   return { valid: true };
 }

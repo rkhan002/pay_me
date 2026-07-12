@@ -219,10 +219,19 @@ function renderMelds(root, state) {
     meldEl.className =
       "meld" + (layable ? " meld--layable" : "") + (layable && hasSelection ? " meld--target" : "");
     meldEl.dataset.meldId = meld.id;
+    // A wild-rank card shows its normal suit color when it's acting as a
+    // NATURAL (a set OF the wild rank), and the wild color when it's a filler
+    // or a designated wild (runs carry a wildAs on their wilds). Jokers are
+    // always wild. This mirrors validateSet's "set of the wild rank" rule.
+    const wildRank = state.hand?.wildRank;
+    const setOfWildRank =
+      meld.meldType === "SET" && !meld.cards.some((c) => c.rank !== "JOKER" && c.rank !== wildRank);
     for (const card of meld.cards) {
-      meldEl.appendChild(
-        renderCard(card, { wild: card.rank === "JOKER" || card.rank === state.hand?.wildRank }),
-      );
+      const actingWild =
+        card.rank === "JOKER" ||
+        (card.rank === wildRank &&
+          (meld.meldType === "SET" ? !setOfWildRank : card.wildAs != null));
+      meldEl.appendChild(renderCard(card, { wild: actingWild }));
     }
     if (layable) {
       const cue = document.createElement("div");

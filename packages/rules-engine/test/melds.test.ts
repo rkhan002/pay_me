@@ -66,6 +66,23 @@ describe("validateSet", () => {
     );
     expect(result.valid).toBe(true);
   });
+
+  it("accepts a set OF the wild rank - wild-rank cards used at face value", () => {
+    // Three 3s while 3 is wild: the 3s are used as natural 3s, not wilds.
+    const result = validateSet([card("3", "H"), card("3", "S", 0), card("3", "S", 1)], "3");
+    expect(result.valid).toBe(true);
+  });
+
+  it("a set of the wild rank still needs 2 of them (1 wild-rank card + jokers is not enough)", () => {
+    const result = validateSet([card("3", "H"), joker(0), joker(1)], "3");
+    expect(result.valid).toBe(false);
+  });
+
+  it("wild-rank card acts as a wild filler when the set is a different rank", () => {
+    // Two natural 8s + a 3 (wild rank) -> the 3 is the wild, valid set of 8s.
+    const result = validateSet([card("8", "S"), card("8", "H"), card("3", "D")], "3");
+    expect(result.valid).toBe(true);
+  });
 });
 
 describe("validateRun", () => {
