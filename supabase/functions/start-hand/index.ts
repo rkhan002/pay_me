@@ -1,4 +1,5 @@
-import { dealCards } from "../_shared/rules-engine/deal.ts";
+import { dealCards, dealFromDeck, buildCarryOverDeck } from "../_shared/rules-engine/deal.ts";
+import { decksForPlayerCount, type Card } from "../_shared/rules-engine/deck.ts";
 import {
   configForHand,
   startingSeatIndex,
@@ -6,6 +7,72 @@ import {
 } from "../_shared/rules-engine/handConfig.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
+
+const CARDS_PER_DECK = 54; // 52 ranked + 2 jokers
+
+// deno-lint-ignore no-explicit-any
+type SupabaseAdmin = any;
+
+// Project a stored card back to a plain deck card, dropping any run-only wild
+// designation (wildAs) or stray fields so reclaimed cards re-enter the deck clean.
+// deno-lint-ignore no-explicit-any
+function baseCard(c: any): Card {
+  return { rank: c.rank, suit: c.suit ?? null, deckIndex: c.deckIndex };
+}
+
+/**
+ * Builds the next hand's deal by carrying the deck over from the previous
+ * (completed) hand instead of shuffling a fresh deck: the cards never drawn
+ * last hand stay in their order on top, and everything reclaimed from the
+ * finished hand - the discard pile, players' leftover hand cards, and every
+ * melded card (wild-in-a-run designations stripped) - is shuffled underneath.
+ * Falls back to a fresh shuffle if the reclaimed cards don't add back up to a
+ * full deck, so a data hiccup can never deal a short or duplicated hand.
+ */
+async function dealCarriedOver(
+  admin: SupabaseAdmin,
+  roomId: string,
+  prevHandNumber: number,
+  playerIds: string[],
+  dealSize: number,
+) {
+  const { data: prevHand } = await admin
+    .from("hands")
+    .select("id, discard_pile")
+    .eq("room_id", roomId)
+    .eq("hand_number", prevHandNumber)
+    .single();
+  if (!prevHand) return dealCards(playerIds, dealSize);
+
+  const [{ data: stockRow }, { data: handPlayers }, { data: melds }] = await Promise.all([
+    admin.from("hand_stock").select("stock").eq("hand_id", prevHand.id).single(),
+    admin.from("hand_players").select("hand_cards").eq("hand_id", prevHand.id),
+    admin.from("melds").select("meld_cards(rank, suit, deck_index)").eq("hand_id", prevHand.id),
+  ]);
+
+  const remainingStock: Card[] = (((stockRow?.stock as Card[]) ?? []) as Card[]).map(baseCard);
+
+  const reclaimed: Card[] = [];
+  for (const c of (prevHand.discard_pile as Card[]) ?? []) reclaimed.push(baseCard(c));
+  for (const hp of handPlayers ?? []) {
+    for (const c of (hp.hand_cards as Card[]) ?? []) reclaimed.push(baseCard(c));
+  }
+  for (const m of melds ?? []) {
+    for (const c of m.meld_cards ?? []) {
+      reclaimed.push({ rank: c.rank, suit: c.suit ?? null, deckIndex: c.deck_index });
+    }
+  }
+
+  const deck = buildCarryOverDeck(remainingStock, reclaimed);
+  const expected = decksForPlayerCount(playerIds.length) * CARDS_PER_DECK;
+  if (deck.length !== expected) {
+    console.warn(
+      `Carry-over deck had ${deck.length} cards, expected ${expected}; dealing a fresh shuffle instead.`,
+    );
+    return dealCards(playerIds, dealSize);
+  }
+  return dealFromDeck(playerIds, dealSize, deck);
+}
 
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
@@ -67,7 +134,19 @@ Deno.serve(async (req: Request) => {
 
     const config = configForHand(nextHandNumber);
     const playerIds: string[] = players.map((p: any) => p.id as string);
-    const { hands, stock, discardPile } = dealCards(playerIds, config.dealSize);
+
+    // First hand of a game is a fresh shuffle; every later hand carries the
+    // deck over from the just-completed hand (see dealCarriedOver).
+    const { hands, stock, discardPile } =
+      room.current_hand_number === 0
+        ? dealCards(playerIds, config.dealSize)
+        : await dealCarriedOver(
+            admin,
+            roomId,
+            room.current_hand_number,
+            playerIds,
+            config.dealSize,
+          );
 
     // Who leads rotates every hand instead of always being whoever's in
     // seat 0 - round-robin for 3+ players, which for exactly 2 players
