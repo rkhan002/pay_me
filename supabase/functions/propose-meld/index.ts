@@ -6,7 +6,7 @@
 // distinguishable "needsWildDesignation" payload so the client can show a
 // picker and resubmit the same request with wildAssignments filled in.
 import { proposeMeld } from "../_shared/rules-engine/handState.ts";
-import { runArrangements } from "../_shared/rules-engine/melds.ts";
+import { runArrangements, validateSet } from "../_shared/rules-engine/melds.ts";
 import { isWildCard } from "../_shared/rules-engine/deck.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
@@ -42,7 +42,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const result = proposeMeld(prevState, playerId, cards, meldType, wildAssignments);
-    if (!result.ok) return errorResponse(result.error, 422);
+    if (!result.ok) {
+      // A common mix-up is submitting run-shaped cards via "Meld as set" (or
+      // vice versa). When the same cards WOULD be valid as the other meld
+      // type, tell the client so it can nudge the player toward the right
+      // button instead of just echoing the raw validation error.
+      let couldBe: "SET" | "RUN" | undefined;
+      if (meldType === "SET") {
+        if (runArrangements(cards, prevState.wildRank).length > 0) couldBe = "RUN";
+      } else if (validateSet(cards, prevState.wildRank).valid) {
+        couldBe = "SET";
+      }
+      return json({ ok: false, error: result.error, ...(couldBe ? { couldBe } : {}) }, 422);
+    }
 
     await saveHandState(admin, handId, prevState, result.state, playerId);
     await logMove(admin, handId, playerId, "propose_meld", body);

@@ -34,6 +34,19 @@ function isWildCard(card, wildRank) {
   return card.rank === "JOKER" || card.rank === wildRank;
 }
 
+// Turns a caught intent error into the message shown in the banner. When the
+// server flagged that the same cards would form the OTHER meld type (couldBe),
+// append a nudge toward the right button instead of leaving the player staring
+// at a raw "must share a rank"-style validation error.
+function errorText(e) {
+  const msg = (e && e.message) || "Something went wrong";
+  if (e && e.couldBe) {
+    const other = e.couldBe === "RUN" ? "run" : "set";
+    return `${msg} — but these cards would make a valid ${other}. Try “Meld as ${other}” instead.`;
+  }
+  return msg;
+}
+
 // A RUN meld/lay-off involving a wild card comes back from the server as
 // { ok: false, needsWildDesignation: true, ... } instead of erroring or
 // guessing - see propose-meld/layoff-card's edge functions. This opens the
@@ -58,7 +71,7 @@ async function proposeRun(state) {
     await loadHand(state.hand.id);
     clearSelection();
   } catch (e) {
-    setState({ error: e.message });
+    setState({ error: errorText(e) });
   }
 }
 
@@ -68,7 +81,7 @@ async function unmeldMeld(state, meldId) {
     await unmeld(state.hand.id, meldId);
     await loadHand(state.hand.id);
   } catch (e) {
-    setState({ error: e.message });
+    setState({ error: errorText(e) });
   }
 }
 
@@ -98,7 +111,7 @@ async function layOffOntoMeld(state, meldId) {
     await loadHand(state.hand.id);
     clearSelection();
   } catch (e) {
-    setState({ error: e.message });
+    setState({ error: errorText(e) });
   }
 }
 
@@ -127,7 +140,7 @@ async function submitWildPicker(picker, choice) {
     await loadHand(picker.handId);
     clearSelection();
   } catch (e) {
-    setState({ error: e.message, wildPicker: null });
+    setState({ error: errorText(e), wildPicker: null });
   }
 }
 
@@ -160,7 +173,7 @@ async function guard(fn, refresh, optimistic) {
     await fn();
     if (refresh) await refresh();
   } catch (e) {
-    setState({ error: e.message });
+    setState({ error: errorText(e) });
     if (refresh) await refresh().catch(() => {});
   } finally {
     actionInFlight = false;

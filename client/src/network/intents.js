@@ -21,7 +21,11 @@ async function callFunction(name, body) {
   // true, ... } - that's not a rejected move, it's a request for more
   // information, so it's handed back to the caller instead of thrown.
   if ((!res.ok || json.ok === false) && !json.needsWildDesignation) {
-    throw new Error(json.error || `${name} failed`);
+    const err = new Error(json.error || `${name} failed`);
+    // Some rejections carry a hint that the same cards would be valid as the
+    // other meld type (see propose-meld); pass it through so the UI can nudge.
+    if (json.couldBe) err.couldBe = json.couldBe;
+    throw err;
   }
   return json;
 }
