@@ -38,6 +38,10 @@ export async function loadRoom(roomId) {
   // 11th and final hand has just been scored.
   if (prevRoomStatus && prevRoomStatus !== "complete" && room?.status === "complete") {
     playSfx("win");
+    // Announce the champion. Dynamic import keeps this off the module's
+    // static dependency graph (winnerCelebration imports loadStandings from
+    // here), avoiding an import cycle.
+    import("../ui/winnerCelebration.js").then((m) => m.showWinnerCelebration(roomId));
   }
 
   setState({
