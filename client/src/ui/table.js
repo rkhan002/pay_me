@@ -556,8 +556,9 @@ function renderControls(root, state) {
     const label = state.room.currentHandNumber === 0 ? "Deal hand 1" : "Deal next hand";
     const btn = document.createElement("button");
     btn.className = "btn btn--primary";
-    btn.textContent = state.room.currentHandNumber >= 11 ? "Game complete" : label;
-    btn.disabled = state.room.currentHandNumber >= 11 || state.players.length < 2;
+    const totalHands = state.room.totalHands ?? 11;
+    btn.textContent = state.room.currentHandNumber >= totalHands ? "Game complete" : label;
+    btn.disabled = state.room.currentHandNumber >= totalHands || state.players.length < 2;
     btn.addEventListener("click", () => {
       // Belt-and-suspenders against double-fires: disable immediately so a
       // second click (or a slow network making the first click look like
@@ -706,7 +707,7 @@ export function renderTable(root) {
     <div class="room-code">Room: <span class="room-code-value">${state.room?.code ?? ""}</span></div>
     <div class="hand-info">${
       state.hand
-        ? `Hand ${state.hand.handNumber}/11 &middot; wild: ${state.hand.wildRank}`
+        ? `Hand ${state.hand.handNumber}/${state.room?.totalHands ?? 11} &middot; wild: ${state.hand.wildRank}`
         : "Waiting to deal"
     }</div>
   `;

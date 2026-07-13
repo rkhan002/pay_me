@@ -9,11 +9,15 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method !== "POST") throw new HttpError("POST only", 405);
     const userId = await requireUserId(req);
-    const { displayName, maxPlayers = 6 } = await req.json();
+    const { displayName, maxPlayers = 6, mode = "full" } = await req.json();
     if (!displayName || typeof displayName !== "string") {
       throw new HttpError("Missing displayName", 400);
     }
     if (maxPlayers < 2 || maxPlayers > 6) throw new HttpError("maxPlayers must be 2-6", 400);
+    // Quick Mode plays hands 1-8 (wild 3-10); Full Game plays all 11 (3-K).
+    // Stored as total_hands so a DB trigger can end the game at the right hand.
+    if (mode !== "quick" && mode !== "full") throw new HttpError("Invalid game mode", 400);
+    const totalHands = mode === "quick" ? 8 : 11;
 
     const admin = supabaseAdmin();
 
@@ -30,7 +34,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: room, error: roomError } = await admin
       .from("rooms")
-      .insert({ code, max_players: maxPlayers, created_by: userId })
+      .insert({ code, max_players: maxPlayers, created_by: userId, total_hands: totalHands })
       .select()
       .single();
     if (roomError || !room) throw new HttpError("Failed to create room", 500);

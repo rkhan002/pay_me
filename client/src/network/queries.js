@@ -52,6 +52,7 @@ export async function loadRoom(roomId) {
           status: room.status,
           maxPlayers: room.max_players,
           currentHandNumber: room.current_hand_number,
+          totalHands: room.total_hands ?? 11,
         }
       : null,
     players: (players ?? []).map((p) => ({

@@ -4,6 +4,10 @@ import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
 import { suitIcon } from "./cards.js";
 
+// Host's chosen game mode for the next "Start a new table". Kept module-local
+// (a purely pre-game UI choice) and defaults to the full 11-hand game.
+let selectedMode = "full";
+
 async function enterRoom(roomId, playerId) {
   // Load the room's actual state BEFORE switching screens. Flipping to
   // "table" first and loading after left a brief window where state.hand
@@ -101,6 +105,34 @@ export function renderLobby(root) {
   divider.textContent = "or";
   card.appendChild(divider);
 
+  // Game mode: Full Game plays all 11 hands (wild 3 -> K); Quick Mode stops
+  // after hand 8 (wild 3 -> 10) for a shorter game.
+  const modeField = document.createElement("div");
+  modeField.className = "field";
+  modeField.innerHTML = `<label>Game mode</label>`;
+  const modeToggle = document.createElement("div");
+  modeToggle.className = "mode-toggle";
+  const modeBtns = {};
+  for (const [value, label, sub] of [
+    ["full", "Full game", "3 \u2192 K \u00b7 11 hands"],
+    ["quick", "Quick", "3 \u2192 10 \u00b7 8 hands"],
+  ]) {
+    const opt = document.createElement("button");
+    opt.type = "button";
+    opt.className = "mode-option" + (value === selectedMode ? " mode-option--active" : "");
+    opt.innerHTML = `<span class="mode-option-label">${label}</span><span class="mode-option-sub">${sub}</span>`;
+    opt.addEventListener("click", () => {
+      selectedMode = value;
+      for (const [v, b] of Object.entries(modeBtns)) {
+        b.classList.toggle("mode-option--active", v === value);
+      }
+    });
+    modeBtns[value] = opt;
+    modeToggle.appendChild(opt);
+  }
+  modeField.appendChild(modeToggle);
+  card.appendChild(modeField);
+
   const createBtn = document.createElement("button");
   createBtn.className = "btn btn--secondary";
   createBtn.textContent = "Start a new table";
@@ -109,7 +141,7 @@ export function renderLobby(root) {
     createBtn.disabled = true;
     setState({ error: null }); // clear any stale error from a previous attempt
     try {
-      const { roomId, playerId } = await createRoom(nameInput.value.trim() || "Host");
+      const { roomId, playerId } = await createRoom(nameInput.value.trim() || "Host", selectedMode);
       await enterRoom(roomId, playerId);
     } catch (e) {
       setState({ error: e.message });

@@ -30,8 +30,8 @@ async function callFunction(name, body) {
   return json;
 }
 
-export const createRoom = (displayName, maxPlayers = 6) =>
-  callFunction("create-room", { displayName, maxPlayers });
+export const createRoom = (displayName, mode = "full", maxPlayers = 6) =>
+  callFunction("create-room", { displayName, mode, maxPlayers });
 
 export const joinRoom = (code, displayName) => callFunction("join-room", { code, displayName });
 

@@ -10,7 +10,7 @@ let state = {
   userId: null,
   error: null,
 
-  room: null, // { id, code, status, maxPlayers, currentHandNumber }
+  room: null, // { id, code, status, maxPlayers, currentHandNumber, totalHands }
   players: [], // [{ id, seatIndex, displayName, connected, userId }]
   myPlayerId: null,
 
