@@ -128,12 +128,9 @@ async function submitWildPicker(picker, choice) {
   setState({ error: null });
   try {
     if (picker.kind === "meld") {
-      const wilds = picker.cards.filter((c) => isWildCard(c, getState().hand.wildRank));
-      const wildAssignments = {};
-      wilds.forEach((w, i) => {
-        wildAssignments[cardKey(w)] = choice.wildRanks[i];
-      });
-      await proposeMeld(picker.handId, picker.cards, "RUN", wildAssignments);
+      // The chosen arrangement carries the exact cardKey -> rank map for its
+      // wild fillers; a wild-rank card acting as its own natural is left out.
+      await proposeMeld(picker.handId, picker.cards, "RUN", choice.wildAssignments);
     } else {
       await layOffCard(picker.handId, picker.card, picker.meldId, choice);
     }

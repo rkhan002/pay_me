@@ -185,6 +185,31 @@ describe("proposing a brand-new meld during the layoff phase", () => {
   });
 });
 
+describe("runs with a dual-use wild-rank card", () => {
+  it("stores a run with the wild-rank card as a natural (no wildAs)", () => {
+    // wild 3: hand has 3H, 4H, a joker. Meld 3-4-5 (3 natural, joker = 5).
+    const jk = joker();
+    const state = baseState({
+      wildRank: "3",
+      hasDrawnThisTurn: true,
+      hands: { p1: [card("3", "H"), card("4", "H"), jk], p2: [], p3: [] },
+    });
+    const result = unwrap(
+      proposeMeld(state, "p1", [card("3", "H"), card("4", "H"), jk], "RUN", {
+        [`JOKER#0`]: "5",
+      }),
+    );
+    const meld = result.melds[result.melds.length - 1];
+    expect(meld.type).toBe("RUN");
+    // sorted 3,4,5; the natural 3H has no wildAs, the joker carries wildAs 5.
+    expect(meld.cards.map((c) => c.rank)).toEqual(["3", "4", "JOKER"]);
+    const threeH = meld.cards.find((c) => c.rank === "3");
+    const jokerCard = meld.cards.find((c) => c.rank === "JOKER");
+    expect(threeH.wildAs).toBeUndefined();
+    expect(jokerCard.wildAs).toBe("5");
+  });
+});
+
 describe("post-Pay-Me order starts from the seat after the caller", () => {
   // Regression for the CECBT bug: with seat order [p1, p2, p3] and p2 calling
   // Pay Me, the final turns (and the lay-off round) must run p3 -> p1, not the

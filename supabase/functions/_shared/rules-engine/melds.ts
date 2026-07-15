@@ -1,6 +1,6 @@
 // AUTO-GENERATED from packages/rules-engine/src/melds.ts — DO NOT EDIT.
 // Edit the source there, then run: npm run rules:sync
-import { isWildCard, cardKey, type Card, type Rank } from "./deck.ts";
+import { cardKey, type Card, type Rank } from "./deck.ts";
 
 export type MeldType = "SET" | "RUN";
 
@@ -31,12 +31,6 @@ const RANK_HIGH: Record<Exclude<Rank, "JOKER">, number> = {
 };
 
 const MIN_NATURALS = 2;
-
-function partition(cards: Card[], wildRank: Rank) {
-  const naturals = cards.filter((c) => !isWildCard(c, wildRank));
-  const wilds = cards.filter((c) => isWildCard(c, wildRank));
-  return { naturals, wilds };
-}
 
 /**
  * Set: 3+ cards, same rank, no upper limit (house ruling) - with multiple
@@ -76,27 +70,6 @@ export function validateSet(cards: Card[], wildRank: Rank): MeldValidationResult
   return { valid: true };
 }
 
-function tryRunWindow(
-  naturalValues: number[],
-  totalLength: number,
-  domainMin: number,
-  domainMax: number,
-): boolean {
-  const uniqueValues = new Set(naturalValues);
-  if (uniqueValues.size !== naturalValues.length) return false; // duplicate rank in one run
-  const min = Math.min(...naturalValues);
-  const max = Math.max(...naturalValues);
-  const span = max - min + 1;
-  if (span > totalLength) return false;
-  const slack = totalLength - span;
-  for (let shiftStart = 0; shiftStart <= slack; shiftStart++) {
-    const windowStart = min - shiftStart;
-    const windowEnd = windowStart + totalLength - 1;
-    if (windowStart >= domainMin && windowEnd <= domainMax) return true;
-  }
-  return false;
-}
-
 /**
  * Run: 3+ consecutive cards, same suit. At least 2 natural cards.
  * Ace may anchor low (A-2-3...) or high (...Q-K-A) but K-A-2 wraparound
@@ -107,26 +80,22 @@ export function validateRun(cards: Card[], wildRank: Rank): MeldValidationResult
   if (cards.length < 3) {
     return { valid: false, reason: "A run must have at least 3 cards" };
   }
-  const { naturals, wilds } = partition(cards, wildRank);
-  if (naturals.length < MIN_NATURALS) {
+  // A run is valid if there's any way to resolve its wilds (and dual-use
+  // wild-rank cards) into a contiguous same-suit sequence - see runArrangements.
+  if (runArrangements(cards, wildRank).length > 0) return { valid: true };
+
+  // No valid arrangement: give the most useful reason. A wild-rank card can
+  // count as one natural (its own rank), so include one in the capacity check.
+  const naturalCapacity =
+    cards.filter((c) => c.rank !== "JOKER" && c.rank !== wildRank).length +
+    (cards.some((c) => c.rank === wildRank) ? 1 : 0);
+  if (naturalCapacity < MIN_NATURALS) {
     return { valid: false, reason: "A meld needs at least 2 natural cards" };
   }
-  const suit = naturals[0].suit;
-  if (!naturals.every((c) => c.suit === suit)) {
-    return { valid: false, reason: "Natural cards in a run must share a suit" };
-  }
-  void wilds;
-  const lowValues = naturals.map((c) => RANK_LOW[c.rank as Exclude<Rank, "JOKER">]);
-  const highValues = naturals.map((c) => RANK_HIGH[c.rank as Exclude<Rank, "JOKER">]);
-  const fitsLow = tryRunWindow(lowValues, cards.length, 1, 13);
-  const fitsHigh = tryRunWindow(highValues, cards.length, 2, 14);
-  if (!fitsLow && !fitsHigh) {
-    return {
-      valid: false,
-      reason: "Cards don't form a contiguous run (ace can't wrap from king to 2)",
-    };
-  }
-  return { valid: true };
+  return {
+    valid: false,
+    reason: "Cards don't form a contiguous run (ace can't wrap from king to 2)",
+  };
 }
 
 export function validateMeld(
@@ -169,7 +138,13 @@ function valueToRank(value: number, table: Record<Exclude<Rank, "JOKER">, number
 export interface RunArrangement {
   /** Every rank in the run, ascending, once every wild is resolved - e.g. ["9","10","J","Q"]. */
   orderedRanks: Rank[];
-  /** What the run's wild card(s) would represent under this arrangement, ascending. */
+  /**
+   * cardKey -> rank for each card acting as a WILD filler in this arrangement.
+   * A wild-rank card sitting at its own rank (a natural) is deliberately NOT
+   * included - the client sends this map straight back as the resolution.
+   */
+  wildAssignments: Record<string, Rank>;
+  /** The filler ranks, ascending - kept for display and back-compat. */
   wildRanks: Rank[];
 }
 
@@ -182,42 +157,67 @@ export interface RunArrangement {
  * case a player needs to be asked about rather than have guessed for them.
  */
 export function runArrangements(cards: Card[], wildRank: Rank): RunArrangement[] {
-  const { naturals, wilds } = partition(cards, wildRank);
-  if (naturals.length < MIN_NATURALS) return [];
-  const suit = naturals[0].suit;
-  if (!naturals.every((c) => c.suit === suit)) return [];
-
+  const hardNaturals = cards.filter((c) => c.rank !== "JOKER" && c.rank !== wildRank);
+  const wildRankCards = cards.filter((c) => c.rank === wildRank);
+  const jokers = cards.filter((c) => c.rank === "JOKER");
   const totalLength = cards.length;
-  const results: RunArrangement[] = [];
-  const seen = new Set<string>();
 
-  for (const [table, domainMin, domainMax] of [
-    [RANK_LOW, 1, 13],
-    [RANK_HIGH, 2, 14],
-  ] as const) {
-    const naturalValues = naturals.map((c) => table[c.rank as Exclude<Rank, "JOKER">]);
-    if (new Set(naturalValues).size !== naturalValues.length) continue;
-    const min = Math.min(...naturalValues);
-    const max = Math.max(...naturalValues);
-    const span = max - min + 1;
-    if (span > totalLength) continue;
-    const slack = totalLength - span;
-    for (let shiftStart = 0; shiftStart <= slack; shiftStart++) {
-      const windowStart = min - shiftStart;
-      const windowEnd = windowStart + totalLength - 1;
-      if (windowStart < domainMin || windowEnd > domainMax) continue;
-      const windowValues: number[] = [];
-      for (let v = windowStart; v <= windowEnd; v++) windowValues.push(v);
-      const gapValues = windowValues.filter((v) => !naturalValues.includes(v));
-      if (gapValues.length !== wilds.length) continue; // safety - should always match
-      const orderedRanks = windowValues.map((v) => valueToRank(v, table));
-      const key = orderedRanks.join(",");
-      if (seen.has(key)) continue;
-      seen.add(key);
-      results.push({ orderedRanks, wildRanks: gapValues.map((v) => valueToRank(v, table)) });
+  // A card of the wild rank is dual-use in a run: it can sit at its OWN rank as
+  // a natural (counting toward the 2-natural floor), or act as a wild filler.
+  // At most one wild-rank card can be natural (two would duplicate the wild
+  // rank within one run), so we try "none natural" plus "each single one
+  // natural" and keep whichever interpretations form a valid run.
+  const naturalOptions: (Card | null)[] = [null, ...wildRankCards];
+
+  // Dedupe by the resulting ordered ranks, preferring the interpretation with
+  // the FEWEST wild fillers (i.e. more cards acting as their own natural), so
+  // e.g. 3-4-5 with a natural 3 wins over the same run with the 3 used as a
+  // wild standing for 3.
+  const best = new Map<string, RunArrangement>();
+
+  for (const naturalWild of naturalOptions) {
+    const naturals = naturalWild ? [...hardNaturals, naturalWild] : hardNaturals;
+    if (naturals.length < MIN_NATURALS) continue;
+    const suit = naturals[0].suit;
+    if (!naturals.every((c) => c.suit === suit)) continue;
+    const wilds = [...jokers, ...wildRankCards.filter((c) => c !== naturalWild)];
+
+    for (const [table, domainMin, domainMax] of [
+      [RANK_LOW, 1, 13],
+      [RANK_HIGH, 2, 14],
+    ] as const) {
+      const naturalValues = naturals.map(
+        (c) => table[(c === naturalWild ? wildRank : c.rank) as Exclude<Rank, "JOKER">],
+      );
+      if (new Set(naturalValues).size !== naturalValues.length) continue;
+      const min = Math.min(...naturalValues);
+      const max = Math.max(...naturalValues);
+      const span = max - min + 1;
+      if (span > totalLength) continue;
+      const slack = totalLength - span;
+      for (let shiftStart = 0; shiftStart <= slack; shiftStart++) {
+        const windowStart = min - shiftStart;
+        const windowEnd = windowStart + totalLength - 1;
+        if (windowStart < domainMin || windowEnd > domainMax) continue;
+        const windowValues: number[] = [];
+        for (let v = windowStart; v <= windowEnd; v++) windowValues.push(v);
+        const gapValues = windowValues.filter((v) => !naturalValues.includes(v));
+        if (gapValues.length !== wilds.length) continue; // safety - should always match
+        const orderedRanks = windowValues.map((v) => valueToRank(v, table));
+        const wildRanks = gapValues.map((v) => valueToRank(v, table));
+        const wildAssignments: Record<string, Rank> = {};
+        wilds.forEach((w, i) => {
+          wildAssignments[cardKey(w)] = wildRanks[i];
+        });
+        const key = orderedRanks.join(",");
+        const existing = best.get(key);
+        if (!existing || wildRanks.length < existing.wildRanks.length) {
+          best.set(key, { orderedRanks, wildAssignments, wildRanks });
+        }
+      }
     }
   }
-  return results;
+  return [...best.values()];
 }
 
 /**
@@ -231,22 +231,21 @@ export function validateWildAssignments(
   wildRank: Rank,
   wildAssignments: Record<string, Rank>,
 ): MeldValidationResult {
-  const { wilds } = partition(cards, wildRank);
-  if (wilds.length === 0) return { valid: true };
-
-  const assignedRanks: Rank[] = [];
-  for (const wildCard of wilds) {
-    const assigned = wildAssignments[cardKey(wildCard)];
-    if (!assigned) {
-      return { valid: false, reason: "Every wild card in this run needs a rank assigned" };
-    }
-    assignedRanks.push(assigned);
+  const arrangements = runArrangements(cards, wildRank);
+  if (arrangements.length === 0) {
+    return { valid: false, reason: "That assignment doesn't form a valid run with these cards" };
   }
-
-  const assignedMultiset = [...assignedRanks].sort().join(",");
-  const matches = runArrangements(cards, wildRank).some(
-    (arr) => [...arr.wildRanks].sort().join(",") === assignedMultiset,
-  );
+  // The provided map must exactly match one arrangement's filler map: every
+  // wild (joker, or wild-rank card used AS a wild) assigned the right rank and
+  // nothing extra. A wild-rank card left unassigned is acting as its natural.
+  const providedKeys = Object.keys(wildAssignments);
+  const matches = arrangements.some((arr) => {
+    const keys = Object.keys(arr.wildAssignments);
+    return (
+      keys.length === providedKeys.length &&
+      keys.every((k) => arr.wildAssignments[k] === wildAssignments[k])
+    );
+  });
   if (!matches) {
     return { valid: false, reason: "That assignment doesn't form a valid run with these cards" };
   }
@@ -258,7 +257,10 @@ function effectiveRankValue(
   wildRank: Rank,
   table: Record<Exclude<Rank, "JOKER">, number>,
 ): number | undefined {
-  const rank = isWildCard(card, wildRank) ? card.wildAs : card.rank;
+  // A wild-rank card with no wildAs is acting as a natural of its OWN rank; a
+  // wildAs (on a joker, or a wild-rank card being used AS a wild) says which
+  // rank it stands for. A joker with no wildAs is still unresolved.
+  const rank = card.wildAs ?? (card.rank === "JOKER" ? undefined : card.rank);
   if (!rank) return undefined;
   return table[rank as Exclude<Rank, "JOKER">];
 }

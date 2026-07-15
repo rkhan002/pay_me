@@ -174,6 +174,65 @@ describe("runArrangements", () => {
   });
 });
 
+describe("wild-rank cards are dual-use in runs", () => {
+  // With 3 wild, a 3 of the run's suit can sit at its own rank as a natural
+  // (helping meet the 2-natural floor) OR act as a wild filler.
+  it("counts a wild-rank card as a natural toward the 2-natural floor", () => {
+    // 3H (natural 3) + 4H + a joker: 2 naturals, joker fills. Before dual-use
+    // this failed with only one natural.
+    expect(validateRun([card("3", "H"), card("4", "H"), joker()], "3").valid).toBe(true);
+  });
+
+  it("accepts a plain run whose low card is the wild rank", () => {
+    expect(validateRun([card("3", "H"), card("4", "H"), card("5", "H")], "3").valid).toBe(true);
+  });
+
+  it("resolves uniquely (no picker) when the wild-rank card is a natural", () => {
+    // 3H, 5H, joker (wild 3): 3 natural, 5 natural, joker must be the 4.
+    const arr = runArrangements([card("3", "H"), card("5", "H"), joker()], "3");
+    expect(arr).toHaveLength(1);
+    expect(arr[0].orderedRanks).toEqual(["3", "4", "5"]);
+    // Only the joker is a wild filler; the natural 3H is not assigned.
+    expect(Object.keys(arr[0].wildAssignments)).toEqual([cardKey(joker())]);
+    expect(arr[0].wildAssignments[cardKey(joker())]).toBe("4");
+  });
+
+  it("offers the natural arrangement with no wild fillers", () => {
+    const arr = runArrangements([card("3", "H"), card("4", "H"), card("5", "H")], "3");
+    const nat = arr.find((a) => a.orderedRanks.join(",") === "3,4,5");
+    expect(nat).toBeTruthy();
+    expect(nat!.wildAssignments).toEqual({});
+  });
+
+  it("still uses a wild-rank card AS a wild when it can't be a natural", () => {
+    // JH, QH + 3S (wild 3): the 3 isn't adjacent to J-Q (and is a different
+    // suit), so it can only act as a wild - e.g. the K, giving J-Q-K.
+    const arr = runArrangements([card("J", "H"), card("Q", "H"), card("3", "S")], "3");
+    const jqk = arr.find((a) => a.orderedRanks.join(",") === "J,Q,K");
+    expect(jqk).toBeTruthy();
+    expect(jqk!.wildAssignments[cardKey(card("3", "S"))]).toBe("K");
+  });
+
+  it("sorts a run with a natural wild-rank card into ascending order", () => {
+    const sorted = sortRunCards(
+      [card("4", "H"), card("3", "H"), { ...joker(), wildAs: "5" as const }],
+      "3",
+    );
+    expect(sorted.map((c) => c.rank)).toEqual(["3", "4", "JOKER"]);
+  });
+
+  it("validates the joker-only assignment when the wild-rank card is natural", () => {
+    const cards = [card("3", "H"), card("4", "H"), joker()];
+    const jkey = cardKey(joker());
+    expect(validateWildAssignments(cards, "3", { [jkey]: "5" }).valid).toBe(true); // 3-4-5
+    expect(validateWildAssignments(cards, "3", { [jkey]: "2" }).valid).toBe(true); // 2-3-4
+    // Also assigning the natural 3 a rank is not a valid arrangement.
+    expect(
+      validateWildAssignments(cards, "3", { [jkey]: "5", [cardKey(card("3", "H"))]: "3" }).valid,
+    ).toBe(false);
+  });
+});
+
 describe("validateWildAssignments", () => {
   const cards = [card("Q", "H"), card("10", "H"), joker(), card("J", "H")];
 

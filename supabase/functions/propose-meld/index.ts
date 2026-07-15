@@ -31,17 +31,23 @@ Deno.serve(async (req: Request) => {
     const { playerId } = await resolvePlayerIdForHand(admin, handId, userId);
     const prevState = await loadHandState(admin, handId);
 
+    let effectiveAssignments = wildAssignments;
     if (meldType === "RUN" && cards.some((c: any) => isWildCard(c, prevState.wildRank))) {
-      if (!wildAssignments) {
+      if (!effectiveAssignments) {
         const arrangements = runArrangements(cards, prevState.wildRank);
-        if (arrangements.length === 0) {
-          return errorResponse("Cards don't form a valid run", 422);
+        if (arrangements.length === 1) {
+          // Unambiguous - resolve automatically, no picker. Covers a wild-rank
+          // card sitting at its own rank with only one way to complete the run.
+          effectiveAssignments = arrangements[0].wildAssignments;
+        } else if (arrangements.length > 1) {
+          return json({ ok: false, needsWildDesignation: true, arrangements });
         }
-        return json({ ok: false, needsWildDesignation: true, arrangements });
+        // arrangements.length === 0: not a valid run - fall through so
+        // proposeMeld/validateRun returns the proper error (+ couldBe hint).
       }
     }
 
-    const result = proposeMeld(prevState, playerId, cards, meldType, wildAssignments);
+    const result = proposeMeld(prevState, playerId, cards, meldType, effectiveAssignments);
     if (!result.ok) {
       // A common mix-up is submitting run-shaped cards via "Meld as set" (or
       // vice versa). When the same cards WOULD be valid as the other meld
