@@ -6,6 +6,7 @@ import {
   cardKey,
 } from "../state/store.js";
 import { renderCard, renderCardFan, renderCardBack } from "./cards.js";
+import { avatarSrc } from "./avatars.js";
 import { commitOrder, sortByRank, sortBySuit, makeHandFanDraggable } from "./handOrder.js";
 import {
   startHand,
@@ -233,7 +234,16 @@ function renderOpponents(root, state) {
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = player.displayName.slice(0, 2).toUpperCase();
+    const avSrc = avatarSrc(player.avatar);
+    if (avSrc) {
+      avatar.classList.add("avatar--img");
+      const img = document.createElement("img");
+      img.src = avSrc;
+      img.alt = player.displayName;
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = player.displayName.slice(0, 2).toUpperCase();
+    }
     if (!player.connected) avatar.classList.add("avatar--disconnected");
     seat.appendChild(avatar);
 

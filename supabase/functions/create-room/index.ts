@@ -9,7 +9,7 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method !== "POST") throw new HttpError("POST only", 405);
     const userId = await requireUserId(req);
-    const { displayName, maxPlayers = 6, mode = "full" } = await req.json();
+    const { displayName, maxPlayers = 6, mode = "full", avatar = null } = await req.json();
     if (!displayName || typeof displayName !== "string") {
       throw new HttpError("Missing displayName", 400);
     }
@@ -18,6 +18,9 @@ Deno.serve(async (req: Request) => {
     // Stored as total_hands so a DB trigger can end the game at the right hand.
     if (mode !== "quick" && mode !== "full") throw new HttpError("Invalid game mode", 400);
     const totalHands = mode === "quick" ? 8 : 11;
+    // Optional character-icon id chosen in the lobby (resolved to an image by
+    // the client); null falls back to the initials circle.
+    const avatarId = typeof avatar === "string" && avatar.length <= 32 ? avatar : null;
 
     const admin = supabaseAdmin();
 
@@ -41,7 +44,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: player, error: playerError } = await admin
       .from("players")
-      .insert({ room_id: room.id, user_id: userId, seat_index: 0, display_name: displayName })
+      .insert({
+        room_id: room.id,
+        user_id: userId,
+        seat_index: 0,
+        display_name: displayName,
+        avatar: avatarId,
+      })
       .select()
       .single();
     if (playerError || !player) throw new HttpError("Failed to seat the host", 500);

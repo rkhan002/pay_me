@@ -1353,3 +1353,77 @@ button.card-back:not(:disabled):hover {
   color: var(--text-dim);
   letter-spacing: 0.02em;
 }
+
+/* ---------- Player character avatars ---------- */
+/* Seat avatar image variant (replaces the initials circle when the player
+   picked a character; see ui/avatars.js). */
+.avatar--img {
+  background: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.avatar--img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Lobby character picker. */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 0.5rem;
+}
+
+.avatar-option {
+  padding: 0;
+  aspect-ratio: 1;
+  border: 2px solid var(--surface2);
+  border-radius: 50%;
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.1s ease;
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-option:hover {
+  transform: translateY(-2px);
+}
+
+.avatar-option--active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(61, 224, 255, 0.45);
+}
+
+/* Champion's character in the winner celebration. */
+.wc-avatar {
+  width: 96px;
+  height: 96px;
+  margin: 0.1rem 0 0.4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--amber);
+  box-shadow: 0 0 22px rgba(255, 170, 0, 0.4);
+  opacity: 0.2;
+  animation: wc-rowin 0.5s ease-out 0.4s forwards;
+}
+
+.wc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

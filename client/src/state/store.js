@@ -11,7 +11,7 @@ let state = {
   error: null,
 
   room: null, // { id, code, status, maxPlayers, currentHandNumber, totalHands }
-  players: [], // [{ id, seatIndex, displayName, connected, userId }]
+  players: [], // [{ id, seatIndex, displayName, connected, userId, avatar }]
   myPlayerId: null,
 
   hand: null, // { id, handNumber, wildRank, dealSize, discardPile, turnPlayerId, hasDrawnThisTurn, phase, payMeCallerId, pendingFinalTurns, pendingLayoffs }

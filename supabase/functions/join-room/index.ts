@@ -8,8 +8,10 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method !== "POST") throw new HttpError("POST only", 405);
     const userId = await requireUserId(req);
-    const { code, displayName } = await req.json();
+    const { code, displayName, avatar = null } = await req.json();
     if (!code || !displayName) throw new HttpError("Missing code or displayName", 400);
+    // Optional character-icon id (see create-room); null keeps the initials circle.
+    const avatarId = typeof avatar === "string" && avatar.length <= 32 ? avatar : null;
 
     const admin = supabaseAdmin();
     const { data: room, error: roomError } = await admin
@@ -30,7 +32,7 @@ Deno.serve(async (req: Request) => {
     if (existing) {
       await admin
         .from("players")
-        .update({ last_seen_at: new Date().toISOString() })
+        .update({ last_seen_at: new Date().toISOString(), avatar: avatarId })
         .eq("id", existing.id);
       return json({ ok: true, roomId: room.id, playerId: existing.id, rejoined: true });
     }
@@ -52,6 +54,7 @@ Deno.serve(async (req: Request) => {
         user_id: userId,
         seat_index: count ?? 0,
         display_name: displayName,
+        avatar: avatarId,
       })
       .select()
       .single();

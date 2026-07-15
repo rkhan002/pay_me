@@ -11,6 +11,7 @@
 // in-progress -> complete transition (see network/queries.js).
 import { getState } from "../state/store.js";
 import { loadStandings } from "../network/queries.js";
+import { avatarSrc } from "./avatars.js";
 
 const OVERLAY_ID = "winner-celebration";
 const CONFETTI_COLORS = [
@@ -62,6 +63,19 @@ function mountCelebration() {
   eyebrow.className = "wc-eyebrow";
   eyebrow.textContent = "CHAMPION";
   rise.appendChild(eyebrow);
+
+  const champSrc = avatarSrc(
+    (getState().players.find((p) => p.id === winner.playerId) || {}).avatar,
+  );
+  if (champSrc) {
+    const av = document.createElement("div");
+    av.className = "wc-avatar";
+    const img = document.createElement("img");
+    img.src = champSrc;
+    img.alt = winner.displayName;
+    av.appendChild(img);
+    rise.appendChild(av);
+  }
 
   const name = document.createElement("div");
   name.className = "wc-name";

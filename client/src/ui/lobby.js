@@ -3,10 +3,15 @@ import { setState } from "../state/store.js";
 import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
 import { suitIcon } from "./cards.js";
+import { AVATARS } from "./avatars.js";
 
 // Host's chosen game mode for the next "Start a new table". Kept module-local
 // (a purely pre-game UI choice) and defaults to the full 11-hand game.
 let selectedMode = "full";
+
+// The character icon chosen for the next join/create. Random default so a
+// table looks varied out of the box; the player can change it in the picker.
+let selectedAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
 
 async function enterRoom(roomId, playerId) {
   // Load the room's actual state BEFORE switching screens. Flipping to
@@ -66,6 +71,34 @@ export function renderLobby(root) {
   nameField.appendChild(nameInput);
   card.appendChild(nameField);
 
+  // Character picker: the icon shown for you at the table (see ui/avatars.js).
+  const avatarField = document.createElement("div");
+  avatarField.className = "field";
+  avatarField.innerHTML = `<label>Character</label>`;
+  const avatarGrid = document.createElement("div");
+  avatarGrid.className = "avatar-grid";
+  const avatarBtns = {};
+  for (const a of AVATARS) {
+    const opt = document.createElement("button");
+    opt.type = "button";
+    opt.className = "avatar-option" + (a.id === selectedAvatar ? " avatar-option--active" : "");
+    opt.setAttribute("aria-label", a.label);
+    const img = document.createElement("img");
+    img.src = a.src;
+    img.alt = a.label;
+    opt.appendChild(img);
+    opt.addEventListener("click", () => {
+      selectedAvatar = a.id;
+      for (const [id, b] of Object.entries(avatarBtns)) {
+        b.classList.toggle("avatar-option--active", id === a.id);
+      }
+    });
+    avatarBtns[a.id] = opt;
+    avatarGrid.appendChild(opt);
+  }
+  avatarField.appendChild(avatarGrid);
+  card.appendChild(avatarField);
+
   const joinField = document.createElement("div");
   joinField.className = "field";
   joinField.innerHTML = `<label for="roomCode">Room code</label>`;
@@ -90,7 +123,11 @@ export function renderLobby(root) {
     createBtn.disabled = true;
     setState({ error: null }); // clear any stale error from a previous attempt
     try {
-      const { roomId, playerId } = await joinRoom(codeInput.value.trim(), nameInput.value.trim());
+      const { roomId, playerId } = await joinRoom(
+        codeInput.value.trim(),
+        nameInput.value.trim(),
+        selectedAvatar,
+      );
       await enterRoom(roomId, playerId);
     } catch (e) {
       setState({ error: e.message });
@@ -141,7 +178,11 @@ export function renderLobby(root) {
     createBtn.disabled = true;
     setState({ error: null }); // clear any stale error from a previous attempt
     try {
-      const { roomId, playerId } = await createRoom(nameInput.value.trim() || "Host", selectedMode);
+      const { roomId, playerId } = await createRoom(
+        nameInput.value.trim() || "Host",
+        selectedMode,
+        selectedAvatar,
+      );
       await enterRoom(roomId, playerId);
     } catch (e) {
       setState({ error: e.message });

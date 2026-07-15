@@ -61,6 +61,7 @@ export async function loadRoom(roomId) {
       displayName: p.display_name,
       connected: isConnected(p.last_seen_at),
       userId: p.user_id,
+      avatar: p.avatar ?? null,
     })),
   });
 
