@@ -474,8 +474,8 @@ function buildActionHint(state, myTurn, inLayoff, myLayoffTurn) {
   let text = "";
   if (myLayoffTurn) {
     text = state.melds.length
-      ? "Lay-off round: tap a card in your hand, then tap a meld to add it. Tap Pass when you're done."
-      : "Lay-off round: tap Pass when you're done.";
+      ? "Lay-off round (no discarding now): tap a card, then a meld, to lay it off. Any card you can't lay off stays in your hand - tap Pass when you're done."
+      : "Lay-off round: nothing here to lay off onto, so tap Pass. Any cards left stay in your hand.";
   } else if (myTurn && !state.hand.hasDrawnThisTurn) {
     text =
       "Your turn - draw a card first (Stock or Discard), then you can meld, lay off, or discard.";
@@ -661,7 +661,8 @@ function renderControls(root, state) {
   const discardBtn = document.createElement("button");
   discardBtn.className = "btn btn--primary";
   discardBtn.textContent = "Discard selected";
-  discardBtn.disabled = !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length !== 1;
+  discardBtn.disabled =
+    inLayoff || !myTurn || !state.hand.hasDrawnThisTurn || selectedCards().length !== 1;
   discardBtn.addEventListener("click", () => {
     const card = selectedCards()[0];
     guard(
