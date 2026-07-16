@@ -95,6 +95,24 @@ async function layOffOntoMeld(state, meldId) {
     return;
   }
   setState({ error: null });
+
+  // Move the card onto the meld optimistically so it lands the instant you
+  // click, instead of after a full server round trip - loadHand then
+  // reconciles with the authoritative table, and on rejection restores it.
+  // The one move we can't show yet is a wild joining a RUN: the server
+  // replies needsWildDesignation (no move made) so we can open the rank
+  // picker, and optimistically yanking the card would make it vanish while
+  // that modal is up. isWildCard is inlined (the wild rank, or a joker).
+  const meld = state.melds.find((m) => m.id === meldId);
+  const isWild = card.rank === "JOKER" || card.rank === state.hand.wildRank;
+  const willPrompt = meld?.meldType === "RUN" && isWild;
+  if (!willPrompt) {
+    setState((st) => ({
+      myCards: st.myCards.filter((c) => cardKey(c) !== cardKey(card)),
+      melds: st.melds.map((m) => (m.id === meldId ? { ...m, cards: [...m.cards, card] } : m)),
+    }));
+  }
+
   try {
     const result = await layOffCard(state.hand.id, card, meldId);
     if (result.needsWildDesignation) {
@@ -113,6 +131,8 @@ async function layOffOntoMeld(state, meldId) {
     clearSelection();
   } catch (e) {
     setState({ error: errorText(e) });
+    // Undo the optimistic move by refetching the true table state.
+    await loadHand(state.hand.id).catch(() => {});
   }
 }
 
@@ -125,7 +145,20 @@ async function layOffOntoMeld(state, meldId) {
  * its own assigned rank regardless of that pairing.
  */
 async function submitWildPicker(picker, choice) {
-  setState({ error: null });
+  // Close the picker up front and, for a lay-off, drop the card onto the meld
+  // optimistically now that we know the rank it takes (choice) - same instant
+  // feedback as an ordinary lay-off. loadHand reconciles / restores after.
+  setState({ error: null, wildPicker: null });
+  if (picker.kind === "layoff") {
+    setState((st) => ({
+      myCards: st.myCards.filter((c) => cardKey(c) !== cardKey(picker.card)),
+      melds: st.melds.map((m) =>
+        m.id === picker.meldId
+          ? { ...m, cards: [...m.cards, { ...picker.card, wildAs: choice }] }
+          : m,
+      ),
+    }));
+  }
   try {
     if (picker.kind === "meld") {
       // The chosen arrangement carries the exact cardKey -> rank map for its
@@ -134,11 +167,11 @@ async function submitWildPicker(picker, choice) {
     } else {
       await layOffCard(picker.handId, picker.card, picker.meldId, choice);
     }
-    setState({ wildPicker: null });
     await loadHand(picker.handId);
     clearSelection();
   } catch (e) {
-    setState({ error: errorText(e), wildPicker: null });
+    setState({ error: errorText(e) });
+    await loadHand(picker.handId).catch(() => {});
   }
 }
 

@@ -22,20 +22,44 @@ export function handleOptions(req: Request): Response | null {
   return null;
 }
 
-/** Every intent-sending function requires a valid Supabase (anonymous) JWT. */
-export async function requireUserId(req: Request): Promise<string> {
+function decodeJwtPayload(token: string): Record<string, unknown> {
+  const parts = token.split(".");
+  if (parts.length !== 3) throw new HttpError("Malformed session token", 401);
+  try {
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
+    return JSON.parse(atob(b64 + pad)) as Record<string, unknown>;
+  } catch {
+    throw new HttpError("Malformed session token", 401);
+  }
+}
+
+/**
+ * Every intent-sending function requires a valid Supabase (anonymous) JWT.
+ *
+ * All of these functions are deployed with verify_jwt = true, so Supabase's
+ * edge gateway has already cryptographically verified this token's signature
+ * (against the project JWT secret) and its expiry BEFORE our code runs - an
+ * unverified or expired token never reaches here. So we don't re-verify; we
+ * just read the subject out of the payload. This drops the ~100-200ms network
+ * round trip that auth.getUser() used to add to every single action. We still
+ * defensively re-check the token is present, well-formed, and not expired.
+ */
+export function requireUserId(req: Request): string {
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
   if (!token) throw new HttpError("Missing Authorization header", 401);
 
-  const { createClient } = await import("npm:@supabase/supabase-js@2");
-  const anonClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-  );
-  const { data, error } = await anonClient.auth.getUser(token);
-  if (error || !data?.user) throw new HttpError("Invalid or expired session", 401);
-  return data.user.id;
+  const payload = decodeJwtPayload(token);
+  const sub = payload.sub;
+  const exp = payload.exp;
+  if (typeof exp === "number" && exp * 1000 <= Date.now()) {
+    throw new HttpError("Session expired", 401);
+  }
+  if (typeof sub !== "string" || sub.length === 0) {
+    throw new HttpError("Invalid session token", 401);
+  }
+  return sub;
 }
 
 export class HttpError extends Error {
