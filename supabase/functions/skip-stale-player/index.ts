@@ -17,6 +17,7 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
 import { resolvePlayerIdForHand } from "../_shared/playerLookup.ts";
 import { loadHandState, saveHandState, logMove, STALE_MS } from "../_shared/handRepo.ts";
+import { handViewFor } from "../_shared/rules-engine/handView.ts";
 
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
@@ -55,6 +56,7 @@ Deno.serve(async (req: Request) => {
     await saveHandState(admin, handId, prevState, result.state, callerId);
     await logMove(admin, handId, callerId, "skip_stale_player", body);
 
+    let scoreMap: Record<string, number> | undefined;
     if (result.state.phase === "scoring" && result.state.payMeCallerId) {
       const scores = scoreHandForAllPlayers(
         result.state.hands,
@@ -69,6 +71,7 @@ Deno.serve(async (req: Request) => {
           .eq("player_id", entry.playerId);
       }
       await admin.from("hands").update({ phase: "complete" }).eq("id", handId);
+      scoreMap = Object.fromEntries(scores.map((e) => [e.playerId, e.score]));
 
       const { data: hand } = await admin
         .from("hands")
@@ -80,7 +83,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return json({ ok: true });
+    const view = scoreMap
+      ? handViewFor({ ...result.state, phase: "complete" }, callerId, scoreMap)
+      : handViewFor(result.state, callerId);
+    return json({ ok: true, view });
   } catch (e) {
     if (e instanceof HttpError) return errorResponse(e.message, e.status);
     console.error(e);

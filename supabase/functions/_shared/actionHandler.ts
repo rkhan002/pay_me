@@ -15,6 +15,7 @@ import {
 } from "./http.ts";
 import { resolvePlayerIdForHand } from "./playerLookup.ts";
 import { loadHandState, saveHandState, logMove } from "./handRepo.ts";
+import { handViewFor } from "./rules-engine/handView.ts";
 
 export function handleAction(
   action: string,
@@ -41,7 +42,9 @@ export function handleAction(
       await saveHandState(admin, handId, prevState, result.state, playerId);
       await logMove(admin, handId, playerId, action, body);
 
-      return json({ ok: true });
+      // Return the acting player's viewer-scoped snapshot so the client can
+      // apply it directly instead of making a second read round trip.
+      return json({ ok: true, view: handViewFor(result.state, playerId) });
     } catch (e) {
       if (e instanceof HttpError) return errorResponse(e.message, e.status);
       console.error(e);

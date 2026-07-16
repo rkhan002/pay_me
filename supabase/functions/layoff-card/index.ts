@@ -10,6 +10,7 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { HttpError, errorResponse, handleOptions, json, requireUserId } from "../_shared/http.ts";
 import { resolvePlayerIdForHand } from "../_shared/playerLookup.ts";
 import { loadHandState, saveHandState, logMove } from "../_shared/handRepo.ts";
+import { handViewFor } from "../_shared/rules-engine/handView.ts";
 
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
@@ -53,7 +54,7 @@ Deno.serve(async (req: Request) => {
     await saveHandState(admin, handId, prevState, result.state, playerId);
     await logMove(admin, handId, playerId, "layoff", body);
 
-    return json({ ok: true });
+    return json({ ok: true, view: handViewFor(result.state, playerId) });
   } catch (e) {
     if (e instanceof HttpError) return errorResponse(e.message, e.status);
     console.error(e);

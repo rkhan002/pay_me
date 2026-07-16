@@ -3,7 +3,7 @@
 // supabase/migrations/0001_init.sql. No writes happen here - see intents.js
 // for the only way this client ever changes game state.
 import { supabase } from "./supabaseClient.js";
-import { setState } from "../state/store.js";
+import { getState, setState } from "../state/store.js";
 import { playSfx } from "../audio/audioManager.js";
 import { orderCards } from "../ui/handOrder.js";
 
@@ -265,6 +265,51 @@ export async function loadHand(handId) {
       cardCount: p.card_count,
       score: p.score,
       hasTakenFinalTurn: p.has_taken_final_turn,
+    })),
+    melds: nextMelds,
+  });
+}
+
+/**
+ * Applies a viewer-scoped snapshot returned by an action edge function (see
+ * handViewFor / the edge functions' { ok, view } response), instead of doing a
+ * second read round trip via loadHand. The server already computed exactly what
+ * this player is allowed to see - including the RLS meld gating - so we just
+ * overlay it. Static hand fields (id, handNumber, dealSize) never change during
+ * a hand, so we keep the ones already in state and overlay only the dynamic
+ * fields the server sent. Runs the same SFX diff loadHand does.
+ */
+export function applyHandView(view) {
+  const { myPlayerId, hand: prevHand, myCards: prevMyCards, melds: prevMelds } = getState();
+  // No current hand to overlay onto (shouldn't happen for an in-hand action);
+  // ignore rather than build a half-populated hand object.
+  if (!prevHand) return;
+
+  const nextHand = { ...prevHand, ...view.hand };
+  const nextMyCards = orderCards(nextHand.id, view.myCards ?? []);
+  const nextMelds = (view.melds ?? []).map((m) => ({
+    id: m.id,
+    ownerPlayerId: m.ownerPlayerId,
+    meldType: m.meldType,
+    cards: (m.cards ?? []).map((c) => ({
+      rank: c.rank,
+      suit: c.suit,
+      deckIndex: c.deckIndex,
+      wildAs: c.wildAs ?? undefined,
+    })),
+  }));
+
+  fireHandSfx(prevHand, prevMyCards, prevMelds, nextHand, nextMyCards, nextMelds, myPlayerId);
+
+  setState({
+    hand: nextHand,
+    myCards: nextMyCards,
+    // publicHandInfo already arrives in client shape from handViewFor.
+    publicHandInfo: (view.publicHandInfo ?? []).map((p) => ({
+      playerId: p.playerId,
+      cardCount: p.cardCount,
+      score: p.score,
+      hasTakenFinalTurn: p.hasTakenFinalTurn,
     })),
     melds: nextMelds,
   });

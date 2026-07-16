@@ -19,7 +19,7 @@ import {
   skipStalePlayer,
   unmeld,
 } from "../network/intents.js";
-import { loadRoom, loadHand, loadStandings } from "../network/queries.js";
+import { loadRoom, loadHand, loadStandings, applyHandView } from "../network/queries.js";
 import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/audioManager.js";
 
 function selectedCards() {
@@ -69,7 +69,8 @@ async function proposeRun(state) {
       });
       return;
     }
-    await loadHand(state.hand.id);
+    if (result.view) applyHandView(result.view);
+    else await loadHand(state.hand.id);
     clearSelection();
   } catch (e) {
     setState({ error: errorText(e) });
@@ -79,8 +80,9 @@ async function proposeRun(state) {
 async function unmeldMeld(state, meldId) {
   setState({ error: null });
   try {
-    await unmeld(state.hand.id, meldId);
-    await loadHand(state.hand.id);
+    const result = await unmeld(state.hand.id, meldId);
+    if (result.view) applyHandView(result.view);
+    else await loadHand(state.hand.id);
   } catch (e) {
     setState({ error: errorText(e) });
   }
@@ -127,7 +129,8 @@ async function layOffOntoMeld(state, meldId) {
       });
       return;
     }
-    await loadHand(state.hand.id);
+    if (result.view) applyHandView(result.view);
+    else await loadHand(state.hand.id);
     clearSelection();
   } catch (e) {
     setState({ error: errorText(e) });
@@ -160,14 +163,16 @@ async function submitWildPicker(picker, choice) {
     }));
   }
   try {
+    let result;
     if (picker.kind === "meld") {
       // The chosen arrangement carries the exact cardKey -> rank map for its
       // wild fillers; a wild-rank card acting as its own natural is left out.
-      await proposeMeld(picker.handId, picker.cards, "RUN", choice.wildAssignments);
+      result = await proposeMeld(picker.handId, picker.cards, "RUN", choice.wildAssignments);
     } else {
-      await layOffCard(picker.handId, picker.card, picker.meldId, choice);
+      result = await layOffCard(picker.handId, picker.card, picker.meldId, choice);
     }
-    await loadHand(picker.handId);
+    if (result.view) applyHandView(result.view);
+    else await loadHand(picker.handId);
     clearSelection();
   } catch (e) {
     setState({ error: errorText(e) });
@@ -201,14 +206,29 @@ async function guard(fn, refresh, optimistic) {
   // same refresh restores the truth, undoing the optimistic change.
   if (optimistic) setState(optimistic);
   try {
-    await fn();
-    if (refresh) await refresh();
+    const result = await fn();
+    // A successful action returns the acting player's viewer-scoped snapshot
+    // (see applyOrLoad) - apply it instead of a second read round trip.
+    if (refresh) await refresh(result);
   } catch (e) {
     setState({ error: errorText(e) });
+    // No view on the error path - fall back to reloading the true state.
     if (refresh) await refresh().catch(() => {});
   } finally {
     actionInFlight = false;
   }
+}
+
+// The edge functions return { ok: true, view } where view is exactly what this
+// player may see (loadHand's shape, RLS gating already applied server-side).
+// Applying it skips the second read; we still fall back to loadHand when there
+// is no view (older function, or the error path restoring the truth).
+async function applyOrLoad(result, handId) {
+  if (result && result.view) applyHandView(result.view);
+  else await loadHand(handId);
+}
+function reconcile(state) {
+  return (result) => applyOrLoad(result, state.hand.id);
 }
 
 // A labeled column wrapper for a pile (Stock / Discard) in the center row.
@@ -229,7 +249,7 @@ function makePile(label) {
 function drawStockAction(state) {
   return guard(
     () => drawStock(state.hand.id),
-    () => loadHand(state.hand.id),
+    reconcile(state),
     // The drawn card comes from the face-down stock, so we can't know it yet
     // - but flipping hasDrawn instantly disables the draw affordances and
     // lights up meld/discard, and the card itself pops in on refresh.
@@ -240,7 +260,7 @@ function drawStockAction(state) {
 function drawDiscardAction(state) {
   return guard(
     () => drawDiscard(state.hand.id),
-    () => loadHand(state.hand.id),
+    reconcile(state),
     (st) => {
       const [top, ...rest] = st.hand.discardPile;
       return {
@@ -642,10 +662,7 @@ function renderControls(root, state) {
     skipBtn.className = "btn btn--secondary";
     skipBtn.textContent = `Skip ${waitingOnPlayer.displayName} (disconnected)`;
     skipBtn.addEventListener("click", () =>
-      guard(
-        () => skipStalePlayer(state.hand.id, waitingOnPlayerId),
-        () => loadHand(state.hand.id),
-      ),
+      guard(() => skipStalePlayer(state.hand.id, waitingOnPlayerId), reconcile(state)),
     );
     bar.appendChild(skipBtn);
   }
@@ -683,10 +700,9 @@ function renderControls(root, state) {
   setBtn.disabled = !canMeld || selectedCards().length < 3;
   if (setBtn.disabled) setBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
   setBtn.addEventListener("click", () =>
-    guard(
-      () => proposeMeld(state.hand.id, selectedCards(), "SET"),
-      () => loadHand(state.hand.id),
-    ).then(clearSelection),
+    guard(() => proposeMeld(state.hand.id, selectedCards(), "SET"), reconcile(state)).then(
+      clearSelection,
+    ),
   );
   bar.appendChild(setBtn);
 
@@ -707,7 +723,7 @@ function renderControls(root, state) {
     const card = selectedCards()[0];
     guard(
       () => discardCard(state.hand.id, card),
-      () => loadHand(state.hand.id),
+      reconcile(state),
       (st) => ({
         hand: { ...st.hand, discardPile: [card, ...st.hand.discardPile] },
         myCards: st.myCards.filter((c) => cardKey(c) !== cardKey(card)),
@@ -721,10 +737,7 @@ function renderControls(root, state) {
     passBtn.className = "btn btn--primary";
     passBtn.textContent = "Pass (done laying off)";
     passBtn.addEventListener("click", () =>
-      guard(
-        () => passLayoff(state.hand.id),
-        () => loadHand(state.hand.id),
-      ),
+      guard(() => passLayoff(state.hand.id), reconcile(state)),
     );
     bar.appendChild(passBtn);
   }
