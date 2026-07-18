@@ -16,6 +16,7 @@ import {
   proposeMeld,
   layOffCard,
   passLayoff,
+  stealWild,
   skipStalePlayer,
   unmeld,
 } from "../network/intents.js";
@@ -74,6 +75,19 @@ async function proposeRun(state) {
     clearSelection();
   } catch (e) {
     setState({ error: errorText(e) });
+  }
+}
+
+async function stealWildAction(state, meldId, naturalCard) {
+  setState({ error: null });
+  try {
+    const result = await stealWild(state.hand.id, meldId, naturalCard);
+    if (result.view) applyHandView(result.view);
+    else await loadHand(state.hand.id);
+    clearSelection();
+  } catch (e) {
+    setState({ error: errorText(e) });
+    await loadHand(state.hand.id).catch(() => {});
   }
 }
 
@@ -332,9 +346,14 @@ function renderMelds(root, state) {
   // player's own melds only, per RLS - see supabase/migrations), and the
   // owner can still change their mind and take one back.
   const canUnmeld = !state.hand?.payMeCallerId;
-  const layable = canLayOffNow(state);
   const hasSelection = state.selectedCardKeys.size >= 1;
+  const inLayoff = state.hand?.phase === "layoff";
+  const myLayoffTurn = inLayoff && state.hand?.pendingLayoffs[0] === state.myPlayerId;
+  const wildRank = state.hand?.wildRank;
   for (const meld of state.melds) {
+    // Valid lay-off target only per phase (own melds in play; ONLY the winner's
+    // meld in the lay-off round) - see layTargetOk.
+    const layable = layTargetOk(state, meld);
     const meldEl = document.createElement("div");
     meldEl.className =
       "meld" + (layable ? " meld--layable" : "") + (layable && hasSelection ? " meld--target" : "");
@@ -343,15 +362,41 @@ function renderMelds(root, state) {
     // NATURAL (a set OF the wild rank), and the wild color when it's a filler
     // or a designated wild (runs carry a wildAs on their wilds). Jokers are
     // always wild. This mirrors validateSet's "set of the wild rank" rule.
-    const wildRank = state.hand?.wildRank;
     const setOfWildRank =
       meld.meldType === "SET" && !meld.cards.some((c) => c.rank !== "JOKER" && c.rank !== wildRank);
+    // Winner's run during your lay-off turn: a wild you hold the exact natural
+    // for (same rank AND suit) can be stolen - see stealWildAction / steal-wild.
+    const stealableRun =
+      myLayoffTurn && meld.meldType === "RUN" && meld.ownerPlayerId === state.hand?.payMeCallerId;
+    const runSuit = stealableRun
+      ? (meld.cards.find((c) => c.wildAs == null && c.rank !== "JOKER")?.suit ?? null)
+      : null;
     for (const card of meld.cards) {
       const actingWild =
         card.rank === "JOKER" ||
         (card.rank === wildRank &&
           (meld.meldType === "SET" ? !setOfWildRank : card.wildAs != null));
       meldEl.appendChild(renderCard(card, { wild: actingWild }));
+      if (stealableRun && card.wildAs != null) {
+        const nat = state.myCards.find(
+          (mc) =>
+            mc.rank === card.wildAs &&
+            mc.suit === runSuit &&
+            !(mc.rank === "JOKER" || mc.rank === wildRank),
+        );
+        if (nat) {
+          const stealBtn = document.createElement("button");
+          stealBtn.type = "button";
+          stealBtn.className = "btn btn--secondary steal-btn";
+          const sym = { S: "\u2660", H: "\u2665", D: "\u2666", C: "\u2663" }[nat.suit] ?? "";
+          stealBtn.textContent = `Steal (play ${nat.rank}${sym})`;
+          stealBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            stealWildAction(state, meld.id, nat);
+          });
+          meldEl.appendChild(stealBtn);
+        }
+      }
     }
     if (layable) {
       const cue = document.createElement("div");
@@ -372,7 +417,9 @@ function renderMelds(root, state) {
       });
       meldEl.appendChild(unmeldBtn);
     }
-    meldEl.addEventListener("click", () => layOffOntoMeld(state, meld.id));
+    if (layable) {
+      meldEl.addEventListener("click", () => layOffOntoMeld(state, meld.id));
+    }
     section.appendChild(meldEl);
   }
   root.appendChild(section);
@@ -526,6 +573,19 @@ function canLayOffNow(state) {
   const myLayoffTurn = inLayoff && state.hand.pendingLayoffs[0] === state.myPlayerId;
   const myPlayTurn = isMyTurn(state) && state.hand.hasDrawnThisTurn && !inLayoff;
   return myPlayTurn || myLayoffTurn;
+}
+
+// Which melds are valid lay-off targets right now:
+//  - during your normal turn: only your OWN melds.
+//  - during your lay-off turn: only the winner's (Pay Me caller's) meld.
+function layTargetOk(state, meld) {
+  if (!state.hand) return false;
+  const inLayoff = state.hand.phase === "layoff";
+  const myLayoffTurn = inLayoff && state.hand.pendingLayoffs[0] === state.myPlayerId;
+  const myPlayTurn = isMyTurn(state) && state.hand.hasDrawnThisTurn && !inLayoff;
+  if (myLayoffTurn) return meld.ownerPlayerId === state.hand.payMeCallerId;
+  if (myPlayTurn) return meld.ownerPlayerId === state.myPlayerId;
+  return false;
 }
 
 // A one-line, touch-friendly explanation of what the player can do right now -

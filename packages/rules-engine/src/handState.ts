@@ -248,15 +248,24 @@ function applyLayoff(
   if (meldIndex === -1) return { ok: false, error: "No such meld on the table" };
   const meld = state.melds[meldIndex];
 
-  // Melds are private until someone calls Pay Me (see unmeld()'s comment) -
-  // so during ordinary play, a player can only build onto their own meld,
-  // never one they can't actually see. This only applies to the "playing"
-  // phase: layOffDuringLayoffPhase never runs with phase "playing" (it
-  // requires "layoff", by which point every meld is revealed), and
-  // layOffDuringTurn's "final_turns" branch only runs once Pay Me has
-  // already been declared, at which point everything is revealed too.
-  if (state.phase === "playing" && meld.ownerId !== playerId) {
-    return { ok: false, error: "You can only add to your own melds before Pay Me is declared" };
+  // Which melds you may lay off onto depends on the phase:
+  //  - playing / final_turns: only your OWN melds. No one else's melds are
+  //    revealed until the lay-off round (see handView / migration 0009), so
+  //    you can only ever build onto your own before then.
+  //  - layoff (the lay-off round): only the Pay Me caller's ("winner's") meld.
+  //    That single revealed pile is the shared dumping ground; every other
+  //    player's melds stay off-limits.
+  if ((state.phase === "playing" || state.phase === "final_turns") && meld.ownerId !== playerId) {
+    return {
+      ok: false,
+      error: "You can only add to your own melds before the lay-off round",
+    };
+  }
+  if (state.phase === "layoff" && meld.ownerId !== state.payMeCallerId) {
+    return {
+      ok: false,
+      error: "During the lay-off round you can only lay off onto the winner's meld",
+    };
   }
 
   if (!canLayOff(meld.cards, meld.type, card, state.wildRank)) {
@@ -376,6 +385,78 @@ export function layOffDuringLayoffPhase(
   if (state.phase !== "layoff") return { ok: false, error: "Not in the lay-off phase" };
   if (currentPlayer(state) !== playerId) return { ok: false, error: "Not your lay-off turn" };
   return applyLayoff(state, playerId, card, meldId, wildAssignedRank);
+}
+
+/**
+ * Wild steal (lay-off round only). A player may pull a wild card out of a RUN
+ * in the winner's (Pay Me caller's) meld by substituting, from their own hand,
+ * the exact natural card that wild is standing in for - same rank AND suit -
+ * and taking the freed wild into their hand. Runs only: a wild in a SET is not
+ * pinned to a suit, so it can't be stolen. The run stays the same sequence of
+ * ranks, so it remains valid (a natural replaces the wild it represented).
+ */
+export function stealWildFromRun(
+  state: HandState,
+  playerId: string,
+  meldId: string,
+  naturalCard: Card,
+): Result<HandState> {
+  if (state.phase !== "layoff") {
+    return { ok: false, error: "Wild-stealing is only allowed in the lay-off round" };
+  }
+  if (currentPlayer(state) !== playerId) return { ok: false, error: "Not your lay-off turn" };
+
+  const meldIndex = state.melds.findIndex((m) => m.id === meldId);
+  if (meldIndex === -1) return { ok: false, error: "No such meld on the table" };
+  const meld = state.melds[meldIndex];
+
+  if (meld.ownerId !== state.payMeCallerId) {
+    return { ok: false, error: "You can only steal from the winner's meld" };
+  }
+  if (meld.type !== "RUN") {
+    return { ok: false, error: "You can only steal a wild from a run, not a set" };
+  }
+  if (isWildCard(naturalCard, state.wildRank)) {
+    return { ok: false, error: "You must substitute a natural card, not a wild" };
+  }
+
+  // A run is a single suit; the substitute must match that suit and stand in
+  // exactly for the rank the target wild currently represents.
+  const runSuit = meld.cards.find((c) => !isWildCard(c, state.wildRank))?.suit ?? null;
+  if (naturalCard.suit !== runSuit) {
+    return { ok: false, error: "That card isn't the right suit for this run" };
+  }
+  const targetIndex = meld.cards.findIndex(
+    (c) => isWildCard(c, state.wildRank) && c.wildAs === naturalCard.rank,
+  );
+  if (targetIndex === -1) {
+    return { ok: false, error: "No wild in this run is standing in for that card" };
+  }
+
+  const remainingHand = removeCardsFromHand(state.hands[playerId], [naturalCard]);
+  if (!remainingHand) return { ok: false, error: "You don't hold that card" };
+
+  // Free the wild (drop its run designation) and hand it to the stealer.
+  const { wildAs: _dropped, ...stolenWild } = meld.cards[targetIndex];
+
+  const newMeldCards = [...meld.cards];
+  newMeldCards[targetIndex] = { ...naturalCard };
+  const finalCards = sortRunCards(newMeldCards, state.wildRank);
+  if (!validateMeld(finalCards, "RUN", state.wildRank).valid) {
+    return { ok: false, error: "That swap would break the run" };
+  }
+
+  const melds = [...state.melds];
+  melds[meldIndex] = { ...meld, cards: finalCards };
+
+  return {
+    ok: true,
+    state: {
+      ...state,
+      hands: { ...state.hands, [playerId]: [...remainingHand, stolenWild as Card] },
+      melds,
+    },
+  };
 }
 
 export function passLayoff(state: HandState, playerId: string): Result<HandState> {

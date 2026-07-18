@@ -106,7 +106,7 @@ describe("melds are private pre-reveal", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("allows laying off onto any meld once Pay Me has been declared", () => {
+  it("still rejects laying off onto another player's meld during final turns (own melds only until the lay-off round)", () => {
     const state = baseState({
       phase: "final_turns",
       payMeCallerId: "p3",
@@ -114,8 +114,9 @@ describe("melds are private pre-reveal", () => {
       currentPlayerIndex: 0,
       hasDrawnThisTurn: true,
     });
-    const result = unwrap(layOffDuringTurn(state, "p1", card("6", "C"), "meld_1"));
-    expect(result.melds.find((m) => m.id === "meld_1")!.cards).toHaveLength(4);
+    // meld_1 is p2's; before the lay-off round a player may only touch their own.
+    const result = layOffDuringTurn(state, "p1", card("6", "C"), "meld_1");
+    expect(result.ok).toBe(false);
   });
 });
 

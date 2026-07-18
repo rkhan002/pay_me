@@ -54,12 +54,9 @@ export interface HandView {
 
 /**
  * Can `viewer` see `meld`? Mirrors the RLS SELECT policy on melds/meld_cards
- * (migration 0006) exactly:
- *  - the owner always sees their own meld;
- *  - a NON-caller meld is revealed to everyone once the hand leaves "playing";
- *  - the Pay Me caller's meld is revealed once the hand reaches
- *    layoff/scoring/complete, or - during final_turns - to any viewer who has
- *    already taken their own final turn (no longer in pendingFinalTurns).
+ * (migration 0009) exactly: the owner always sees their own meld; everyone
+ * else sees a meld only once the lay-off round has begun (phase is
+ * layoff/scoring/complete). Nothing is revealed during playing or final_turns.
  */
 export function meldVisibleTo(
   meld: { ownerId: string },
@@ -68,20 +65,10 @@ export function meldVisibleTo(
 ): boolean {
   if (meld.ownerId === viewerPlayerId) return true;
 
-  const caller = state.payMeCallerId;
-  if (meld.ownerId !== caller) {
-    // Non-caller meld: hidden during "playing", shown otherwise.
-    return state.phase !== "playing";
-  }
-
-  // Caller's own meld: time-gated per viewer.
-  if (state.phase === "layoff" || state.phase === "scoring" || state.phase === "complete") {
-    return true;
-  }
-  if (state.phase === "final_turns") {
-    return !state.pendingFinalTurns.includes(viewerPlayerId);
-  }
-  return false; // "playing" - not yet revealed
+  // No meld is revealed to opponents until the lay-off round begins - i.e.
+  // once every player has finished their final turn and the hand has moved
+  // past "final_turns". Before then, you only ever see your own melds.
+  return state.phase === "layoff" || state.phase === "scoring" || state.phase === "complete";
 }
 
 /**

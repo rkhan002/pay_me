@@ -66,49 +66,25 @@ describe("handViewFor - caller-scoped snapshot", () => {
   });
 });
 
-describe("meld visibility mirrors the RLS policy", () => {
+describe("meld visibility — hidden until the lay-off round", () => {
   it("during playing, a viewer sees only their own melds", () => {
     const v = handViewFor(baseState({ phase: "playing" }), "p1");
     expect(v.melds.map((m) => m.id)).toEqual(["m_p1"]);
   });
 
-  it("non-caller melds are revealed to everyone once the hand leaves playing", () => {
+  it("during final_turns, opponents' melds are STILL hidden (even non-caller ones)", () => {
     const s = baseState({
       phase: "final_turns",
       payMeCallerId: "p3",
       pendingFinalTurns: ["p1", "p2"],
     });
-    const v = handViewFor(s, "p1");
-    // p2's meld (non-caller) is visible; p1 always sees own
-    expect(v.melds.map((m) => m.id).sort()).toEqual(["m_p1", "m_p2"]);
-  });
-
-  it("the Pay Me caller's melds stay hidden from a viewer who still owes a final turn", () => {
-    const s = baseState({
-      phase: "final_turns",
-      payMeCallerId: "p2",
-      pendingFinalTurns: ["p1", "p3"],
-    });
-    // p1 still owes final turn -> cannot see caller p2's meld
-    expect(meldVisibleTo({ ownerId: "p2" }, s, "p1")).toBe(false);
+    // p1 sees only their own; p2's (non-caller) and p3's (caller) stay hidden
     expect(handViewFor(s, "p1").melds.map((m) => m.id)).toEqual(["m_p1"]);
+    expect(meldVisibleTo({ ownerId: "p2" }, s, "p1")).toBe(false);
+    expect(meldVisibleTo({ ownerId: "p3" }, s, "p1")).toBe(false);
   });
 
-  it("the caller's melds become visible to a viewer who has taken their final turn", () => {
-    const s = baseState({
-      phase: "final_turns",
-      payMeCallerId: "p2",
-      pendingFinalTurns: ["p3"], // p1 already went
-    });
-    expect(meldVisibleTo({ ownerId: "p2" }, s, "p1")).toBe(true);
-    expect(
-      handViewFor(s, "p1")
-        .melds.map((m) => m.id)
-        .sort(),
-    ).toEqual(["m_p1", "m_p2"]);
-  });
-
-  it("everything is visible in layoff/scoring/complete", () => {
+  it("everyone's melds are revealed once the lay-off round begins", () => {
     for (const phase of ["layoff", "scoring", "complete"] as const) {
       const s = baseState({ phase, payMeCallerId: "p2" });
       expect(
@@ -119,16 +95,10 @@ describe("meld visibility mirrors the RLS policy", () => {
     }
   });
 
-  it("the caller always sees their own melds even mid-final-turns", () => {
-    const s = baseState({
-      phase: "final_turns",
-      payMeCallerId: "p2",
-      pendingFinalTurns: ["p1", "p3"],
-    });
-    expect(
-      handViewFor(s, "p2")
-        .melds.map((m) => m.id)
-        .sort(),
-    ).toEqual(["m_p1", "m_p2"]);
+  it("the owner always sees their own meld, in every phase", () => {
+    for (const phase of ["playing", "final_turns", "layoff", "scoring", "complete"] as const) {
+      const s = baseState({ phase, payMeCallerId: "p2", pendingFinalTurns: ["p1"] });
+      expect(meldVisibleTo({ ownerId: "p1" }, s, "p1")).toBe(true);
+    }
   });
 });

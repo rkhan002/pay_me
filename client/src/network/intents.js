@@ -52,6 +52,9 @@ export const layOffCard = (handId, card, meldId, wildAssignedRank) =>
 
 export const passLayoff = (handId) => callFunction("pass-layoff", { handId });
 
+export const stealWild = (handId, meldId, card) =>
+  callFunction("steal-wild", { handId, meldId, card });
+
 export const unmeld = (handId, meldId) => callFunction("unmeld", { handId, meldId });
 
 export const heartbeat = (roomId) => callFunction("heartbeat", { roomId });
