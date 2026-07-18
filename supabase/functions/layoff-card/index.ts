@@ -35,8 +35,21 @@ Deno.serve(async (req: Request) => {
     // melds are private pre-reveal (see applyLayoff in handState.ts), so a
     // player shouldn't learn anything about another player's meld (including
     // "it's a RUN that needs a wild rank") before Pay Me is declared.
-    if (prevState.phase === "playing" && meld.ownerId !== playerId) {
-      return errorResponse("You can only add to your own melds before Pay Me is declared", 422);
+    // Reject a target the player isn't allowed to lay onto BEFORE the wild-
+    // designation hint below, so we never leak candidate ranks for a meld they
+    // can't touch (own melds only until the lay-off round; winner's meld only
+    // in it - mirrors applyLayoff and the reveal timing).
+    if (
+      (prevState.phase === "playing" || prevState.phase === "final_turns") &&
+      meld.ownerId !== playerId
+    ) {
+      return errorResponse("You can only add to your own melds before the lay-off round", 422);
+    }
+    if (prevState.phase === "layoff" && meld.ownerId !== prevState.payMeCallerId) {
+      return errorResponse(
+        "During the lay-off round you can only lay off onto the winner's meld",
+        422,
+      );
     }
 
     if (meld.type === "RUN" && isWildCard(card, prevState.wildRank) && !wildAssignedRank) {
