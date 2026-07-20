@@ -23,6 +23,16 @@ async function boot() {
   document.addEventListener("click", unlock);
   document.addEventListener("keydown", unlock);
 
+  // Keyboard QoL: Escape closes whichever modal is open (wild picker
+  // takes priority over the standings sheet). Additive - the click/close
+  // buttons still work; this just gives keyboard users a way out.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const st = getState();
+    if (st.wildPicker) setState({ wildPicker: null });
+    else if (st.showStandings) setState({ showStandings: false });
+  });
+
   subscribe(render);
   wireErrorDismiss();
   render(getState());

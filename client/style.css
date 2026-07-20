@@ -2091,3 +2091,158 @@ body::before {
     transform: none !important;
   }
 }
+
+/* =====================================================================
+   ACCESSIBILITY / RESPONSIVE / QUALITY-OF-LIFE PASS
+   Usability + a11y only - no layout redesign, no gameplay. Improves
+   contrast, touch sizing, keyboard focus, fluid type, and adds the
+   mobile breakpoints the layout never had. Appended last so it wins on
+   source order; overrides only.
+   ===================================================================== */
+
+/* --- Stage 3: contrast + long-session comfort -----------------------
+   Pure #ff0000 hearts read ~3.9:1 on the dark card face (fails AA for
+   the rank) and halate/shimmer; pure #00ffff clubs are legible but
+   fully saturated and harsh over a long session. Nudge both to softer,
+   still-unmistakable red/cyan (hearts now ~5:1) - branding preserved,
+   diamonds/spades already comfortable and unchanged. */
+:root {
+  --suit-hearts: #ff4d4d;
+  --suit-clubs: #45e0ff;
+}
+
+/* --- Stage 4: keyboard focus is unmistakable ------------------------
+   A thin cyan ring blended into the cyan button borders. A 3px white
+   outline + soft cyan halo is clearly distinct from hover/active and
+   from every bordered control, on any background. */
+.btn:focus-visible,
+.card:focus-visible,
+.stock-pile button:focus-visible,
+.discard-pile .card--drawable:focus-visible,
+.avatar-option:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(61, 224, 255, 0.35);
+}
+
+/* --- Stage 2: touch-friendly targets --------------------------------
+   Center label text and give every button a real hit area. Small
+   utility buttons clear the 24px AA minimum; on touch devices every
+   button reaches the 44px comfort target. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 38px;
+}
+.hand-sort-btn,
+.unmeld-btn,
+.audio-toggle-btn,
+.steal-btn {
+  min-height: 32px;
+}
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+}
+
+/* --- Stage 5: fluid typography --------------------------------------
+   The header (and the hand info it contains) scales smoothly instead of
+   staying fixed and crowding narrow screens. */
+.table-header {
+  font-size: clamp(0.7rem, 2.6vw, 0.85rem);
+}
+
+/* --- Stage 1: responsive layout (the missing breakpoints) -----------
+   Phones (<=640px): tighten spacing, scale the piles + cards down so
+   more of the hand fits before it scrolls, keep the piles the hero, and
+   shrink the header - nothing overlaps, the hand still scrolls. */
+@media (max-width: 640px) {
+  .table-screen {
+    padding: 0.75rem 0.6rem 2rem;
+  }
+  .table-header {
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .opponents-row {
+    gap: 0.5rem;
+  }
+  .avatar,
+  .avatar--img {
+    width: 34px;
+    height: 34px;
+  }
+  .center-row {
+    gap: 1.1rem;
+  }
+  .stock-pile,
+  .discard-pile {
+    width: 64px;
+    height: 88px;
+  }
+  .stock-pile .card-back,
+  .discard-pile .card {
+    width: 54px;
+    height: 76px;
+  }
+  .card {
+    width: 50px;
+    height: 72px;
+    font-size: 0.92rem;
+  }
+  .hand-fan {
+    padding: 0.75rem 0.5rem 0.6rem;
+  }
+  .controls {
+    gap: 0.4rem;
+  }
+  .controls .btn {
+    flex: 1 1 130px;
+  }
+  .btn {
+    font-size: 0.74rem;
+    padding: 0.7rem 0.7rem;
+  }
+}
+
+/* Very small phones (<=380px): stack the header, drop the piles/cards a
+   touch more, and let the control buttons sit two-up so they stay
+   tappable rather than shrinking. */
+@media (max-width: 380px) {
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .center-row {
+    gap: 0.8rem;
+  }
+  .stock-pile,
+  .discard-pile {
+    width: 58px;
+    height: 80px;
+  }
+  .stock-pile .card-back,
+  .discard-pile .card {
+    width: 48px;
+    height: 68px;
+  }
+  .card {
+    width: 46px;
+    height: 66px;
+    font-size: 0.84rem;
+  }
+  .controls .btn {
+    flex: 1 1 45%;
+  }
+}
+
+/* Smoother momentum scrolling for the horizontally-scrolling hand on
+   touch devices (QoL; the fan already scrolls rather than clipping). */
+.hand-fan {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
