@@ -617,6 +617,14 @@ function buildActionHint(state, myTurn, inLayoff, myLayoffTurn) {
     if (state.melds.length) parts.push("tap a card then a meld to lay it off");
     parts.push("or discard one card to end your turn");
     text = parts.join(" \u00b7 ");
+  } else {
+    // Not this player's turn: name who everyone's waiting on, so the moment
+    // never reads as a dead/unclear screen (the seat glow alone is easy to
+    // miss). Covers normal turns and the lay-off round.
+    const waitingOn = state.players.find((p) => p.id === state.hand.turnPlayerId);
+    if (waitingOn && waitingOn.id !== state.myPlayerId) {
+      text = `Waiting for ${waitingOn.displayName} to ${inLayoff ? "lay off" : "play"}\u2026`;
+    }
   }
   if (!text) return null;
   const hint = document.createElement("div");

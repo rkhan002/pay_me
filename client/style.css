@@ -654,7 +654,6 @@ body {
 .meld {
   display: flex;
   align-items: center;
-  gap: -8px;
   padding: 0.5rem;
   border: 2px dashed var(--purple);
   border-radius: var(--radius);
@@ -2245,4 +2244,47 @@ body::before {
 .hand-fan {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+}
+
+/* =====================================================================
+   LAUNCH QA / CONSISTENCY PASS
+   Final commercial-polish refinements: unified interaction timing and
+   even control-button labels. Overrides only; no layout/gameplay change.
+   ===================================================================== */
+
+/* P3 - one motion vocabulary. Interaction transitions were scattered
+   across 0.05-0.2s and mixed easings; every control now reacts with the
+   same duration + easing so hovers/lifts feel like one system. (The
+   deliberately-snappier :active press keeps its own shorter duration.) */
+:root {
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 0.14s;
+}
+.btn {
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    filter var(--dur) var(--ease),
+    opacity var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.card {
+  transition:
+    transform var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
+}
+.stock-pile button:not(:disabled) {
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+/* P2 - even control labels. On desktop the control row has room for every
+   label on one line; without this "Draw from discard" wraps to two lines
+   while its neighbours stay one, making the row look ragged. (Mobile keeps
+   wrapping allowed - buttons are full-width/two-up there.) */
+@media (min-width: 641px) {
+  .controls .btn {
+    white-space: nowrap;
+  }
 }
