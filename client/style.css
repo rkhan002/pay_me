@@ -1879,3 +1879,215 @@ body::before {
   box-shadow: 0 0 90px 26px rgba(61, 224, 255, 0.045);
   filter: blur(2px);
 }
+
+/* =====================================================================
+   MOTION / GAME-FEEL PASS (interactions only - no layout, no gameplay).
+   All effects use transform/opacity/filter/box-shadow (GPU-friendly),
+   100-250ms unless intentionally a reward, and are gated so nothing
+   replays on unrelated re-renders. Namespaced fx-* to avoid collisions.
+   ===================================================================== */
+
+/* --- Phase A: card selection feels picked-up -------------------------
+   The wrap only exists while a card is selected, so a short pop plays
+   exactly when it becomes selected; it settles into a held lift + slight
+   scale + 1.5deg tilt. brightness() goes on the card (not the wrap) so
+   the check-badge isn't brightened. z-index beats the fan's inline order
+   so the lifted card never tucks under a neighbour. */
+.card-wrap {
+  transform: translateY(-6px) scale(1.06) rotate(1.5deg);
+  z-index: 30 !important;
+  animation: fx-select-pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.card-wrap .card--selected {
+  filter: brightness(1.12) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.6));
+}
+@keyframes fx-select-pop {
+  0% {
+    transform: translateY(0) scale(0.98) rotate(0deg);
+  }
+  60% {
+    transform: translateY(-8px) scale(1.09) rotate(2deg);
+  }
+  100% {
+    transform: translateY(-6px) scale(1.06) rotate(1.5deg);
+  }
+}
+/* Don't let the selected-pop fight a live drag-to-reorder. */
+.card-wrap:has(.card--dragging) {
+  animation: none !important;
+}
+/* Card keyboard focus ring (buttons already had one via the polish pass). */
+.card:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* --- Phase B: stock & discard invite the draw -----------------------
+   When (and only when) a draw is legal, the stock's top back and the
+   drawable discard card breathe so "draw here" reads at a glance; hover
+   raises them; :active presses for a tactile click. The stock back has
+   no suit box-shadow, so it pulses a glow ring; the discard card keeps
+   its suit neon (box-shadow) and breathes via filter instead. */
+.stock-pile button:not(:disabled) {
+  cursor: pointer;
+  animation: fx-stock-pulse 1.7s ease-in-out infinite;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.stock-pile button:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+.stock-pile button:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+}
+@keyframes fx-stock-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(61, 224, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 18px 2px rgba(61, 224, 255, 0.5);
+  }
+}
+.discard-pile .card--drawable {
+  animation: fx-draw-breathe 1.7s ease-in-out infinite;
+}
+.discard-pile .card--drawable:active {
+  transform: translateY(1px) scale(0.98);
+}
+@keyframes fx-draw-breathe {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 6px 11px rgba(0, 0, 0, 0.55));
+  }
+  50% {
+    filter: brightness(1.16) drop-shadow(0 6px 14px rgba(61, 224, 255, 0.35));
+  }
+}
+
+/* --- Phase C: buttons get depth + press -----------------------------
+   Hover lifts (the polish pass already deepened the shadow), :active
+   presses down and shrinks slightly for a physical click, and the
+   disabled state fades smoothly instead of snapping. */
+.btn {
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease,
+    border-color 0.15s ease;
+}
+.btn:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+.btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.97);
+  transition-duration: 0.06s;
+}
+
+/* --- Phase D: whose turn it is, unmistakably -------------------------
+   A slow cyan halo breathes around the active seat and its avatar. Only
+   one seat is ever active, so at most one seat breathes at a time. The
+   pay-me (amber) ring is left as-is. */
+.seat--active {
+  animation: fx-breathe 2.4s ease-in-out infinite;
+}
+.seat--active .avatar {
+  animation: fx-avatar-breathe 2.4s ease-in-out infinite;
+}
+@keyframes fx-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(61, 224, 255, 0.85),
+      0 0 12px rgba(61, 224, 255, 0.18),
+      var(--elev-1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(61, 224, 255, 0.95),
+      0 0 26px rgba(61, 224, 255, 0.5),
+      var(--elev-1);
+  }
+}
+@keyframes fx-avatar-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.12),
+      var(--elev-1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(61, 224, 255, 0.5),
+      0 0 14px rgba(61, 224, 255, 0.4),
+      var(--elev-1);
+  }
+}
+
+/* --- Phase E: enter animations (gated in JS to new items only) -------
+   New hand cards deal in (slide up + fade + slight flip, staggered in
+   JS); a freshly formed meld gives one reward glow-pulse. Because JS
+   adds these classes only to genuinely new keys/ids, they never replay
+   on unrelated re-renders. */
+.anim-deal-in {
+  animation: fx-deal-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes fx-deal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9) rotateX(14deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-meld-in {
+  animation: fx-meld-in 500ms ease-out;
+}
+@keyframes fx-meld-in {
+  0% {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 0 rgba(200, 255, 61, 0);
+  }
+  40% {
+    transform: scale(1.02);
+    box-shadow: 0 0 26px 4px rgba(200, 255, 61, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.32);
+  }
+}
+
+/* --- Phase F: respect reduced-motion --------------------------------
+   Kill the continuous/entrance motion but keep the STATIC cues (selected
+   lift, active ring, focus outline) so nothing loses meaning. */
+@media (prefers-reduced-motion: reduce) {
+  .card-wrap,
+  .anim-deal-in,
+  .anim-meld-in,
+  .stock-pile button:not(:disabled),
+  .discard-pile .card--drawable,
+  .seat--active,
+  .seat--active .avatar {
+    animation: none !important;
+  }
+  .anim-deal-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .card-wrap {
+    transform: translateY(-4px);
+  }
+  .btn:not(:disabled):hover,
+  .btn:not(:disabled):active,
+  .card:hover,
+  .stock-pile button:not(:disabled):hover,
+  .stock-pile button:not(:disabled):active,
+  .discard-pile .card--drawable:active {
+    transform: none !important;
+  }
+}

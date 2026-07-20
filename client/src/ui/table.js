@@ -23,6 +23,14 @@ import {
 import { loadRoom, loadHand, loadStandings, applyHandView } from "../network/queries.js";
 import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/audioManager.js";
 
+// --- One-shot enter-animation tracking (motion pass) -------------------
+// renderTable() rebuilds the whole DOM on every state change, so a CSS
+// @keyframes on .card/.meld would replay on EVERY re-render. To fire the
+// deal-in / meld-in animations exactly once (only when a card or meld is
+// genuinely new), we remember what was on screen last render and diff.
+let prevHandKeys = new Set();
+let prevMeldIds = new Set();
+
 function selectedCards() {
   const { myCards, selectedCardKeys } = getState();
   return myCards.filter((c) => selectedCardKeys.has(cardKey(c)));
@@ -358,6 +366,8 @@ function renderMelds(root, state) {
     meldEl.className =
       "meld" + (layable ? " meld--layable" : "") + (layable && hasSelection ? " meld--target" : "");
     meldEl.dataset.meldId = meld.id;
+    // Newly formed meld -> one reward glow-pulse (see .anim-meld-in).
+    if (!prevMeldIds.has(meld.id)) meldEl.classList.add("anim-meld-in");
     // A wild-rank card shows its normal suit color when it's acting as a
     // NATURAL (a set OF the wild rank), and the wild color when it's a filler
     // or a designated wild (runs carry a wildAs on their wilds). Jokers are
@@ -422,6 +432,7 @@ function renderMelds(root, state) {
     }
     section.appendChild(meldEl);
   }
+  prevMeldIds = new Set(state.melds.map((m) => m.id));
   root.appendChild(section);
 }
 
@@ -973,10 +984,17 @@ export function renderTable(root) {
       wrap.appendChild(sortBar);
     }
 
+    // Only cards not present on the previous render get the deal-in
+    // animation, so selection toggles / opponents' moves don't re-animate
+    // the whole hand. (First render after joining deals the hand in.)
+    const curKeys = state.myCards.map((c) => cardKey(c));
+    const newKeys = new Set(curKeys.filter((k) => !prevHandKeys.has(k)));
+    prevHandKeys = new Set(curKeys);
     const fan = renderCardFan(state.myCards, {
       selectedKeys: state.selectedCardKeys,
       wildRank: state.hand?.wildRank,
       onClick: (card) => toggleCardSelection(card),
+      newKeys,
     });
     makeHandFanDraggable(fan, (keys) => {
       const byKey = new Map(state.myCards.map((c) => [cardKey(c), c]));

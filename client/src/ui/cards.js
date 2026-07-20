@@ -136,7 +136,7 @@ export function renderCard(card, { selected = false, wild = false, onClick, tabI
   return wrap;
 }
 
-export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
+export function renderCardFan(cards, { selectedKeys, wildRank, onClick, newKeys = null }) {
   const wrap = document.createElement("div");
   wrap.className = "hand-fan";
   // Straight row, evenly spaced by the flex layout + each card's CSS
@@ -144,6 +144,12 @@ export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
   // "uneven" rather than card-game-stylish once hands got past a few
   // cards, and it added nothing readability-wise now that CSS's gap (not
   // overlap) is what keeps every card's corner visible anyway.
+  //
+  // `newKeys` (optional) is the set of card keys that weren't in the hand
+  // on the previous render - only those get the one-shot "deal in" enter
+  // animation, so a normal re-render (selection toggle, an opponent's move)
+  // never re-animates the whole hand. See table.js's prevHandKeys.
+  let dealt = 0;
   cards.forEach((card, i) => {
     const el = renderCard(card, {
       selected: selectedKeys.has(cardKey(card)),
@@ -151,6 +157,13 @@ export function renderCardFan(cards, { selectedKeys, wildRank, onClick }) {
       onClick,
     });
     el.style.zIndex = String(i);
+    if (newKeys && newKeys.has(cardKey(card))) {
+      el.classList.add("anim-deal-in");
+      // Stagger a multi-card deal so cards cascade rather than snap in all
+      // at once; a single drawn card (dealt === 0) gets no delay.
+      el.style.animationDelay = `${dealt * 45}ms`;
+      dealt += 1;
+    }
     wrap.appendChild(el);
   });
   return wrap;
