@@ -17,6 +17,18 @@
   --amber: #ffaa00;
   --radius: 10px;
 
+  /* --- Premium polish: elevation + surface tokens (presentation only) --- */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-2: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --elev-3: 0 16px 44px rgba(0, 0, 0, 0.55);
+  /* Hairline separator drawn with an inset shadow so it never adds box size
+     (no layout reflow) - used to give panels crisp light-catching edges. */
+  --hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --panel-bg: linear-gradient(180deg, rgba(27, 33, 64, 0.5) 0%, rgba(16, 20, 37, 0.5) 100%);
+  /* Top-edge glass sheen for cards/buttons - fades out quickly so it reads as
+     a reflection, not a wash. */
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
+
   /* One distinct color per suit, so hearts/diamonds and spades/clubs no
      longer share a color pairwise. */
   --suit-hearts: #ff0000;
@@ -32,7 +44,26 @@
 }
 
 body {
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, #171c33 0%, var(--bg) 60%);
+  /* Living play surface (Section 1). Layers, front-to-back:
+     1) center spotlight (purple) that concentrates attention on the middle;
+     2) a cool top wash so the table meets the header cleanly;
+     3) a soft vignette that darkens the far edges and frames the felt;
+     4) a faint tech dot-grid (subtle hex/circuit feel) - kept ~5% alpha;
+     5) the original neon-felt radial base. All very subtle so the CARDS,
+     not the table, stay the visual focus. */
+  background:
+    radial-gradient(52% 42% at 50% 42%, rgba(123, 47, 247, 0.13) 0%, rgba(123, 47, 247, 0) 62%),
+    radial-gradient(120% 80% at 50% -8%, rgba(61, 224, 255, 0.06) 0%, rgba(61, 224, 255, 0) 55%),
+    radial-gradient(150% 125% at 50% 46%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.5) 100%),
+    radial-gradient(circle at center, rgba(123, 140, 255, 0.05) 1px, rgba(123, 140, 255, 0) 1.6px),
+    radial-gradient(ellipse 120% 80% at 50% 0%, #171c33 0%, var(--bg) 60%);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    26px 26px,
+    100% 100%;
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Space Grotesk", sans-serif;
   min-height: 100vh;
@@ -1426,4 +1457,425 @@ button.card-back:not(:disabled):hover {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* =====================================================================
+   PREMIUM VISUAL POLISH PASS (presentation only - layered on top of the
+   rules above so it's easy to review/revert). No layout geometry, colors,
+   fonts, or DOM changed; depth is added via shadows/gradients/inset
+   hairlines that don't reflow. Sections map to the polish brief.
+   ===================================================================== */
+
+/* --- Section 5: premium cards ------------------------------------------
+   Depth via a composited drop-shadow (composes with each suit's neon
+   box-shadow instead of replacing it), a clipped top "glass" sheen, and a
+   cleaner hover. Card content is lifted above the sheen so it stays crisp. */
+.card {
+  position: relative;
+  overflow: hidden;
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.5));
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+/* Visual-only hover: a touch more lift + a deeper, tighter shadow so the
+   card reads as "picked up off the felt" (no new animation). */
+.card:hover {
+  transform: translateY(-6px);
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.6));
+}
+.card--selected {
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
+}
+
+/* Card backs (stock/discard piles) get the same grounding shadow. */
+.card-back {
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55));
+}
+
+/* --- Section 3/6: piles + player panels depth --------------------------
+   Give the piles and seats real elevation and light separation. */
+.pile-label,
+.hand-label {
+  color: var(--text-dim);
+}
+
+.seat {
+  background: var(--panel-bg);
+  box-shadow: var(--hairline);
+  transition:
+    box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+/* Non-active seats sit back a little (Section 2: de-emphasise "other
+   players" without hiding them). */
+.opponents-row .seat:not(.seat--active) {
+  opacity: 0.82;
+}
+.seat--active {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(61, 224, 255, 0.16) 0%, rgba(61, 224, 255, 0.05) 100%);
+  box-shadow:
+    0 0 0 2px var(--cyan),
+    0 0 22px rgba(61, 224, 255, 0.35),
+    var(--elev-2);
+}
+.seat--pay-me {
+  box-shadow:
+    0 0 0 2px var(--amber),
+    0 0 22px rgba(255, 170, 0, 0.4),
+    var(--elev-2);
+}
+
+/* Consistent avatar framing (Section 6): a subtle ring + grounding shadow
+   for both the initials circle and the character-image avatars. */
+.avatar {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.14),
+    var(--elev-1);
+}
+.avatar--img {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.16),
+    0 0 14px rgba(123, 47, 247, 0.35),
+    var(--elev-1);
+}
+
+/* Card-count reads as a proper pill so it's easy to scan at a glance
+   (Section 6). */
+.seat-count {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: var(--hairline);
+}
+
+/* --- Section 2/3: the hand "tray" --------------------------------------
+   Anchor the player's hand on a faint raised surface so it clearly reads as
+   the primary zone, and separates from the felt with a top hairline. Uses a
+   hairline inset shadow (no border) so nothing reflows. */
+.hand-fan {
+  background: linear-gradient(180deg, rgba(123, 47, 247, 0.06) 0%, rgba(20, 24, 43, 0.45) 100%);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--elev-2);
+}
+
+/* --- Section 3: melds get quiet depth (kept clearly secondary) --------- */
+.meld {
+  background: rgba(20, 24, 43, 0.4);
+  box-shadow: var(--elev-1);
+}
+
+/* --- Section 7: buttons -------------------------------------------------
+   Stronger hierarchy without animation. Base buttons get a subtle vertical
+   gradient + grounding shadow + a top sheen; primary is pushed forward;
+   disabled reads clearly inert but still legible. */
+.btn {
+  background:
+    var(--sheen),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%),
+    var(--surface2);
+  box-shadow: var(--elev-1);
+}
+.btn:hover:not(:disabled) {
+  box-shadow:
+    0 0 14px rgba(61, 224, 255, 0.25),
+    var(--elev-2);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.btn--primary {
+  background: var(--sheen), linear-gradient(180deg, #d6ff5c 0%, var(--lime) 55%, #a9e02f 100%);
+  box-shadow:
+    0 0 24px rgba(200, 255, 61, 0.5),
+    var(--elev-2);
+}
+.btn--primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 32px rgba(200, 255, 61, 0.7),
+    var(--elev-3);
+}
+.btn--secondary {
+  background:
+    var(--sheen), linear-gradient(180deg, rgba(255, 61, 138, 0.1) 0%, rgba(255, 255, 255, 0) 100%),
+    var(--surface2);
+}
+/* Clearly inert, but not so faint it becomes illegible (Section 7). */
+.btn:disabled {
+  opacity: 0.45;
+  filter: saturate(0.6);
+  box-shadow: none;
+}
+/* Keep the "which draw button I used" ring visible even while disabled -
+   preserve the existing exception. */
+.btn--selected:disabled {
+  filter: none;
+}
+
+/* =====================================================================
+   REFINEMENT PASS v2 (tuning on top of the polish pass; overrides only,
+   so it layers cleanly). Goals: lighter player panels, more prominent
+   cards, a stronger stock/discard focal point with layered central depth,
+   and a tighter vertical rhythm. Background, meld containers, and overall
+   aesthetic are preserved.
+   ===================================================================== */
+
+/* --- Player panels: ~20-25% less visual weight --------------------------
+   Dimmer panel fill, quieter active/pay-me glow (drop from elev-2 to
+   elev-1), smaller avatars, lighter count pill, tighter internal spacing,
+   and non-active seats recede further. */
+.opponents-row {
+  margin-bottom: 1rem;
+  opacity: 0.92;
+}
+.seat {
+  padding: 0.4rem 0.5rem;
+  gap: 0.2rem;
+  background: linear-gradient(180deg, rgba(27, 33, 64, 0.32) 0%, rgba(16, 20, 37, 0.32) 100%);
+}
+.opponents-row .seat:not(.seat--active) {
+  opacity: 0.7;
+}
+.seat--active {
+  background: linear-gradient(180deg, rgba(61, 224, 255, 0.11) 0%, rgba(61, 224, 255, 0.03) 100%);
+  box-shadow:
+    0 0 0 2px rgba(61, 224, 255, 0.85),
+    0 0 14px rgba(61, 224, 255, 0.22),
+    var(--elev-1);
+}
+.seat--pay-me {
+  box-shadow:
+    0 0 0 2px rgba(255, 170, 0, 0.85),
+    0 0 14px rgba(255, 170, 0, 0.28),
+    var(--elev-1);
+}
+.avatar {
+  width: 38px;
+  height: 38px;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.1),
+    var(--elev-1);
+}
+.avatar--img {
+  width: 38px;
+  height: 38px;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.12),
+    0 0 10px rgba(123, 47, 247, 0.28),
+    var(--elev-1);
+}
+.seat-name {
+  font-size: 0.72rem;
+}
+.seat-count {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.05rem 0.45rem;
+  font-size: 0.66rem;
+}
+
+/* --- Cards: ~10-12% more prominent --------------------------------------
+   Larger footprint + a deeper grounding shadow so the hand/melds read as
+   the hero layer. (Glow is left to the existing per-suit box-shadow so the
+   white "selected" ring is never overridden - depth is added via filter,
+   which composes instead of conflicting.) */
+.card {
+  width: 60px;
+  height: 84px;
+  font-size: 1.06rem;
+  filter: drop-shadow(0 6px 11px rgba(0, 0, 0, 0.55));
+}
+.card:hover {
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.62));
+}
+.card--selected {
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.6));
+}
+
+/* --- Stock / Discard: stronger focal point + layered central depth ------
+   Scale the pile containers to hold the larger cards, deepen their
+   grounding shadow, and pool a soft cyan+purple glow behind the center row
+   so the eye settles on the draw/discard piles. Uses backgrounds only - no
+   new elements, no reflow. */
+.stock-pile,
+.discard-pile {
+  width: 70px;
+  height: 96px;
+}
+.card-back {
+  filter: drop-shadow(0 7px 13px rgba(0, 0, 0, 0.6));
+}
+.center-row {
+  position: relative;
+  margin-bottom: 1rem;
+  background:
+    radial-gradient(58% 120% at 50% 46%, rgba(61, 224, 255, 0.07) 0%, rgba(61, 224, 255, 0) 70%),
+    radial-gradient(42% 92% at 50% 60%, rgba(123, 47, 247, 0.09) 0%, rgba(123, 47, 247, 0) 72%);
+}
+
+/* --- Tighter vertical rhythm -------------------------------------------- */
+.table-screen {
+  padding: 1rem 1rem 2.5rem;
+}
+.table-header {
+  margin-bottom: 0.75rem;
+}
+.melds {
+  margin-bottom: 1rem;
+}
+.hand-fan {
+  padding: 1rem 1rem 0.75rem;
+}
+
+/* =====================================================================
+   REFINEMENT PASS v3 (art-direction feedback). Softer meld containers,
+   hero stock/discard, clearer button hierarchy, consistent 4-8px depth,
+   tighter rhythm, more premium card faces, and a subtle "table" anchor.
+   Overrides only; background aesthetic preserved. Still presentation-only.
+   ===================================================================== */
+
+/* 1. Softer meld containers - the cards are the stars, not the boxes.
+   Border opacity ~55% lower, no glow, rounder corners, faint fill. */
+.meld {
+  border: 2px dashed rgba(123, 47, 247, 0.42);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(123, 47, 247, 0.05) 0%, rgba(20, 24, 43, 0.22) 100%);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.32);
+}
+/* Re-affirm the interactive lay-off cue so the softened base doesn't erase
+   the solid lime "tap here" border (base .meld is declared after it). */
+.meld--target {
+  border-style: solid;
+  border-color: var(--lime);
+}
+
+/* 6. Premium card faces: a faint face gradient (not flat), a top-edge
+   highlight + faint inner glow, and a thicker selected ring. Scoped away
+   from .card-back so the "PAY ME" backs keep their pink radial. */
+.card:not(.card-back) {
+  background: linear-gradient(158deg, #1b2039 0%, #12162a 100%);
+}
+.card:not(.card-back)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 0 10px rgba(255, 255, 255, 0.04);
+}
+.card--selected {
+  box-shadow:
+    0 0 0 4px #fff,
+    0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+/* 2 + 4. Stock & Discard as the hero: ~10% larger than hand cards, a soft
+   floor glow underneath, and a taller floating shadow to lift them. */
+.stock-pile,
+.discard-pile {
+  width: 78px;
+  height: 104px;
+  position: relative;
+}
+.stock-pile .card-back,
+.discard-pile .card {
+  width: 66px;
+  height: 92px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.6));
+}
+.stock-pile::after,
+.discard-pile::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  width: 84%;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(61, 224, 255, 0.28), rgba(61, 224, 255, 0));
+  filter: blur(3px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 3. Button hierarchy. Enabled non-primary buttons read as a clear second
+   tier (brighter cyan edge) above the dimmed/disabled ones; the entry
+   action (Draw from Stock = first control) gets extra glow when available;
+   the lime primary stays the "complete your turn" hero. */
+.controls .btn:not(:disabled):not(.btn--primary) {
+  border-color: #6ee9ff;
+}
+.controls .btn:first-child:not(:disabled) {
+  box-shadow:
+    0 0 16px rgba(61, 224, 255, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.35);
+  border-color: #8ff2ff;
+}
+
+/* 4. Consistent soft separation (4-8px) beneath panels, buttons, and (via
+   the block above) melds and piles. */
+.seat {
+  box-shadow:
+    var(--hairline),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+}
+.btn {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+.btn--primary {
+  box-shadow:
+    0 0 24px rgba(200, 255, 61, 0.5),
+    0 5px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 5. Tighter vertical rhythm between the play sections. */
+.opponents-row {
+  margin-bottom: 0.5rem;
+}
+.center-row {
+  margin-bottom: 0.5rem;
+}
+.melds {
+  margin-bottom: 0.5rem;
+}
+
+/* 7. Table anchor: a very subtle neon oval behind the central play area so
+   the space quietly reads as a futuristic table (not consciously noticed).
+   Sits above the felt, below the cards. */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  width: min(720px, 90vw);
+  height: min(360px, 52vh);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(61, 224, 255, 0.06) 0%, rgba(123, 47, 247, 0.07) 100%);
+  box-shadow: 0 0 90px 26px rgba(61, 224, 255, 0.045);
+  filter: blur(2px);
 }
