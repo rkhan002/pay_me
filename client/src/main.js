@@ -2,11 +2,24 @@ import { ensureSession, currentUserId } from "./network/supabaseClient.js";
 import { subscribe, getState, setState } from "./state/store.js";
 import { render, wireErrorDismiss } from "./ui/render.js";
 import { initAudio, unlockOnFirstGesture } from "./audio/audioManager.js";
+import { attemptReconnect } from "./network/reconnect.js";
 
 async function boot() {
+  // Brief splash so the reconnect check below isn't a blank screen.
+  const app = document.getElementById("app");
+  if (app)
+    app.innerHTML =
+      '<div class="lobby"><div class="lobby-card"><div class="logo"><h1>PAY ME</h1></div>' +
+      '<p class="boot-splash">Loading\u2026</p></div></div>';
+
   await ensureSession();
   const userId = await currentUserId();
   setState({ userId });
+
+  // If this identity is already in an active room, go straight back to the
+  // table (survives a refresh - see reconnect.js). Otherwise the lobby renders
+  // and, if the URL carries an invite code, prefills it.
+  await attemptReconnect();
 
   initAudio();
   // Browsers refuse to play any audio before the page has seen a genuine

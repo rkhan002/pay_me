@@ -2486,3 +2486,19 @@ body::before {
     height: 66px;
   }
 }
+
+/* --- Reconnect splash + invite button ------------------------------- */
+.boot-splash {
+  text-align: center;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+/* The Invite button reads as a friendly accent (cyan) rather than another
+   neutral header chip. */
+.invite-btn {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.invite-btn:hover:not(:disabled) {
+  color: var(--text);
+}

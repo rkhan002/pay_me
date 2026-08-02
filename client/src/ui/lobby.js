@@ -2,6 +2,13 @@ import { createRoom, joinRoom } from "../network/intents.js";
 import { setState } from "../state/store.js";
 import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
+import {
+  persistRoom,
+  setRoomInUrl,
+  roomCodeFromUrl,
+  persistDisplayName,
+  readDisplayName,
+} from "../network/reconnect.js";
 import { suitIcon } from "./cards.js";
 import { AVATARS } from "./avatars.js";
 
@@ -23,6 +30,11 @@ async function enterRoom(roomId, playerId) {
   // already has the real hand state.
   setState({ myPlayerId: playerId, error: null });
   await loadRoom(roomId);
+  // Remember the room (fast reconnect) and reflect its code in the URL (so the
+  // link is shareable and a refresh keeps the room).
+  const code = getState().room?.code ?? null;
+  persistRoom(roomId, playerId, code);
+  setRoomInUrl(code);
   setState({ screen: "table" });
   subscribeToRoom(roomId);
 }
@@ -68,6 +80,7 @@ export function renderLobby(root) {
   nameInput.id = "displayName";
   nameInput.placeholder = "e.g. Hercules Mulligan";
   nameInput.maxLength = 24;
+  nameInput.value = readDisplayName();
   nameField.appendChild(nameInput);
   card.appendChild(nameField);
 
@@ -107,6 +120,8 @@ export function renderLobby(root) {
   codeInput.placeholder = "ROOM CODE";
   codeInput.maxLength = 6;
   codeInput.style.textTransform = "uppercase";
+  // Prefill from a shared invite link (?room=CODE).
+  codeInput.value = roomCodeFromUrl() || "";
   codeInput.style.letterSpacing = "0.2em";
   joinField.appendChild(codeInput);
   card.appendChild(joinField);
@@ -123,6 +138,7 @@ export function renderLobby(root) {
     createBtn.disabled = true;
     setState({ error: null }); // clear any stale error from a previous attempt
     try {
+      persistDisplayName(nameInput.value.trim());
       const { roomId, playerId } = await joinRoom(
         codeInput.value.trim(),
         nameInput.value.trim(),
@@ -178,6 +194,7 @@ export function renderLobby(root) {
     createBtn.disabled = true;
     setState({ error: null }); // clear any stale error from a previous attempt
     try {
+      persistDisplayName(nameInput.value.trim());
       const { roomId, playerId } = await createRoom(
         nameInput.value.trim() || "Host",
         selectedMode,

@@ -21,6 +21,7 @@ import {
   unmeld,
 } from "../network/intents.js";
 import { loadRoom, loadHand, loadStandings, applyHandView } from "../network/queries.js";
+import { inviteLink } from "../network/reconnect.js";
 import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/audioManager.js";
 
 // --- One-shot enter-animation tracking (motion pass) -------------------
@@ -976,6 +977,30 @@ export function renderTable(root) {
     syncSfxBtn();
   });
   headerActions.appendChild(sfxBtn);
+
+  // Copy a shareable invite link (the room's ?room=CODE URL). Updates its own
+  // label on click rather than going through setState, so a re-render can't
+  // wipe the transient "Copied!" mid-timeout (same pattern as the audio btns).
+  if (state.room?.code) {
+    const inviteBtn = document.createElement("button");
+    inviteBtn.type = "button";
+    inviteBtn.className = "btn invite-btn";
+    inviteBtn.textContent = "Invite";
+    inviteBtn.addEventListener("click", async () => {
+      const link = inviteLink(state.room.code);
+      try {
+        await navigator.clipboard.writeText(link);
+        inviteBtn.textContent = "Link copied!";
+      } catch {
+        window.prompt("Copy this invite link:", link);
+        inviteBtn.textContent = "Invite";
+      }
+      setTimeout(() => {
+        inviteBtn.textContent = "Invite";
+      }, 1600);
+    });
+    headerActions.appendChild(inviteBtn);
+  }
 
   header.appendChild(headerActions);
   board.appendChild(header);
