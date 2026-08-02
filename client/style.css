@@ -2528,6 +2528,13 @@ body::before {
 .table-header .header-actions {
   gap: 0.4rem;
 }
+/* Header/nav buttons size to their content (base .btn is width:100%, which
+   would make Invite/Lobby span full width and stack). */
+.table-header .header-actions .btn {
+  width: auto;
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
 
 @media (max-width: 640px) {
   /* Fixed top zone of the app-shell: bleeds to the screen edges, respects
