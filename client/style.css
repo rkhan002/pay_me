@@ -2711,3 +2711,16 @@ body::before {
     gap: 1rem;
   }
 }
+
+/* Desktop: bound the felt by viewport height so the table AND the player's
+   hand both fit without scrolling (mobile keeps the scrolling board + fixed
+   dock, so it's unaffected). Height drives width via the aspect ratio. */
+@media (min-width: 641px) {
+  .felt {
+    height: min(46vh, 430px);
+    width: auto;
+    max-width: 780px;
+    aspect-ratio: 1536 / 1024;
+    margin: 0.25rem auto 0;
+  }
+}
