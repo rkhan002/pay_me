@@ -63,6 +63,44 @@ function errorText(e) {
 // guessing - see propose-meld/layoff-card's edge functions. This opens the
 // picker modal (see renderWildPickerModal) instead of treating it as either
 // a success or a rejected move.
+// Single "Meld" action. A group of cards can be a valid SET or a valid RUN
+// but never both - a set is same-rank, a run is distinct consecutive ranks, so
+// the same cards can't satisfy both. That means we don't need to ask the player
+// which they meant: try SET, and if the server rejects it, try RUN (which opens
+// the wild picker when a run's wilds need a designated rank).
+async function meldAction(state) {
+  const cards = selectedCards();
+  if (cards.length < 3 || actionInFlight) return;
+  setState({ error: null });
+  actionInFlight = true;
+  try {
+    const setRes = await proposeMeld(state.hand.id, cards, "SET");
+    await applyOrLoad(setRes, state.hand.id);
+    clearSelection();
+  } catch (_notASet) {
+    try {
+      const runRes = await proposeMeld(state.hand.id, cards, "RUN");
+      if (runRes.needsWildDesignation) {
+        setState({
+          wildPicker: {
+            kind: "meld",
+            handId: state.hand.id,
+            cards,
+            arrangements: runRes.arrangements,
+          },
+        });
+        return; // picker takes over; finally still clears the in-flight flag
+      }
+      await applyOrLoad(runRes, state.hand.id);
+      clearSelection();
+    } catch (_notARun) {
+      setState({ error: "Those cards don\u2019t form a valid set or run." });
+    }
+  } finally {
+    actionInFlight = false;
+  }
+}
+
 async function proposeRun(state) {
   const cards = selectedCards();
   setState({ error: null });
@@ -684,7 +722,7 @@ function buildActionHint(state, myTurn, inLayoff, myLayoffTurn) {
       : "Lay-off round: nothing here to lay off onto, so tap Pass. Any cards left stay in your hand.";
   } else if (myTurn && !state.hand.hasDrawnThisTurn) {
     text =
-      "Your turn - draw a card first (Stock or Discard), then you can meld, lay off, or discard.";
+      "Your turn - draw a card by tapping the stock or discard pile, then meld, lay off, or discard.";
   } else if (myTurn && state.hand.hasDrawnThisTurn) {
     const parts = [
       selectedCards().length >= 3 ? "Meld the selected cards" : "select 3+ cards to Meld",
@@ -821,26 +859,9 @@ function renderControls(root, state) {
     bar.appendChild(skipBtn);
   }
 
-  // Which draw source is "active" this turn - only meaningful once this
-  // player has actually drawn, so a leftover drawnSource from a previous
-  // turn never lights up the wrong button.
-  const drawnStock = myTurn && state.hand.hasDrawnThisTurn && state.drawnSource === "stock";
-  const drawnDiscard = myTurn && state.hand.hasDrawnThisTurn && state.drawnSource === "discard";
-
-  const drawStockBtn = document.createElement("button");
-  drawStockBtn.className = "btn" + (drawnStock ? " btn--selected" : "");
-  drawStockBtn.textContent = "Draw from stock";
-  drawStockBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawStockBtn.addEventListener("click", () => drawStockAction(state));
-  bar.appendChild(drawStockBtn);
-
-  const drawDiscardBtn = document.createElement("button");
-  drawDiscardBtn.className = "btn" + (drawnDiscard ? " btn--selected" : "");
-  drawDiscardBtn.textContent = "Draw from discard";
-  drawDiscardBtn.disabled = !myTurn || state.hand.hasDrawnThisTurn || inLayoff;
-  drawDiscardBtn.addEventListener("click", () => drawDiscardAction(state));
-  bar.appendChild(drawDiscardBtn);
-
+  // Draw is done by tapping the stock or discard pile directly (see
+  // renderTable) - no separate draw buttons.
+  //
   // The layoff phase never involves drawing (it's a card-dump round after
   // everyone's had their real final turn), so hasDrawnThisTurn never becomes
   // true there - gating melding on it would leave these buttons permanently
@@ -848,25 +869,13 @@ function renderControls(root, state) {
   // to act right now" in that phase instead.
   const canMeld = myTurn && (state.hand.hasDrawnThisTurn || myLayoffTurn);
 
-  const setBtn = document.createElement("button");
-  setBtn.className = "btn";
-  setBtn.textContent = "Meld as set";
-  setBtn.disabled = !canMeld || selectedCards().length < 3;
-  if (setBtn.disabled) setBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
-  setBtn.addEventListener("click", () =>
-    guard(() => proposeMeld(state.hand.id, selectedCards(), "SET"), reconcile(state)).then(
-      clearSelection,
-    ),
-  );
-  bar.appendChild(setBtn);
-
-  const runBtn = document.createElement("button");
-  runBtn.className = "btn";
-  runBtn.textContent = "Meld as run";
-  runBtn.disabled = !canMeld || selectedCards().length < 3;
-  if (runBtn.disabled) runBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
-  runBtn.addEventListener("click", () => proposeRun(state));
-  bar.appendChild(runBtn);
+  const meldBtn = document.createElement("button");
+  meldBtn.className = "btn";
+  meldBtn.textContent = "Meld";
+  meldBtn.disabled = !canMeld || selectedCards().length < 3;
+  if (meldBtn.disabled) meldBtn.title = meldDisabledReason(state, myTurn, inLayoff, myLayoffTurn);
+  meldBtn.addEventListener("click", () => meldAction(state));
+  bar.appendChild(meldBtn);
 
   const discardBtn = document.createElement("button");
   discardBtn.className = "btn btn--primary";
@@ -1034,7 +1043,7 @@ export function renderTable(root) {
   }
 
   header.appendChild(headerActions);
-  board.appendChild(header);
+  wrap.appendChild(header);
 
   renderOpponents(board, state);
   if (state.hand?.phase !== "complete") renderPayMeBanner(board, state);

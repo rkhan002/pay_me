@@ -2513,3 +2513,41 @@ body::before {
   color: var(--text);
   border-color: rgba(255, 255, 255, 0.5);
 }
+
+/* =====================================================================
+   TOP NAV BAR
+   The header is now a top-level shell zone (a sibling of the scrollable
+   board and the bottom dock), so on mobile it's a fixed full-width bar
+   that never scrolls away, mirroring the docked hand. On desktop it reads
+   as a clean nav strip across the top of the table.
+   ===================================================================== */
+.table-header {
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.table-header .header-actions {
+  gap: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  /* Fixed top zone of the app-shell: bleeds to the screen edges, respects
+     the notch, and stays put while the board scrolls beneath it. */
+  .table-header {
+    margin: 0 -0.6rem 0.5rem;
+    padding: calc(0.45rem + env(safe-area-inset-top, 0px)) 0.6rem 0.5rem;
+    background: linear-gradient(180deg, rgba(20, 24, 43, 0.94) 0%, rgba(11, 14, 26, 0.82) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    row-gap: 0.4rem;
+    align-items: center;
+  }
+  /* Compact utility buttons so the five nav actions sit cleanly in the bar. */
+  .table-header .header-actions {
+    gap: 0.3rem;
+  }
+  .table-header .header-actions .btn {
+    min-height: 38px;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.62rem;
+  }
+}
