@@ -2880,3 +2880,43 @@ body::before {
     font-size: 0.52rem;
   }
 }
+
+/* =====================================================================
+   TABLE REDESIGN v3 - socket-filling avatars, symmetric centre piles,
+   long-press discard (no "See all" button)
+   ===================================================================== */
+
+/* Avatars fill the image sockets: a touch larger, ring-less so the socket's
+   own rim frames them, consistent across every seat. */
+.felt .seat {
+  width: 9.4%;
+}
+.felt .seat .avatar,
+.felt .seat .avatar--img {
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
+}
+.felt .seat .avatar--img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Pay-Me caller keeps a distinct amber ring even though avatars are ring-less. */
+.felt .seat--pay-me .avatar {
+  box-shadow:
+    0 0 0 3px var(--amber),
+    0 0 18px rgba(255, 170, 0, 0.5);
+}
+
+/* Centre piles: a neatly centred, symmetric pair. */
+.felt .table-center {
+  top: 47%;
+  align-items: center;
+  gap: 1.1rem;
+}
+.discard-pile {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

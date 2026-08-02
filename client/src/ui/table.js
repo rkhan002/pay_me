@@ -1161,20 +1161,38 @@ export function renderTable(root) {
         empty.className = "pile-empty";
         discardPileEl.appendChild(empty);
       }
-      // Memory aid: a compact control to open the full discard history
-      // (see renderDiscardLogModal). Separate from the top-card draw tap, so
-      // it never competes with drawing. Only shown when there's history.
+      // Long-press the discard pile to open its full history (replaces the
+      // old "See all" button). Press-and-hold ~450ms opens the viewer; a
+      // normal tap still draws when it's a legal draw.
       if (state.hand.discardPile.length > 0) {
-        const histBtn = document.createElement("button");
-        histBtn.type = "button";
-        histBtn.className = "pile-history-btn";
-        histBtn.textContent = `See all ${state.hand.discardPile.length}`;
-        histBtn.setAttribute(
-          "aria-label",
-          `View all ${state.hand.discardPile.length} cards in the discard pile`,
+        discardPileEl.title = "Press and hold to view the discard pile";
+        let pressTimer = null;
+        let longPressed = false;
+        const startPress = () => {
+          longPressed = false;
+          pressTimer = setTimeout(() => {
+            longPressed = true;
+            setState({ showDiscardLog: true });
+          }, 450);
+        };
+        const endPress = () => clearTimeout(pressTimer);
+        discardPileEl.addEventListener("pointerdown", startPress);
+        discardPileEl.addEventListener("pointerup", endPress);
+        discardPileEl.addEventListener("pointerleave", endPress);
+        discardPileEl.addEventListener("pointercancel", endPress);
+        discardPileEl.addEventListener("contextmenu", (e) => e.preventDefault());
+        // Swallow the draw click that would otherwise follow a long press.
+        discardPileEl.addEventListener(
+          "click",
+          (e) => {
+            if (longPressed) {
+              e.stopPropagation();
+              e.preventDefault();
+              longPressed = false;
+            }
+          },
+          true,
         );
-        histBtn.addEventListener("click", () => setState({ showDiscardLog: true }));
-        discardCol.appendChild(histBtn);
       }
       discardCol.appendChild(discardPileEl);
       centerRow.appendChild(discardCol);
