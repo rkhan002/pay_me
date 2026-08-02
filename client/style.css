@@ -2558,3 +2558,156 @@ body::before {
     font-size: 0.62rem;
   }
 }
+
+/* =====================================================================
+   TABLE REDESIGN
+   The oval table image is the felt/play surface. Players are seated around
+   it and the stock/discard piles are laid on the table. The old layered
+   felt background is removed so the image is the focal point.
+   ===================================================================== */
+
+/* Plain dark canvas - the table image carries the visual weight now. */
+body {
+  background: #090b14;
+  background-attachment: initial;
+  background-size: auto;
+}
+/* Drop the old table-anchor oval and the center-row glow. */
+body::before {
+  content: none;
+}
+.center-row {
+  background: none;
+}
+
+/* The felt: the table image, aspect-preserved, as the play surface. */
+.felt {
+  position: relative;
+  width: 100%;
+  max-width: 780px;
+  margin: 0.25rem auto 0;
+  aspect-ratio: 1536 / 1024;
+  background: url("/assets/table-bg.png") center center / contain no-repeat;
+  overflow: visible;
+}
+
+/* Seats positioned around the oval (left/top set inline per player). Compact
+   avatar + name + count, readable over the felt, no panel chrome. */
+.felt .seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  width: max-content;
+  max-width: 100px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+  z-index: 3;
+}
+.felt .seat .avatar,
+.felt .seat .avatar--img {
+  width: 46px;
+  height: 46px;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.14),
+    0 3px 10px rgba(0, 0, 0, 0.6);
+}
+.felt .seat .seat-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.felt .seat .seat-count {
+  background: rgba(9, 11, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.02rem 0.45rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  box-shadow: none;
+}
+
+/* Active player: an elegant gold (#D8A23A) glowing ring, breathing softly, so
+   whose turn it is reads instantly. Overrides the old cyan active glow. */
+.felt .seat--active {
+  animation: none;
+  box-shadow: none;
+  background: none;
+}
+.felt .seat--active .avatar {
+  box-shadow:
+    0 0 0 3px #d8a23a,
+    0 0 22px rgba(216, 162, 58, 0.75);
+  animation: fx-gold-breathe 2.4s ease-in-out infinite;
+}
+.felt .seat--active .seat-name {
+  color: #f0cd82;
+}
+@keyframes fx-gold-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #d8a23a,
+      0 0 14px rgba(216, 162, 58, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px #d8a23a,
+      0 0 30px rgba(216, 162, 58, 0.9);
+  }
+}
+/* Pay-Me caller keeps a distinct amber ring (unchanged intent). */
+.felt .seat--pay-me .avatar {
+  box-shadow:
+    0 0 0 3px var(--amber),
+    0 0 20px rgba(255, 170, 0, 0.55);
+}
+
+/* Stock/discard piles laid in the centre of the table. */
+.felt .table-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  gap: 1.6rem;
+  z-index: 2;
+}
+.felt .table-center .pile-label {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* Melds sit just below the table as a laid-down tray. */
+.melds {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .felt {
+    max-width: 100%;
+    margin-top: 0.25rem;
+  }
+  .felt .seat .avatar,
+  .felt .seat .avatar--img {
+    width: 38px;
+    height: 38px;
+  }
+  .felt .seat .seat-name {
+    font-size: 0.64rem;
+    max-width: 74px;
+  }
+  .felt .table-center {
+    gap: 1rem;
+  }
+}

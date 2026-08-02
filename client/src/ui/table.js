@@ -348,13 +348,32 @@ function drawDiscardAction(state) {
   );
 }
 
-function renderOpponents(root, state) {
-  const row = document.createElement("div");
-  row.className = "opponents-row";
-  for (const player of state.players) {
+function renderSeats(felt, state) {
+  const players = state.players;
+  const n = players.length;
+  if (n === 0) return;
+
+  // Seat everyone around the oval: rotate the seat list so the local player
+  // is at the bottom (index 0), then space the rest evenly around the ellipse.
+  const myIdx = Math.max(
+    0,
+    players.findIndex((p) => p.id === state.myPlayerId),
+  );
+  const ordered = [...players.slice(myIdx), ...players.slice(0, myIdx)];
+  const rx = 45; // horizontal radius (% of the felt)
+  const ry = 40; // vertical radius (% of the felt)
+
+  ordered.forEach((player, i) => {
     const info = state.publicHandInfo.find((p) => p.playerId === player.id);
+    const angle = Math.PI / 2 + (i * 2 * Math.PI) / n; // PI/2 = bottom (self)
+    const x = 50 + rx * Math.cos(angle);
+    const y = 50 + ry * Math.sin(angle);
+
     const seat = document.createElement("div");
     seat.className = "seat";
+    seat.style.left = `${x.toFixed(2)}%`;
+    seat.style.top = `${y.toFixed(2)}%`;
+    if (player.id === state.myPlayerId) seat.classList.add("seat--self");
     if (state.hand?.turnPlayerId === player.id) seat.classList.add("seat--active");
     if (player.id === state.hand?.payMeCallerId) seat.classList.add("seat--pay-me");
 
@@ -379,26 +398,17 @@ function renderOpponents(root, state) {
     seat.appendChild(name);
 
     if (info) {
-      // For my own seat, count my actual hand (which updates instantly on an
-      // optimistic draw/discard) rather than the public snapshot, which only
-      // catches up on the next server refresh - otherwise my avatar's count
-      // briefly lags my own hand right after I draw or discard.
-      const n = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
-      // Opponents' hands are concealed - show a small "Pay Me" card back to
-      // represent the cards they're holding. (My own hand is shown in full
-      // at the bottom of the screen, so no back for my own seat.)
-      if (player.id !== state.myPlayerId && n > 0 && state.hand?.phase !== "complete") {
-        seat.appendChild(renderCardBack({ small: true }));
-      }
+      // Own seat counts the live hand (updates instantly on an optimistic
+      // draw/discard); everyone else uses the public snapshot.
+      const nc = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
       const count = document.createElement("div");
       count.className = "seat-count";
-      count.textContent = `${n} card${n === 1 ? "" : "s"}`;
+      count.textContent = `${nc} card${nc === 1 ? "" : "s"}`;
       seat.appendChild(count);
     }
 
-    row.appendChild(seat);
-  }
-  root.appendChild(row);
+    felt.appendChild(seat);
+  });
 }
 
 function renderMelds(root, state) {
@@ -1054,8 +1064,14 @@ export function renderTable(root) {
   header.appendChild(headerActions);
   wrap.appendChild(header);
 
-  renderOpponents(board, state);
   if (state.hand?.phase !== "complete") renderPayMeBanner(board, state);
+
+  // The felt: the oval table image is the play surface. Players are seated
+  // around it and the stock/discard piles are laid on the table.
+  const felt = document.createElement("div");
+  felt.className = "felt";
+  renderSeats(felt, state);
+  board.appendChild(felt);
 
   if (state.hand) {
     // A finished hand shows a clean recap (opponents + revealed melds + the
@@ -1064,7 +1080,7 @@ export function renderTable(root) {
     // the bottom of the screen.
     if (state.hand.phase !== "complete") {
       const centerRow = document.createElement("div");
-      centerRow.className = "center-row";
+      centerRow.className = "center-row table-center";
 
       // A draw (from either pile) is only legal on your own turn, before
       // you've drawn, and never in the layoff phase - the same gate the draw
@@ -1128,7 +1144,7 @@ export function renderTable(root) {
       discardCol.appendChild(discardPileEl);
       centerRow.appendChild(discardCol);
 
-      board.appendChild(centerRow);
+      felt.appendChild(centerRow);
     }
     renderMelds(board, state);
   }
