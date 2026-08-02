@@ -2457,3 +2457,32 @@ body::before {
     font-size: 0.7rem;
   }
 }
+
+/* Dock compaction (mobile): keep the docked zone short so the board above
+   keeps as much room as possible - tighter buttons, a clamped hint, smaller
+   sort buttons, and slightly smaller hand cards. */
+@media (max-width: 640px) {
+  .player-dock .controls {
+    gap: 0.35rem;
+  }
+  .player-dock .controls .btn {
+    padding: 0.5rem 0.5rem;
+    min-height: 44px;
+    font-size: 0.66rem;
+  }
+  .player-dock .action-hint {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    max-height: 2.6em;
+    overflow: hidden;
+    margin-top: 0.3rem;
+  }
+  .player-dock .hand-sort-btn {
+    min-height: 30px;
+    padding: 0.25rem 0.55rem;
+  }
+  .player-dock .hand-fan .card {
+    width: 46px;
+    height: 66px;
+  }
+}
