@@ -74,28 +74,37 @@ async function meldAction(state) {
   setState({ error: null });
   actionInFlight = true;
   try {
-    const setRes = await proposeMeld(state.hand.id, cards, "SET");
-    await applyOrLoad(setRes, state.hand.id);
-    clearSelection();
-  } catch (_notASet) {
+    // Resolve the meld TYPE first: try SET, fall back to RUN. Only a rejected
+    // proposal (the cards aren't that type) should trigger the fallback - so
+    // applying the result is kept OUT of this block, otherwise a hiccup while
+    // rendering a *successful* set would be misread as "not a set" and wrongly
+    // retried as a run.
+    let res;
     try {
-      const runRes = await proposeMeld(state.hand.id, cards, "RUN");
-      if (runRes.needsWildDesignation) {
-        setState({
-          wildPicker: {
-            kind: "meld",
-            handId: state.hand.id,
-            cards,
-            arrangements: runRes.arrangements,
-          },
-        });
-        return; // picker takes over; finally still clears the in-flight flag
+      res = await proposeMeld(state.hand.id, cards, "SET");
+    } catch (_notASet) {
+      try {
+        res = await proposeMeld(state.hand.id, cards, "RUN");
+      } catch (_notARun) {
+        setState({ error: "Those cards don\u2019t form a valid set or run." });
+        return;
       }
-      await applyOrLoad(runRes, state.hand.id);
-      clearSelection();
-    } catch (_notARun) {
-      setState({ error: "Those cards don\u2019t form a valid set or run." });
     }
+    // A run whose wilds need a designated rank: hand off to the picker.
+    if (res.needsWildDesignation) {
+      setState({
+        wildPicker: { kind: "meld", handId: state.hand.id, cards, arrangements: res.arrangements },
+      });
+      return;
+    }
+    // Apply the (already-successful) meld; a view-processing error just falls
+    // back to a fresh load rather than surfacing a bogus "invalid meld".
+    try {
+      await applyOrLoad(res, state.hand.id);
+    } catch {
+      await loadHand(state.hand.id).catch(() => {});
+    }
+    clearSelection();
   } finally {
     actionInFlight = false;
   }
