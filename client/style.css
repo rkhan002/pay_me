@@ -2394,3 +2394,66 @@ body::before {
     0 0 0 2px var(--cyan),
     0 0 12px rgba(61, 224, 255, 0.4);
 }
+
+/* --- Mobile app-shell: pinned player dock ---------------------------
+   Fixes the "scroll up and down to reach my hand" problem on phones. The
+   table becomes a full-height column: the board (header, opponents, piles,
+   melds) scrolls in .board-scroll, while the hand + action buttons dock at
+   the bottom in .player-dock, always in reach.
+
+   By default the wrappers are display:contents (no layout box), so on desktop
+   the sections lay out exactly as if the wrappers weren't there - zero change.
+   They only become real boxes at <=640px. */
+.board-scroll,
+.player-dock {
+  display: contents;
+}
+@media (max-width: 640px) {
+  .table-screen {
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0.6rem 0.6rem 0;
+  }
+  .board-scroll {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.4rem;
+  }
+  .player-dock {
+    display: block;
+    flex: 0 0 auto;
+    margin: 0 -0.6rem;
+    padding: 0.4rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(20, 24, 43, 0.9) 0%, rgba(11, 14, 26, 0.98) 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.5);
+  }
+  /* Compact the dock: the docked fan is self-evidently "your hand", and its
+     own tray surface is dropped since the dock now provides the panel. */
+  .player-dock .hand-label {
+    display: none;
+  }
+  .player-dock .controls {
+    margin: 0 0 0.4rem;
+  }
+  .player-dock .hand-sort {
+    margin: 0 0 0.35rem;
+  }
+  .player-dock .hand-fan {
+    margin: 0;
+    padding: 0.3rem 0.3rem 0.15rem;
+    background: transparent;
+    box-shadow: none;
+  }
+  .player-dock .action-hint {
+    font-size: 0.7rem;
+  }
+}

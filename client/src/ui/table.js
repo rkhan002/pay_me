@@ -908,6 +908,16 @@ export function renderTable(root) {
   const wrap = document.createElement("div");
   wrap.className = "table-screen";
 
+  // On mobile the table becomes a fixed app-shell: the board (header,
+  // opponents, piles, melds) scrolls inside `board`, while the player's hand
+  // and action buttons live in `dock`, pinned to the bottom so they never
+  // scroll out of reach (see the <=640 rules in style.css). On desktop both
+  // are plain blocks, so the stacked layout is unchanged.
+  const board = document.createElement("div");
+  board.className = "board-scroll";
+  const dock = document.createElement("div");
+  dock.className = "player-dock";
+
   const header = document.createElement("div");
   header.className = "table-header";
   header.innerHTML = `
@@ -968,10 +978,10 @@ export function renderTable(root) {
   headerActions.appendChild(sfxBtn);
 
   header.appendChild(headerActions);
-  wrap.appendChild(header);
+  board.appendChild(header);
 
-  renderOpponents(wrap, state);
-  if (state.hand?.phase !== "complete") renderPayMeBanner(wrap, state);
+  renderOpponents(board, state);
+  if (state.hand?.phase !== "complete") renderPayMeBanner(board, state);
 
   if (state.hand) {
     // A finished hand shows a clean recap (opponents + revealed melds + the
@@ -1044,18 +1054,18 @@ export function renderTable(root) {
       discardCol.appendChild(discardPileEl);
       centerRow.appendChild(discardCol);
 
-      wrap.appendChild(centerRow);
+      board.appendChild(centerRow);
     }
-    renderMelds(wrap, state);
+    renderMelds(board, state);
   }
 
-  renderControls(wrap, state);
+  renderControls(dock, state);
 
   if (state.myCards.length) {
     const handLabel = document.createElement("div");
     handLabel.className = "hand-label";
     handLabel.textContent = "Your hand";
-    wrap.appendChild(handLabel);
+    dock.appendChild(handLabel);
 
     // Card order in hand is a private, local-only preference (see
     // ui/handOrder.js) - drag to rearrange, or one-tap auto-sort. None of it
@@ -1078,7 +1088,7 @@ export function renderTable(root) {
       };
       sortBar.appendChild(mkSort("Sort by rank", sortByRank));
       sortBar.appendChild(mkSort("Sort by suit", sortBySuit));
-      wrap.appendChild(sortBar);
+      dock.appendChild(sortBar);
     }
 
     // Only cards not present on the previous render get the deal-in
@@ -1109,9 +1119,11 @@ export function renderTable(root) {
       pending.classList.add("card-pending");
       fan.appendChild(pending);
     }
-    wrap.appendChild(fan);
+    dock.appendChild(fan);
   }
 
+  wrap.appendChild(board);
+  wrap.appendChild(dock);
   root.appendChild(wrap);
   renderStandingsModal(root, state);
   renderWildPickerModal(root, state);
