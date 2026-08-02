@@ -21,7 +21,7 @@ import {
   unmeld,
 } from "../network/intents.js";
 import { loadRoom, loadHand, loadStandings, applyHandView } from "../network/queries.js";
-import { inviteLink } from "../network/reconnect.js";
+import { inviteLink, clearPersistedRoom, setRoomInUrl } from "../network/reconnect.js";
 import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/audioManager.js";
 
 // --- One-shot enter-animation tracking (motion pass) -------------------
@@ -1000,6 +1000,37 @@ export function renderTable(root) {
       }, 1600);
     });
     headerActions.appendChild(inviteBtn);
+  }
+
+  // Back to the lobby. Since a refresh now reconnects to the current room
+  // (see reconnect.js), this is the way to leave a table to start/join a
+  // different game. Local navigation only - the player stays a member
+  // server-side and can rejoin with the code (or a refresh reconnects them
+  // until they join another game).
+  if (state.room) {
+    const lobbyBtn = document.createElement("button");
+    lobbyBtn.type = "button";
+    lobbyBtn.className = "btn lobby-btn";
+    lobbyBtn.textContent = "Lobby";
+    lobbyBtn.addEventListener("click", () => {
+      if (!confirm("Return to the lobby? You can rejoin this table with its room code.")) return;
+      clearPersistedRoom();
+      setRoomInUrl(null);
+      setState({
+        screen: "lobby",
+        room: null,
+        hand: null,
+        myPlayerId: null,
+        myCards: [],
+        melds: [],
+        publicHandInfo: [],
+        players: [],
+        selectedCardKeys: new Set(),
+        showStandings: false,
+        showDiscardLog: false,
+      });
+    });
+    headerActions.appendChild(lobbyBtn);
   }
 
   header.appendChild(headerActions);

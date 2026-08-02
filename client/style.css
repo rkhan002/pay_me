@@ -2502,3 +2502,14 @@ body::before {
 .invite-btn:hover:not(:disabled) {
   color: var(--text);
 }
+
+/* "Lobby" (leave table) button - a quiet neutral so it doesn't compete with
+   the accent Invite button. */
+.lobby-btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-dim);
+}
+.lobby-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.5);
+}
