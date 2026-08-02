@@ -348,31 +348,52 @@ function drawDiscardAction(state) {
   );
 }
 
+// The six fixed seats defined by the table image (circle-plaque markers).
+// Coordinates are the avatar-circle centres as a % of the felt.
+const SEAT_POS = {
+  TOP: { x: 50, y: 9 },
+  BOTTOM: { x: 50, y: 85 },
+  LU: { x: 9.5, y: 35 },
+  LL: { x: 9.5, y: 60.5 },
+  RU: { x: 90.5, y: 35 },
+  RL: { x: 90.5, y: 60.5 },
+};
+// Ring order going around the table from the bottom (self), counter-clockwise.
+const SEAT_RING = ["BOTTOM", "LL", "LU", "TOP", "RU", "RL"];
+// Which ring slots to fill for N players (self is always slot 0 = BOTTOM),
+// chosen to stay symmetric about the vertical axis and evenly spread, leaving
+// the remaining seats empty.
+const SEAT_SUBSET = {
+  1: [0],
+  2: [0, 3],
+  3: [0, 2, 4],
+  4: [0, 2, 3, 4],
+  5: [0, 1, 2, 4, 5],
+  6: [0, 1, 2, 3, 4, 5],
+};
+
 function renderSeats(felt, state) {
   const players = state.players;
   const n = players.length;
   if (n === 0) return;
 
-  // Seat everyone around the oval: rotate the seat list so the local player
-  // is at the bottom (index 0), then space the rest evenly around the ellipse.
+  // Rotate the seat list so the local player sits at the bottom (slot 0), then
+  // drop everyone into a symmetric subset of the six fixed table seats.
   const myIdx = Math.max(
     0,
     players.findIndex((p) => p.id === state.myPlayerId),
   );
   const ordered = [...players.slice(myIdx), ...players.slice(0, myIdx)];
-  const rx = 45; // horizontal radius (% of the felt)
-  const ry = 40; // vertical radius (% of the felt)
+  const subset = SEAT_SUBSET[n] || SEAT_SUBSET[6];
 
   ordered.forEach((player, i) => {
     const info = state.publicHandInfo.find((p) => p.playerId === player.id);
-    const angle = Math.PI / 2 + (i * 2 * Math.PI) / n; // PI/2 = bottom (self)
-    const x = 50 + rx * Math.cos(angle);
-    const y = 50 + ry * Math.sin(angle);
+    const pos = SEAT_POS[SEAT_RING[subset[i]]];
 
     const seat = document.createElement("div");
     seat.className = "seat";
-    seat.style.left = `${x.toFixed(2)}%`;
-    seat.style.top = `${y.toFixed(2)}%`;
+    seat.style.left = `${pos.x}%`;
+    seat.style.top = `${pos.y}%`;
     if (player.id === state.myPlayerId) seat.classList.add("seat--self");
     if (state.hand?.turnPlayerId === player.id) seat.classList.add("seat--active");
     if (player.id === state.hand?.payMeCallerId) seat.classList.add("seat--pay-me");
@@ -390,27 +411,41 @@ function renderSeats(felt, state) {
       avatar.textContent = player.displayName.slice(0, 2).toUpperCase();
     }
     if (!player.connected) avatar.classList.add("avatar--disconnected");
-    seat.appendChild(avatar);
 
+    // Wrap the avatar so the turn indicator can anchor to its corner.
+    const avatarWrap = document.createElement("div");
+    avatarWrap.className = "avatar-wrap";
+    avatarWrap.appendChild(avatar);
+    // Animated turn indicator (blinking dot + ping) next to the active player.
+    // Only rendered on the active seat, so it disappears the instant the turn
+    // passes to the next player.
+    if (state.hand?.turnPlayerId === player.id) {
+      const ind = document.createElement("div");
+      ind.className = "turn-indicator";
+      ind.setAttribute("aria-label", "Active turn");
+      avatarWrap.appendChild(ind);
+    }
+    seat.appendChild(avatarWrap);
+
+    // Name + card count sit in the seat's plaque, just below the avatar.
+    const label = document.createElement("div");
+    label.className = "seat-label";
     const name = document.createElement("div");
     name.className = "seat-name";
     name.textContent = player.displayName;
-    seat.appendChild(name);
-
+    label.appendChild(name);
     if (info) {
-      // Own seat counts the live hand (updates instantly on an optimistic
-      // draw/discard); everyone else uses the public snapshot.
       const nc = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
       const count = document.createElement("div");
       count.className = "seat-count";
       count.textContent = `${nc} card${nc === 1 ? "" : "s"}`;
-      seat.appendChild(count);
+      label.appendChild(count);
     }
+    seat.appendChild(label);
 
     felt.appendChild(seat);
   });
 }
-
 function renderMelds(root, state) {
   const section = document.createElement("div");
   section.className = "melds";
