@@ -31,6 +31,7 @@ async function boot() {
     const st = getState();
     if (st.wildPicker) setState({ wildPicker: null });
     else if (st.showStandings) setState({ showStandings: false });
+    else if (st.showDiscardLog) setState({ showDiscardLog: false });
   });
 
   subscribe(render);

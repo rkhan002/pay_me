@@ -442,6 +442,55 @@ function renderMelds(root, state) {
   root.appendChild(section);
 }
 
+// The discard-pile history viewer (memory aid). Shows every card currently in
+// the discard pile, newest first, as inert view-only cards - the newest (the
+// real top card) is ringed. Note it reflects the *current* pile, so cards a
+// player has drawn back out are no longer listed (they left the pile).
+function renderDiscardLogModal(root, state) {
+  if (!state.showDiscardLog) return;
+  const pile = state.hand?.discardPile ?? [];
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) setState({ showDiscardLog: false });
+  });
+
+  const card = document.createElement("div");
+  card.className = "modal-card";
+
+  const title = document.createElement("div");
+  title.className = "modal-title";
+  title.textContent = "Discard pile";
+  card.appendChild(title);
+
+  const subtitle = document.createElement("div");
+  subtitle.className = "modal-subtitle";
+  subtitle.textContent = pile.length
+    ? `${pile.length} card${pile.length === 1 ? "" : "s"} \u00b7 newest first`
+    : "The discard pile is empty";
+  card.appendChild(subtitle);
+
+  const grid = document.createElement("div");
+  grid.className = "discard-log";
+  pile.forEach((c, i) => {
+    const cardEl = renderCard(c, { wild: isWildCard(c, state.hand?.wildRank), tabIndex: -1 });
+    cardEl.classList.add("discard-log-card");
+    if (i === 0) cardEl.classList.add("discard-log-card--top");
+    grid.appendChild(cardEl);
+  });
+  card.appendChild(grid);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn--primary";
+  closeBtn.textContent = "Close";
+  closeBtn.addEventListener("click", () => setState({ showDiscardLog: false }));
+  card.appendChild(closeBtn);
+
+  overlay.appendChild(card);
+  root.appendChild(overlay);
+}
+
 function renderStandingsModal(root, state) {
   if (!state.showStandings) return;
 
@@ -958,6 +1007,21 @@ export function renderTable(root) {
         empty.className = "pile-empty";
         discardPileEl.appendChild(empty);
       }
+      // Memory aid: a compact control to open the full discard history
+      // (see renderDiscardLogModal). Separate from the top-card draw tap, so
+      // it never competes with drawing. Only shown when there's history.
+      if (state.hand.discardPile.length > 0) {
+        const histBtn = document.createElement("button");
+        histBtn.type = "button";
+        histBtn.className = "pile-history-btn";
+        histBtn.textContent = `See all ${state.hand.discardPile.length}`;
+        histBtn.setAttribute(
+          "aria-label",
+          `View all ${state.hand.discardPile.length} cards in the discard pile`,
+        );
+        histBtn.addEventListener("click", () => setState({ showDiscardLog: true }));
+        discardCol.appendChild(histBtn);
+      }
       discardCol.appendChild(discardPileEl);
       centerRow.appendChild(discardCol);
 
@@ -1032,4 +1096,5 @@ export function renderTable(root) {
   root.appendChild(wrap);
   renderStandingsModal(root, state);
   renderWildPickerModal(root, state);
+  renderDiscardLogModal(root, state);
 }

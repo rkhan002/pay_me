@@ -37,6 +37,9 @@ let state = {
   standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first (ties: most Pay Me's)
   standingsHandsPlayed: 0,
   showStandings: false,
+  // Discard-pile history viewer (tap the pile's 'See all' control). Purely a
+  // memory aid - shows every card currently in the discard pile, newest first.
+  showDiscardLog: false,
 
   // Set whenever the server responds to a propose-meld/layoff-card call with
   // needsWildDesignation - see network/intents.js. Null the rest of the time.
