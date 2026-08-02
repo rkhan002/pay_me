@@ -28,6 +28,11 @@ let state = {
   // false again the moment this turn ends, so a stale value here can never
   // show through on a later turn.
   drawnSource: null,
+  // True only between clicking 'draw from stock' and the server reply: a
+  // face-down stock card can't be shown optimistically, so we render an
+  // inert placeholder card meanwhile (see table.js). Cleared when the real
+  // hand arrives (queries.js).
+  pendingDraw: false,
 
   standings: [], // [{ playerId, displayName, cumulativeScore, payMeWins }], lowest score first (ties: most Pay Me's)
   standingsHandsPlayed: 0,

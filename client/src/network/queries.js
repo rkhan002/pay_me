@@ -267,6 +267,9 @@ export async function loadHand(handId) {
       hasTakenFinalTurn: p.has_taken_final_turn,
     })),
     melds: nextMelds,
+    // The authoritative hand is now in state (real drawn card included), so
+    // drop the optimistic stock-draw placeholder in the same paint - no flash.
+    pendingDraw: false,
   });
 }
 
@@ -312,5 +315,8 @@ export function applyHandView(view) {
       hasTakenFinalTurn: p.hasTakenFinalTurn,
     })),
     melds: nextMelds,
+    // The authoritative hand is now in state (real drawn card included), so
+    // drop the optimistic stock-draw placeholder in the same paint - no flash.
+    pendingDraw: false,
   });
 }

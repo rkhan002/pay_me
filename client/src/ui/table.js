@@ -275,7 +275,13 @@ function drawStockAction(state) {
     // The drawn card comes from the face-down stock, so we can't know it yet
     // - but flipping hasDrawn instantly disables the draw affordances and
     // lights up meld/discard, and the card itself pops in on refresh.
-    (st) => ({ hand: { ...st.hand, hasDrawnThisTurn: true }, drawnSource: "stock" }),
+    (st) => ({
+      hand: { ...st.hand, hasDrawnThisTurn: true },
+      drawnSource: "stock",
+      // Face-down card: we can't show the real one yet, so land an inert
+      // placeholder immediately (renderTable) so the pickup feels instant.
+      pendingDraw: true,
+    }),
   );
 }
 
@@ -1011,6 +1017,15 @@ export function renderTable(root) {
       // commit when we still have exactly the same set of cards, reordered.
       if (reordered.length === state.myCards.length) setOrder(reordered);
     });
+    // Optimistic stock-draw placeholder: an inert face-down card that lands
+    // the instant you draw (the real card is unknown until the server replies,
+    // then swaps in). Not in myCards, has no data-cardKey, and is
+    // pointer-events:none, so it stays out of selection/drag/reorder.
+    if (state.pendingDraw) {
+      const pending = renderCardBack({ ariaLabel: "Drawing a card" });
+      pending.classList.add("card-pending");
+      fan.appendChild(pending);
+    }
     wrap.appendChild(fan);
   }
 
