@@ -467,9 +467,23 @@ function renderDiscardLogModal(root, state) {
   const subtitle = document.createElement("div");
   subtitle.className = "modal-subtitle";
   subtitle.textContent = pile.length
-    ? `${pile.length} card${pile.length === 1 ? "" : "s"} \u00b7 newest first`
+    ? `${pile.length} card${pile.length === 1 ? "" : "s"} in the pile`
     : "The discard pile is empty";
   card.appendChild(subtitle);
+
+  // Explicit direction labels so the left-to-right strip unmistakably reads
+  // newest -> oldest (reinforced by the recency fade below).
+  if (pile.length) {
+    const legend = document.createElement("div");
+    legend.className = "discard-log-legend";
+    const recent = document.createElement("span");
+    recent.textContent = "Most recent";
+    const oldest = document.createElement("span");
+    oldest.textContent = "Oldest";
+    legend.appendChild(recent);
+    legend.appendChild(oldest);
+    card.appendChild(legend);
+  }
 
   const grid = document.createElement("div");
   grid.className = "discard-log";
@@ -477,6 +491,11 @@ function renderDiscardLogModal(root, state) {
     const cardEl = renderCard(c, { wild: isWildCard(c, state.hand?.wildRank), tabIndex: -1 });
     cardEl.classList.add("discard-log-card");
     if (i === 0) cardEl.classList.add("discard-log-card--top");
+    // Recency fade: the newest card is fully lit and each older card recedes
+    // a little, so the strip reads as a time gradient. Floored at 0.6 so even
+    // the oldest card stays legible.
+    const t = pile.length > 1 ? i / (pile.length - 1) : 0;
+    cardEl.style.opacity = (1 - 0.4 * t).toFixed(3);
     grid.appendChild(cardEl);
   });
   card.appendChild(grid);
