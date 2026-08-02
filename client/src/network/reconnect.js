@@ -122,8 +122,9 @@ export async function attemptReconnect() {
   const found = await findActiveRoom(userId);
   if (found && (await tryRoom(found.roomId, userId))) return true;
 
-  // Nothing to restore - clear any stale hint and drop the ?room= param.
+  // Nothing to restore - drop the stale local hint. Keep any ?room= param
+  // though: for a non-member it's likely a shared invite code, which the
+  // lobby will prefill into the join field.
   clearPersistedRoom();
-  setRoomInUrl(null);
   return false;
 }
