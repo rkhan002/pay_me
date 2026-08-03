@@ -3379,3 +3379,47 @@ body::after {
     font-size: 0.8rem;
   }
 }
+
+/* =====================================================================
+   HAND SPACING (Option A): consistent card size + a clear gap so tap
+   targets never touch, with horizontal swipe once the hand is wider than
+   the screen. Cards never shrink or crowd together - fixes the cramped
+   hand that risked accidental taps. Appended last so it wins the cascade.
+   ===================================================================== */
+.player-dock .hand-fan {
+  gap: 16px;
+  justify-content: flex-start; /* centring-when-it-fits is done by the pseudos below */
+  /* Generous top room so a lifted/selected card + its glow isn't clipped by
+     the horizontal scroll container; comfortable ends for the edge cards. */
+  padding: 24px 16px 12px;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 16px;
+}
+/* Auto-margin spacers: centre a hand that fits, then collapse so a large hand
+   scrolls from its first card (sidesteps the justify-content:center
+   "first card unreachable while scrolling" bug). */
+.player-dock .hand-fan::before,
+.player-dock .hand-fan::after {
+  content: "";
+  flex: 0 0 0;
+  margin: auto;
+}
+.player-dock .hand-fan .card,
+.player-dock .hand-fan .card-wrap {
+  flex: 0 0 auto; /* keep size + overflow/scroll instead of squeezing together */
+  margin: 0; /* spacing now comes from the flex gap, not per-card margins */
+  scroll-snap-align: center;
+}
+.player-dock .hand-fan .card {
+  width: 56px;
+  height: 80px;
+}
+@media (min-width: 641px) {
+  .player-dock .hand-fan {
+    gap: 18px;
+  }
+  .player-dock .hand-fan .card {
+    width: 64px;
+    height: 92px;
+  }
+}
