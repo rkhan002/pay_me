@@ -132,20 +132,23 @@ function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0, onDone } = {})
   el.style.opacity = "1";
   const anim = el.animate(
     [
+      // Fully opaque from the very start so the card is clearly seen leaving the
+      // deck (a faded-in start read as "appearing near the hand").
       {
         transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(${sc})`,
-        opacity: 0.35,
+        opacity: 1,
         offset: 0,
       },
-      { opacity: 1, offset: 0.22 },
       {
-        transform: `translate(${dx * -0.05}px, ${dy * -0.05}px) rotate(-9deg) scale(1.07)`,
+        transform: `translate(${dx * -0.05}px, ${dy * -0.05}px) rotate(-9deg) scale(1.06)`,
         opacity: 1,
-        offset: 0.82,
+        offset: 0.85,
       },
       { transform: "translate(0, 0) rotate(0deg) scale(1)", opacity: 1, offset: 1 },
     ],
-    { duration: dur, delay, easing: "cubic-bezier(0.16, 0.85, 0.24, 1)", fill: "backwards" },
+    // An ease-in-out curve (vs a hard ease-out) keeps the whole path visible, so
+    // the travel from the deck reads instead of blinking off the deck instantly.
+    { duration: dur, delay, easing: "cubic-bezier(0.45, 0.05, 0.3, 1)", fill: "backwards" },
   );
   anim.onfinish = () => {
     el.style.willChange = "";
@@ -180,7 +183,7 @@ function runHandPitch(root) {
     const src = srcName === "discard" ? discardRect : stockRect;
     pitchEl(el, src, {
       spin: isDeal ? 720 : 640,
-      dur: isDeal ? 300 : 320,
+      dur: isDeal ? 430 : 380,
       delay: isDeal ? i * 34 : 0,
       onDone: () => {
         flyPlan.delete(key);
