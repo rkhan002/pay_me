@@ -2441,8 +2441,10 @@ body::before {
   .player-dock .hand-label {
     display: none;
   }
+  /* Controls now sit at the bottom of the dock (below the hand), so the
+     spacing goes above them rather than below. */
   .player-dock .controls {
-    margin: 0 0 0.4rem;
+    margin: 0.4rem 0 0;
   }
   .player-dock .hand-sort {
     margin: 0 0 0.35rem;

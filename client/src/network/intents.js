@@ -58,6 +58,3 @@ export const stealWild = (handId, meldId, card) =>
 export const unmeld = (handId, meldId) => callFunction("unmeld", { handId, meldId });
 
 export const heartbeat = (roomId) => callFunction("heartbeat", { roomId });
-
-export const skipStalePlayer = (handId, targetPlayerId) =>
-  callFunction("skip-stale-player", { handId, targetPlayerId });
