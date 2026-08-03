@@ -32,6 +32,21 @@ import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/a
 let prevHandKeys = new Set();
 let prevMeldIds = new Set();
 
+// Inline nav icons (currentColor). Music = note, SFX = speaker; the "off"
+// variants add a slash. Home replaces the old "Lobby" label.
+const NAV_ICONS = {
+  musicOn:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 17.5A2.5 2.5 0 1 1 7.5 15c.35 0 .69.08 1 .21V4h8v3h-6v8.5z"/></svg>',
+  musicOff:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 17.5A2.5 2.5 0 1 1 7.5 15c.35 0 .69.08 1 .21V4h8v3h-6v8.5z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 4l16 16"/></svg>',
+  sfxOn:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16.5 8.5a5 5 0 0 1 0 7M19.5 6a8 8 0 0 1 0 12"/></svg>',
+  sfxOff:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l5 6M21 9l-5 6"/></svg>',
+  home:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M4 11l8-7 8 7M6 10v9h5v-5h2v5h5v-9"/></svg>',
+};
+
 function selectedCards() {
   const { myCards, selectedCardKeys } = getState();
   return myCards.filter((c) => selectedCardKeys.has(cardKey(c)));
@@ -994,10 +1009,13 @@ export function renderTable(root) {
   // setState/a full re-render.
   const musicBtn = document.createElement("button");
   musicBtn.type = "button";
-  musicBtn.className = "btn audio-toggle-btn";
+  musicBtn.className = "btn audio-toggle-btn icon-btn";
   const syncMusicBtn = () => {
     const on = isMusicEnabled();
-    musicBtn.textContent = on ? "Music: On" : "Music: Off";
+    musicBtn.innerHTML = on ? NAV_ICONS.musicOn : NAV_ICONS.musicOff;
+    const label = on ? "Music on" : "Music off";
+    musicBtn.setAttribute("aria-label", label);
+    musicBtn.title = label;
     musicBtn.classList.toggle("audio-toggle-btn--off", !on);
   };
   syncMusicBtn();
@@ -1009,10 +1027,13 @@ export function renderTable(root) {
 
   const sfxBtn = document.createElement("button");
   sfxBtn.type = "button";
-  sfxBtn.className = "btn audio-toggle-btn";
+  sfxBtn.className = "btn audio-toggle-btn icon-btn";
   const syncSfxBtn = () => {
     const on = isSfxEnabled();
-    sfxBtn.textContent = on ? "SFX: On" : "SFX: Off";
+    sfxBtn.innerHTML = on ? NAV_ICONS.sfxOn : NAV_ICONS.sfxOff;
+    const label = on ? "Sound effects on" : "Sound effects off";
+    sfxBtn.setAttribute("aria-label", label);
+    sfxBtn.title = label;
     sfxBtn.classList.toggle("audio-toggle-btn--off", !on);
   };
   syncSfxBtn();
@@ -1054,10 +1075,12 @@ export function renderTable(root) {
   if (state.room) {
     const lobbyBtn = document.createElement("button");
     lobbyBtn.type = "button";
-    lobbyBtn.className = "btn lobby-btn";
-    lobbyBtn.textContent = "Lobby";
+    lobbyBtn.className = "btn home-btn icon-btn";
+    lobbyBtn.innerHTML = NAV_ICONS.home;
+    lobbyBtn.title = "Home";
+    lobbyBtn.setAttribute("aria-label", "Home - leave this table");
     lobbyBtn.addEventListener("click", () => {
-      if (!confirm("Return to the lobby? You can rejoin this table with its room code.")) return;
+      if (!confirm("Leave this table and go Home? You can rejoin with its room code.")) return;
       clearPersistedRoom();
       setRoomInUrl(null);
       setState({

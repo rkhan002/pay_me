@@ -3126,3 +3126,60 @@ body::after {
     padding: 0.5rem 0.9rem;
   }
 }
+
+/* =====================================================================
+   TOP NAV v2 - unified neutral buttons + one cyan accent (Invite), with
+   Music/SFX as icon toggles (green = on, dim grey = off) and a Home icon.
+   ===================================================================== */
+/* Unified neutral base for every top-nav button. */
+.table-header .header-actions .btn {
+  background: linear-gradient(180deg, rgba(38, 46, 78, 0.55) 0%, rgba(18, 24, 46, 0.7) 100%);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+}
+.table-header .header-actions .btn:not(:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+/* The single accent: Invite (the primary social action). */
+.table-header .header-actions .invite-btn {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.table-header .header-actions .invite-btn:not(:disabled):hover {
+  border-color: var(--cyan);
+  color: #eafcff;
+}
+
+/* Icon buttons (Music / SFX / Home): square-ish, icon centered. */
+.table-header .header-actions .icon-btn {
+  padding: 0.5rem 0.7rem;
+}
+.table-header .header-actions .icon-btn svg {
+  display: block;
+}
+
+/* Toggle STATE colour: green when ON, dimmed neutral when OFF. */
+.table-header .header-actions .audio-toggle-btn {
+  color: #38df8b;
+  border-color: rgba(56, 223, 139, 0.45);
+}
+.table-header .header-actions .audio-toggle-btn:not(:disabled):hover {
+  border-color: rgba(56, 223, 139, 0.7);
+}
+.table-header .header-actions .audio-toggle-btn--off {
+  color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.table-header .header-actions .audio-toggle-btn--off:not(:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 640px) {
+  .table-header .header-actions .icon-btn {
+    padding: 0.35rem 0.5rem;
+  }
+  .table-header .header-actions .icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
