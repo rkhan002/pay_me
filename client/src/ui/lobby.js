@@ -1,5 +1,5 @@
 import { createRoom, joinRoom } from "../network/intents.js";
-import { setState } from "../state/store.js";
+import { getState, setState } from "../state/store.js";
 import { loadRoom } from "../network/queries.js";
 import { subscribeToRoom } from "../network/realtime.js";
 import {
