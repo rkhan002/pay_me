@@ -3117,3 +3117,12 @@ body::after {
     margin-top: 5px;
   }
 }
+
+/* Top-nav buttons: uniform height on desktop (Invite/Lobby were falling back
+   to the taller base .btn padding). Mobile keeps its own compact sizing. */
+@media (min-width: 641px) {
+  .table-header .header-actions .btn {
+    min-height: 40px;
+    padding: 0.5rem 0.9rem;
+  }
+}
