@@ -138,9 +138,19 @@ export function makeHandFanDraggable(fan, onCommit) {
     e.preventDefault();
     const others = [...fan.children].filter((c) => c !== dragEl);
     let before = null;
+    // Row-aware: the hand can now wrap to two rows, so pick the insertion point
+    // in reading order - the first card on a lower row, or on the same row and
+    // to the right of the pointer.
     for (const sib of others) {
       const r = sib.getBoundingClientRect();
-      if (e.clientX < r.left + r.width / 2) {
+      const cy = r.top + r.height / 2;
+      const cx = r.left + r.width / 2;
+      const band = r.height * 0.6;
+      if (cy - e.clientY > band) {
+        before = sib;
+        break;
+      }
+      if (Math.abs(cy - e.clientY) <= band && e.clientX < cx) {
         before = sib;
         break;
       }
@@ -157,7 +167,7 @@ export function makeHandFanDraggable(fan, onCommit) {
       dragEl.classList.remove("card--dragging");
       justDragged = true;
       const connected = dragEl.isConnected;
-      const keys = [...fan.children].map(keyOf).filter(Boolean);
+      const keys = [...fan.children].map(keyOf).filter((k) => k && !k.startsWith("__"));
       if (connected) onCommit(keys);
     }
     dragEl = null;

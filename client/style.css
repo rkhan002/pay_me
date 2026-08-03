@@ -3381,45 +3381,35 @@ body::after {
 }
 
 /* =====================================================================
-   HAND SPACING (Option A): consistent card size + a clear gap so tap
-   targets never touch, with horizontal swipe once the hand is wider than
-   the screen. Cards never shrink or crowd together - fixes the cramped
-   hand that risked accidental taps. Appended last so it wins the cascade.
+   HAND LAYOUT - wrap to a second (or, for the biggest hands, third) row
+   instead of scrolling, so the whole hand is always visible. Card size +
+   gaps stay comfortable so tap targets never touch. The exact card size,
+   per-row count and max-width are set inline by layoutHandFan() in
+   table.js (it knows the card count and viewport width); the rules here
+   are the static frame plus sensible fallbacks.
    ===================================================================== */
 .player-dock .hand-fan {
-  gap: 16px;
-  justify-content: flex-start; /* centring-when-it-fits is done by the pseudos below */
-  /* Generous top room so a lifted/selected card + its glow isn't clipped by
-     the horizontal scroll container; comfortable ends for the edge cards. */
-  padding: 24px 16px 12px;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  overflow: visible; /* wrapping means no horizontal scroll to clip lifts/glows */
+  column-gap: 14px;
+  row-gap: 12px;
+  /* Top room so a lifted/selected card + its glow is never clipped. */
+  padding: 20px 8px 12px;
+  margin: 0 auto;
 }
-/* Auto-margin spacers: centre a hand that fits, then collapse so a large hand
-   scrolls from its first card (sidesteps the justify-content:center
-   "first card unreachable while scrolling" bug). */
 .player-dock .hand-fan::before,
 .player-dock .hand-fan::after {
-  content: "";
-  flex: 0 0 0;
-  margin: auto;
+  content: none; /* the auto-margin spacers from the scroll version are unused now */
 }
 .player-dock .hand-fan .card,
 .player-dock .hand-fan .card-wrap {
-  flex: 0 0 auto; /* keep size + overflow/scroll instead of squeezing together */
-  margin: 0; /* spacing now comes from the flex gap, not per-card margins */
-  scroll-snap-align: center;
+  flex: 0 0 auto;
+  margin: 0;
 }
 .player-dock .hand-fan .card {
-  width: 56px;
-  height: 80px;
-}
-@media (min-width: 641px) {
-  .player-dock .hand-fan {
-    gap: 18px;
-  }
-  .player-dock .hand-fan .card {
-    width: 64px;
-    height: 92px;
-  }
+  width: var(--card-w, 56px);
+  height: var(--card-h, 80px);
 }

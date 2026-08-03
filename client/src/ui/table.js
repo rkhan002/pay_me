@@ -55,6 +55,28 @@ const PENDING_KEY = "__pending_draw__"; // sentinel key for the face-down placeh
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+// Lay the player's hand out in one or (for 6+ cards) two rows - never a
+// horizontal scroll - so the whole hand is always visible. Cards keep their
+// full size for typical hands; only a near-max hand (11-14 cards) on a narrow
+// screen shrinks a little so two rows still fit the width. Sets the CSS vars
+// and a max-width that forces balanced rows (see .player-dock .hand-fan CSS).
+function layoutHandFan(fan, n) {
+  if (n <= 0) return;
+  const GAP = 14;
+  const MAX_W = 56;
+  const MIN_W = 38;
+  const RATIO = 80 / 56; // card height : width
+  const avail = Math.max(240, Math.min(window.innerWidth, 760) - 24);
+  const rows = n <= 5 ? 1 : 2; // 6+ cards wrap to a second row instead of scrolling
+  const per = Math.ceil(n / rows);
+  let w = Math.min(MAX_W, Math.floor((avail - (per - 1) * GAP) / per));
+  w = Math.max(MIN_W, w);
+  const rowWidth = per * w + (per - 1) * GAP;
+  fan.style.setProperty("--card-w", w + "px");
+  fan.style.setProperty("--card-h", Math.round(w * RATIO) + "px");
+  fan.style.maxWidth = rowWidth + "px";
+}
 function rectOf(el) {
   return el ? el.getBoundingClientRect() : null;
 }
@@ -1420,6 +1442,8 @@ export function renderTable(root) {
       pending.dataset.cardKey = PENDING_KEY;
       fan.appendChild(pending);
     }
+    // Wrap the hand into one/two rows so it's fully visible without scrolling.
+    layoutHandFan(fan, state.myCards.length + (state.pendingDraw ? 1 : 0));
     // Keep queued-to-fly cards invisible until their flight starts (survives the
     // re-render burst that a deal/draw kicks off).
     hideQueuedCards(fan);
