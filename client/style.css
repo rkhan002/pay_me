@@ -3226,3 +3226,18 @@ body::after {
   border-color: rgba(255, 255, 255, 0.4);
   color: rgba(255, 255, 255, 0.65);
 }
+
+/* Mobile: the oval was rendering wider than the viewport (padding/box-sizing)
+   and clipping on the right. Tie the felt to the viewport width and centre it
+   so the whole oval + its neon rim always fit. */
+@media (max-width: 640px) {
+  .table-screen {
+    box-sizing: border-box;
+  }
+  .felt {
+    width: 90vw;
+    max-width: 90vw;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
