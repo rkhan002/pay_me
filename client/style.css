@@ -3243,3 +3243,135 @@ body::after {
     margin-right: auto;
   }
 }
+
+/* =====================================================================
+   FLAT CORNER LAYOUT (table removed)
+   The oval/felt is gone. The header is a top line (room code left, action
+   icons top-right) with the hand number + wild rank centered beneath it.
+   Players zigzag down the left/right edges under the header with large
+   avatars, and the Stock/Discard piles are centered below the players.
+   ===================================================================== */
+
+/* Header becomes a vertical stack: [ room | icons ] row, then centered info. */
+.table-header {
+  display: block;
+}
+.topbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+/* Hand number + wild rank, centered on its own line under the top row. */
+.hand-info--center {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--cyan);
+  font-family: "Bungee", cursive;
+  font-size: clamp(0.72rem, 2.6vw, 0.9rem);
+}
+
+/* Two columns pinned to the left/right edges; players zigzag down them. */
+.player-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 1.1rem 0 1.4rem;
+}
+.player-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  flex: 0 0 auto;
+}
+.player-col--right {
+  align-items: flex-end;
+}
+.player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Avatars 3x the previous size (was ~42px, mobile ~34px). */
+.player-card .avatar,
+.player-card .avatar--img {
+  width: clamp(96px, 24vw, 132px);
+  height: clamp(96px, 24vw, 132px);
+  font-size: 1.9rem;
+}
+.player-card .avatar-wrap {
+  position: relative;
+}
+.player-card .seat-name {
+  max-width: 150px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-card--self .seat-name {
+  color: var(--lime);
+}
+
+/* Whose turn it is: a blinking cyan ring around their avatar; it stops the
+   moment the turn passes (the class is only on the active player). */
+.player-card--active .avatar {
+  box-shadow:
+    0 0 0 3px var(--cyan),
+    0 0 22px rgba(61, 224, 255, 0.6);
+  animation: turn-blink 1.05s ease-in-out infinite;
+}
+@keyframes turn-blink {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px var(--cyan),
+      0 0 24px rgba(61, 224, 255, 0.7);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(61, 224, 255, 0.2),
+      0 0 6px rgba(61, 224, 255, 0.15);
+  }
+}
+.player-card--pay-me .avatar {
+  box-shadow:
+    0 0 0 3px var(--amber),
+    0 0 22px rgba(255, 170, 0, 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-card--active .avatar {
+    animation: none;
+  }
+}
+
+/* Piles centered below the players (the .center-row flex already centers its
+   contents; this just gives it a little breathing room). */
+.center-piles {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .player-grid {
+    margin: 0.8rem 0 1rem;
+  }
+  .player-col {
+    gap: 1rem;
+  }
+  .player-card .avatar,
+  .player-card .avatar--img {
+    width: clamp(84px, 27vw, 116px);
+    height: clamp(84px, 27vw, 116px);
+  }
+  .player-card .seat-name {
+    font-size: 0.8rem;
+  }
+}

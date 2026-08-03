@@ -365,54 +365,27 @@ function drawDiscardAction(state) {
   );
 }
 
-// The six fixed seats defined by the table image (circle-plaque markers).
-// Coordinates are the avatar-circle centres as a % of the felt.
-const SEAT_POS = {
-  TOP: { x: 50, y: 8 },
-  BOTTOM: { x: 50, y: 86 },
-  LU: { x: 10, y: 27 },
-  LL: { x: 10, y: 73 },
-  RU: { x: 90, y: 27 },
-  RL: { x: 90, y: 73 },
-};
-// Ring order going around the table from the bottom (self), counter-clockwise.
-const SEAT_RING = ["BOTTOM", "LL", "LU", "TOP", "RU", "RL"];
-// Which ring slots to fill for N players (self is always slot 0 = BOTTOM),
-// chosen to stay symmetric about the vertical axis and evenly spread, leaving
-// the remaining seats empty.
-const SEAT_SUBSET = {
-  1: [0],
-  2: [0, 3],
-  3: [0, 2, 4],
-  4: [0, 2, 3, 4],
-  5: [0, 1, 2, 4, 5],
-  6: [0, 1, 2, 3, 4, 5],
-};
-
-function renderSeats(felt, state) {
+// Players are laid out in two columns that zigzag down the page: player 1 in
+// the top-left, player 2 top-right, player 3 left, player 4 right, and so on
+// (seat order, so every client sees the same arrangement). Avatars are large;
+// the active player's avatar blinks (see .player-card--active in style.css).
+function renderPlayerColumns(root, state) {
   const players = state.players;
-  const n = players.length;
-  if (n === 0) return;
+  if (!players.length) return;
 
-  // Rotate the seat list so the local player sits at the bottom (slot 0), then
-  // drop everyone into a symmetric subset of the six fixed table seats.
-  const myIdx = Math.max(
-    0,
-    players.findIndex((p) => p.id === state.myPlayerId),
-  );
-  const ordered = [...players.slice(myIdx), ...players.slice(0, myIdx)];
-  const subset = SEAT_SUBSET[n] || SEAT_SUBSET[6];
+  const grid = document.createElement("div");
+  grid.className = "player-grid";
+  const leftCol = document.createElement("div");
+  leftCol.className = "player-col player-col--left";
+  const rightCol = document.createElement("div");
+  rightCol.className = "player-col player-col--right";
 
-  ordered.forEach((player, i) => {
-    const pos = SEAT_POS[SEAT_RING[subset[i]]];
-
-    const seat = document.createElement("div");
-    seat.className = "seat";
-    seat.style.left = `${pos.x}%`;
-    seat.style.top = `${pos.y}%`;
-    if (player.id === state.myPlayerId) seat.classList.add("seat--self");
-    if (state.hand?.turnPlayerId === player.id) seat.classList.add("seat--active");
-    if (player.id === state.hand?.payMeCallerId) seat.classList.add("seat--pay-me");
+  players.forEach((player, i) => {
+    const card = document.createElement("div");
+    card.className = "player-card";
+    if (player.id === state.myPlayerId) card.classList.add("player-card--self");
+    if (state.hand?.turnPlayerId === player.id) card.classList.add("player-card--active");
+    if (player.id === state.hand?.payMeCallerId) card.classList.add("player-card--pay-me");
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
@@ -431,19 +404,21 @@ function renderSeats(felt, state) {
     const avatarWrap = document.createElement("div");
     avatarWrap.className = "avatar-wrap";
     avatarWrap.appendChild(avatar);
-    seat.appendChild(avatarWrap);
+    card.appendChild(avatarWrap);
 
-    // Only the player's name is shown below the seat now (the card-count tag
-    // was removed - it wasn't meaningful info). Whose turn it is is shown by
-    // the rotating scan-arc drawn on .seat--active in CSS.
     const name = document.createElement("div");
     name.className = "seat-name";
     name.textContent = player.displayName;
-    seat.appendChild(name);
+    card.appendChild(name);
 
-    felt.appendChild(seat);
+    (i % 2 === 0 ? leftCol : rightCol).appendChild(card);
   });
+
+  grid.appendChild(leftCol);
+  grid.appendChild(rightCol);
+  root.appendChild(grid);
 }
+
 function renderMelds(root, state) {
   const section = document.createElement("div");
   section.className = "melds";
@@ -959,14 +934,12 @@ export function renderTable(root) {
 
   const header = document.createElement("div");
   header.className = "table-header";
-  header.innerHTML = `
-    <div class="room-code">Room: <span class="room-code-value">${state.room?.code ?? ""}</span></div>
-    <div class="hand-info">${
-      state.hand
-        ? `Hand ${state.hand.handNumber}/${state.room?.totalHands ?? 11} &middot; wild: ${state.hand.wildRank}`
-        : "Waiting to deal"
-    }</div>
-  `;
+  // Top line: room code on the left; the action icons get appended to the
+  // right of this same row further down.
+  const topbar = document.createElement("div");
+  topbar.className = "topbar-row";
+  topbar.innerHTML = `<div class="room-code">Room: <span class="room-code-value">${state.room?.code ?? ""}</span></div>`;
+  header.appendChild(topbar);
   const headerActions = document.createElement("div");
   headerActions.className = "header-actions";
 
@@ -1085,17 +1058,24 @@ export function renderTable(root) {
 
   headerActions.appendChild(scoresBtn);
 
-  header.appendChild(headerActions);
+  // Icons live in the top-right corner of the top line.
+  topbar.appendChild(headerActions);
+
+  // Hand number + wild rank: on their own line, centered under the top line.
+  const handInfo = document.createElement("div");
+  handInfo.className = "hand-info hand-info--center";
+  handInfo.innerHTML = state.hand
+    ? `Hand ${state.hand.handNumber}/${state.room?.totalHands ?? 11} &middot; wild: ${state.hand.wildRank}`
+    : "Waiting to deal";
+  header.appendChild(handInfo);
+
   wrap.appendChild(header);
 
   if (state.hand?.phase !== "complete") renderPayMeBanner(board, state);
 
-  // The felt: the oval table image is the play surface. Players are seated
-  // around it and the stock/discard piles are laid on the table.
-  const felt = document.createElement("div");
-  felt.className = "felt";
-  renderSeats(felt, state);
-  board.appendChild(felt);
+  // No table surface anymore: players zigzag down the left/right edges just
+  // under the header; the piles are centered below them.
+  renderPlayerColumns(board, state);
 
   if (state.hand) {
     // A finished hand shows a clean recap (opponents + revealed melds + the
@@ -1104,7 +1084,7 @@ export function renderTable(root) {
     // the bottom of the screen.
     if (state.hand.phase !== "complete") {
       const centerRow = document.createElement("div");
-      centerRow.className = "center-row table-center";
+      centerRow.className = "center-row center-piles";
 
       // A draw (from either pile) is only legal on your own turn, before
       // you've drawn, and never in the layoff phase - the same gate the draw
@@ -1186,7 +1166,7 @@ export function renderTable(root) {
       discardCol.appendChild(discardPileEl);
       centerRow.appendChild(discardCol);
 
-      felt.appendChild(centerRow);
+      board.appendChild(centerRow);
     }
     renderMelds(board, state);
   }
