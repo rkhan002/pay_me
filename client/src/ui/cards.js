@@ -149,7 +149,6 @@ export function renderCardFan(cards, { selectedKeys, wildRank, onClick, newKeys 
   // on the previous render - only those get the one-shot "deal in" enter
   // animation, so a normal re-render (selection toggle, an opponent's move)
   // never re-animates the whole hand. See table.js's prevHandKeys.
-  let dealt = 0;
   cards.forEach((card, i) => {
     const el = renderCard(card, {
       selected: selectedKeys.has(cardKey(card)),
@@ -158,11 +157,10 @@ export function renderCardFan(cards, { selectedKeys, wildRank, onClick, newKeys 
     });
     el.style.zIndex = String(i);
     if (newKeys && newKeys.has(cardKey(card))) {
-      el.classList.add("anim-deal-in");
-      // Stagger a multi-card deal so cards cascade rather than snap in all
-      // at once; a single drawn card (dealt === 0) gets no delay.
-      el.style.animationDelay = `${dealt * 45}ms`;
-      dealt += 1;
+      // Marked only. The actual motion is the dealer-pitch flight driven from
+      // table.js (runHandPitch) via FLIP + the Web Animations API - it needs to
+      // know where the stock/discard pile is, which only table.js has.
+      el.dataset.fresh = "1";
     }
     wrap.appendChild(el);
   });

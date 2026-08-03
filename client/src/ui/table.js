@@ -31,6 +31,107 @@ import { isMusicEnabled, isSfxEnabled, toggleMusic, toggleSfx } from "../audio/a
 let prevHandKeys = new Set();
 let prevMeldIds = new Set();
 
+// --- Dealer-pitch animation (motion pass) ------------------------------
+// New cards fly out of the stock (or discard) pile and spin into the hand,
+// like a dealer pitching cards. Driven by FLIP + the Web Animations API
+// because the board is fully re-rendered on every state change, so CSS
+// transitions can't tween across renders. Only cards genuinely new to the
+// hand are pitched (see the [data-fresh] marker in renderCardFan), so a
+// normal re-render never re-animates the whole hand.
+let prevPendingDraw = false;
+
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+// Hands whose opening deal this browser has already animated - kept in
+// sessionStorage so a refresh/reconnect doesn't re-deal an in-progress hand
+// (but a genuinely new deal still animates).
+function dealtHands() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem("payme:dealtHands") || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+function markHandDealt(id) {
+  if (!id) return;
+  try {
+    const set = dealtHands();
+    set.add(id);
+    sessionStorage.setItem("payme:dealtHands", JSON.stringify([...set]));
+  } catch {
+    /* sessionStorage unavailable - harmless, deal just replays */
+  }
+}
+// Fly `el` from `srcRect` (a pile's on-screen box) into its own resting slot,
+// spinning on the way. Snappy + flashy per the chosen motion feel.
+function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0 } = {}) {
+  if (!srcRect) return;
+  const dst = el.getBoundingClientRect();
+  if (!dst.width) return;
+  const dx = srcRect.left + srcRect.width / 2 - (dst.left + dst.width / 2);
+  const dy = srcRect.top + srcRect.height / 2 - (dst.top + dst.height / 2);
+  const sc = Math.min(1, (srcRect.width || dst.width) / dst.width);
+  el.style.willChange = "transform";
+  const anim = el.animate(
+    [
+      {
+        transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(${sc})`,
+        opacity: 0.4,
+        offset: 0,
+      },
+      { opacity: 1, offset: 0.2 },
+      {
+        transform: `translate(${dx * -0.05}px, ${dy * -0.05}px) rotate(-9deg) scale(1.07)`,
+        opacity: 1,
+        offset: 0.8,
+      },
+      { transform: "translate(0, 0) rotate(0deg) scale(1)", opacity: 1, offset: 1 },
+    ],
+    { duration: dur, delay, easing: "cubic-bezier(0.16, 0.85, 0.24, 1)", fill: "backwards" },
+  );
+  anim.onfinish = () => {
+    el.style.willChange = "";
+  };
+}
+// Decide what to pitch this render: a full opening deal, a single pickup, or
+// the optimistic face-down placeholder for a stock draw.
+function runHandPitch(root, state, stockCardEl, discardEl) {
+  if (prefersReducedMotion()) return;
+  const fan = root.querySelector(".hand-fan");
+  if (!fan) return;
+  const stockRect = stockCardEl ? stockCardEl.getBoundingClientRect() : null;
+  const discardRect = discardEl ? discardEl.getBoundingClientRect() : null;
+
+  // Optimistic face-down placeholder for a stock draw: pitch it once, on the
+  // render where the draw first shows; afterwards keep it still.
+  const pendingEl = fan.querySelector(".card-pending");
+  if (pendingEl && stockRect) {
+    pendingEl.style.animation = "none";
+    if (!prevPendingDraw) pitchEl(pendingEl, stockRect, { spin: 680, dur: 300 });
+  }
+
+  const freshEls = [...fan.querySelectorAll("[data-fresh]")];
+  if (!freshEls.length) return;
+
+  const handId = state.hand?.id;
+  const total = state.myCards.length;
+  const isFullDeal = freshEls.length === total && total > 1;
+  const isReveal = prevPendingDraw && !state.pendingDraw;
+
+  if (isFullDeal) {
+    if (!dealtHands().has(handId)) {
+      freshEls.forEach((el, i) => pitchEl(el, stockRect, { spin: 720, dur: 300, delay: i * 34 }));
+      markHandDealt(handId);
+    }
+    return;
+  }
+  if (isReveal) return; // the real card already flew in as the placeholder
+
+  const src = state.drawnSource === "discard" ? discardRect : stockRect;
+  freshEls.forEach((el) => pitchEl(el, src, { spin: 640, dur: 320 }));
+}
+
 // Inline nav icons (currentColor). Music = note, SFX = speaker; the "off"
 // variants add a slash. Home replaces the old "Lobby" label.
 const NAV_ICONS = {
@@ -918,6 +1019,9 @@ function renderControls(root, state) {
 export function renderTable(root) {
   const state = getState();
   root.innerHTML = "";
+  // Captured while building the piles, used by the dealer-pitch pass below.
+  let stockCardEl = null;
+  let discardEl = null;
 
   const wrap = document.createElement("div");
   wrap.className = "table-screen";
@@ -1099,14 +1203,13 @@ export function renderTable(root) {
       const stockCol = makePile("Stock");
       const stockStack = document.createElement("div");
       stockStack.className = "stock-pile stock-pile--single";
-      stockStack.appendChild(
-        renderCardBack({
-          interactive: true,
-          disabled: !canDraw,
-          ariaLabel: "Draw from stock",
-          onClick: () => drawStockAction(state),
-        }),
-      );
+      stockCardEl = renderCardBack({
+        interactive: true,
+        disabled: !canDraw,
+        ariaLabel: "Draw from stock",
+        onClick: () => drawStockAction(state),
+      });
+      stockStack.appendChild(stockCardEl);
       stockCol.appendChild(stockStack);
       centerRow.appendChild(stockCol);
 
@@ -1114,6 +1217,7 @@ export function renderTable(root) {
       const discardCol = makePile("Discard");
       const discardPileEl = document.createElement("div");
       discardPileEl.className = "discard-pile";
+      discardEl = discardPileEl;
       const topTwo = state.hand.discardPile.slice(0, 2).reverse();
       topTwo.forEach((card, i) => {
         const isTop = i === topTwo.length - 1;
@@ -1236,6 +1340,12 @@ export function renderTable(root) {
   wrap.appendChild(board);
   wrap.appendChild(dock);
   root.appendChild(wrap);
+
+  // Deal/draw motion: fly new cards out of the stock/discard pile into the
+  // hand. Runs after the tree is in the DOM so positions are measurable.
+  runHandPitch(root, state, stockCardEl, discardEl);
+  prevPendingDraw = state.pendingDraw;
+
   renderStandingsModal(root, state);
   renderWildPickerModal(root, state);
   renderDiscardLogModal(root, state);
