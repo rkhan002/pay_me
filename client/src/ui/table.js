@@ -48,6 +48,9 @@ let curHandId = null; // hand the fly bookkeeping below belongs to
 let flyPlan = new Map(); // cardKey -> "stock" | "discard": queued to fly (hidden)
 let flownKeys = new Set(); // cardKey already flown this hand (never fly again)
 let pitchTimer = null;
+let prevPendingDraw = false; // was the previous render mid stock-draw?
+let pendingFlyArmed = false; // placeholder already queued/flown for this draw
+const PENDING_KEY = "__pending_draw__"; // sentinel key for the face-down placeholder
 
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -89,9 +92,11 @@ function planHandPitch(state, newKeys) {
     curHandId = handId;
     flyPlan = new Map();
     flownKeys = new Set();
+    pendingFlyArmed = false;
   }
   const total = state.myCards.length;
   const isFullDeal = newKeys.size === total && total > 1 && !dealtHands().has(handId);
+  const isReveal = prevPendingDraw && !state.pendingDraw;
 
   if (isFullDeal) {
     markHandDealt(handId);
@@ -101,8 +106,28 @@ function planHandPitch(state, newKeys) {
     }
     return;
   }
+
+  // A stock draw is the one action where the client doesn't yet know the card
+  // (the stock is server-only). Fly a face-down placeholder out of the deck the
+  // instant the draw registers, so the click feels immediate; the real card
+  // then swaps into the placeholder's spot when the server replies.
+  if (state.pendingDraw && !pendingFlyArmed) {
+    flyPlan.set(PENDING_KEY, "stock");
+    pendingFlyArmed = true;
+  }
+  if (isReveal) {
+    pendingFlyArmed = false;
+    flyPlan.delete(PENDING_KEY);
+  }
+
   for (const k of newKeys) {
     if (flownKeys.has(k)) continue;
+    if (isReveal) {
+      // Real card replacing the placeholder that already flew: appear in place
+      // (a second flight would look like it was drawn twice).
+      flownKeys.add(k);
+      continue;
+    }
     flyPlan.set(k, state.drawnSource === "discard" ? "discard" : "stock");
   }
 }
@@ -162,7 +187,7 @@ function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0, onDone } = {})
 function scheduleHandPitch(root) {
   if (prefersReducedMotion() || !flyPlan.size) return;
   clearTimeout(pitchTimer);
-  pitchTimer = setTimeout(() => runHandPitch(root), 110);
+  pitchTimer = setTimeout(() => runHandPitch(root), 80);
 }
 function runHandPitch(root) {
   const fan = root.querySelector(".hand-fan");
@@ -187,7 +212,7 @@ function runHandPitch(root) {
       delay: isDeal ? i * 34 : 0,
       onDone: () => {
         flyPlan.delete(key);
-        flownKeys.add(key);
+        if (key !== PENDING_KEY) flownKeys.add(key);
       },
     });
     i += 1;
@@ -1385,6 +1410,16 @@ export function renderTable(root) {
       // commit when we still have exactly the same set of cards, reordered.
       if (reordered.length === state.myCards.length) setOrder(reordered);
     });
+    // Optimistic stock-draw placeholder: a face-down card shown the instant you
+    // draw (the real card is unknown until the server replies, then swaps in).
+    // It's what flies out of the deck so the click feels immediate.
+    if (state.pendingDraw) {
+      const pending = renderCardBack({ ariaLabel: "Drawing a card" });
+      pending.classList.add("card-pending");
+      pending.style.animation = "none"; // the flight provides the motion
+      pending.dataset.cardKey = PENDING_KEY;
+      fan.appendChild(pending);
+    }
     // Keep queued-to-fly cards invisible until their flight starts (survives the
     // re-render burst that a deal/draw kicks off).
     hideQueuedCards(fan);
@@ -1400,6 +1435,7 @@ export function renderTable(root) {
   // Deal/draw motion: once this render (and the burst it belongs to) settles,
   // fly any queued cards out of the stock/discard pile into the hand.
   scheduleHandPitch(root);
+  prevPendingDraw = state.pendingDraw;
 
   renderStandingsModal(root, state);
   renderWildPickerModal(root, state);
