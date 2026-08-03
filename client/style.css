@@ -3183,3 +3183,46 @@ body::after {
     height: 16px;
   }
 }
+
+/* =====================================================================
+   TOP NAV v3 - all buttons purple; a toggle turns grey when it's OFF.
+   ===================================================================== */
+.table-header .header-actions .btn {
+  border-color: var(--purple);
+  color: #d9c6ff;
+  background: linear-gradient(180deg, rgba(50, 32, 90, 0.5) 0%, rgba(24, 18, 46, 0.72) 100%);
+}
+.table-header .header-actions .btn:not(:disabled):hover {
+  border-color: #9a5bff;
+  color: #f2ecff;
+}
+/* Invite is purple like the rest now (no cyan accent). */
+.table-header .header-actions .invite-btn {
+  border-color: var(--purple);
+  color: #d9c6ff;
+}
+.table-header .header-actions .invite-btn:not(:disabled):hover {
+  border-color: #9a5bff;
+  color: #f2ecff;
+}
+.table-header .header-actions .invite-btn--done {
+  border-color: #38df8b;
+  color: #38df8b;
+}
+/* Toggles: ON = purple (default); OFF = grey. */
+.table-header .header-actions .audio-toggle-btn {
+  border-color: var(--purple);
+  color: #c9a9ff;
+}
+.table-header .header-actions .audio-toggle-btn:not(:disabled):hover {
+  border-color: #9a5bff;
+  color: #ece2ff;
+}
+.table-header .header-actions .audio-toggle-btn--off {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.42);
+}
+.table-header .header-actions .audio-toggle-btn--off:not(:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.65);
+}

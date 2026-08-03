@@ -36,15 +36,18 @@ let prevMeldIds = new Set();
 // variants add a slash. Home replaces the old "Lobby" label.
 const NAV_ICONS = {
   musicOn:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 17.5A2.5 2.5 0 1 1 7.5 15c.35 0 .69.08 1 .21V4h8v3h-6v8.5z"/></svg>',
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>',
   musicOff:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 17.5A2.5 2.5 0 1 1 7.5 15c.35 0 .69.08 1 .21V4h8v3h-6v8.5z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 4l16 16"/></svg>',
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 3l18 18"/></svg>',
   sfxOn:
     '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16.5 8.5a5 5 0 0 1 0 7M19.5 6a8 8 0 0 1 0 12"/></svg>',
   sfxOff:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l5 6M21 9l-5 6"/></svg>',
-  home:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M4 11l8-7 8 7M6 10v9h5v-5h2v5h5v-9"/></svg>',
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9l5 6M21 9l-5 6"/></svg>',
+  invite:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 7.5l8 5.5 8-5.5"/></svg>',
+  inviteDone:
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>',
+  home: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M4 11l8-7 8 7M6 10v9h5v-5h2v5h5v-9"/></svg>',
 };
 
 function selectedCards() {
@@ -1001,7 +1004,6 @@ export function renderTable(root) {
     if (state.room) await loadStandings(state.room.id);
     setState({ showStandings: true });
   });
-  headerActions.appendChild(scoresBtn);
 
   // Audio prefs aren't part of the shared game state (they're a purely
   // local, per-browser preference - see audioManager.js), so toggling
@@ -1049,19 +1051,24 @@ export function renderTable(root) {
   if (state.room?.code) {
     const inviteBtn = document.createElement("button");
     inviteBtn.type = "button";
-    inviteBtn.className = "btn invite-btn";
-    inviteBtn.textContent = "Invite";
+    inviteBtn.className = "btn invite-btn icon-btn";
+    inviteBtn.innerHTML = NAV_ICONS.invite;
+    inviteBtn.title = "Invite - copy link";
+    inviteBtn.setAttribute("aria-label", "Invite - copy link");
     inviteBtn.addEventListener("click", async () => {
       const link = inviteLink(state.room.code);
       try {
         await navigator.clipboard.writeText(link);
-        inviteBtn.textContent = "Link copied!";
+        inviteBtn.innerHTML = NAV_ICONS.inviteDone;
+        inviteBtn.classList.add("invite-btn--done");
+        inviteBtn.title = "Link copied!";
       } catch {
         window.prompt("Copy this invite link:", link);
-        inviteBtn.textContent = "Invite";
       }
       setTimeout(() => {
-        inviteBtn.textContent = "Invite";
+        inviteBtn.innerHTML = NAV_ICONS.invite;
+        inviteBtn.classList.remove("invite-btn--done");
+        inviteBtn.title = "Invite - copy link";
       }, 1600);
     });
     headerActions.appendChild(inviteBtn);
@@ -1099,6 +1106,8 @@ export function renderTable(root) {
     });
     headerActions.appendChild(lobbyBtn);
   }
+
+  headerActions.appendChild(scoresBtn);
 
   header.appendChild(headerActions);
   wrap.appendChild(header);
