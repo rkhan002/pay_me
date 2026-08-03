@@ -33,19 +33,34 @@ let prevMeldIds = new Set();
 
 // --- Dealer-pitch animation (motion pass) ------------------------------
 // New cards fly out of the stock (or discard) pile and spin into the hand,
-// like a dealer pitching cards. Driven by FLIP + the Web Animations API
-// because the board is fully re-rendered on every state change, so CSS
-// transitions can't tween across renders. Only cards genuinely new to the
-// hand are pitched (see the [data-fresh] marker in renderCardFan), so a
-// normal re-render never re-animates the whole hand.
-let prevPendingDraw = false;
+// like a dealer pitching cards. The board is fully rebuilt (innerHTML = "") on
+// every state change, and a deal/draw usually triggers a quick burst of
+// re-renders (optimistic update, the server refresh, a realtime echo). A naive
+// animation on the freshly built card elements gets wiped mid-flight by the
+// next rebuild. So instead:
+//   1) PLAN which card keys should fly, and from where, as state changes.
+//   2) HIDE those cards on every render until they've actually flown.
+//   3) FLY them from a debounced timer, so it runs once the burst has settled;
+//      if a later rebuild interrupts a flight the card is simply re-hidden and
+//      left queued, so the next settle replays it.
+// Motion is FLIP + the Web Animations API.
+let curHandId = null; // hand the fly bookkeeping below belongs to
+let flyPlan = new Map(); // cardKey -> "stock" | "discard": queued to fly (hidden)
+let flownKeys = new Set(); // cardKey already flown this hand (never fly again)
+let pitchTimer = null;
 
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+function rectOf(el) {
+  return el ? el.getBoundingClientRect() : null;
+}
+function cssEscape(v) {
+  return window.CSS && CSS.escape ? CSS.escape(v) : String(v).replace(/["\\]/g, "\\$&");
+}
 // Hands whose opening deal this browser has already animated - kept in
-// sessionStorage so a refresh/reconnect doesn't re-deal an in-progress hand
-// (but a genuinely new deal still animates).
+// sessionStorage so a refresh/reconnect doesn't re-deal an in-progress hand (a
+// genuinely new deal still animates).
 function dealtHands() {
   try {
     return new Set(JSON.parse(sessionStorage.getItem("payme:dealtHands") || "[]"));
@@ -63,28 +78,70 @@ function markHandDealt(id) {
     /* sessionStorage unavailable - harmless, deal just replays */
   }
 }
-// Fly `el` from `srcRect` (a pile's on-screen box) into its own resting slot,
-// spinning on the way. Snappy + flashy per the chosen motion feel.
-function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0 } = {}) {
-  if (!srcRect) return;
+
+// Work out which cards should fly this render, given the keys new to the hand
+// vs the previous render. A full opening deal flies every card from the stock;
+// a single new card is a pickup and flies from whichever pile it came from.
+function planHandPitch(state, newKeys) {
+  if (prefersReducedMotion() || !state.hand) return;
+  const handId = state.hand.id;
+  if (handId !== curHandId) {
+    curHandId = handId;
+    flyPlan = new Map();
+    flownKeys = new Set();
+  }
+  const total = state.myCards.length;
+  const isFullDeal = newKeys.size === total && total > 1 && !dealtHands().has(handId);
+
+  if (isFullDeal) {
+    markHandDealt(handId);
+    for (const c of state.myCards) {
+      const k = cardKey(c);
+      if (!flownKeys.has(k)) flyPlan.set(k, "stock");
+    }
+    return;
+  }
+  for (const k of newKeys) {
+    if (flownKeys.has(k)) continue;
+    flyPlan.set(k, state.drawnSource === "discard" ? "discard" : "stock");
+  }
+}
+
+// Hide queued (not-yet-flown) cards in the freshly built fan so they don't
+// flash in their final slot before flying.
+function hideQueuedCards(fan) {
+  if (prefersReducedMotion() || !flyPlan.size) return;
+  flyPlan.forEach((_src, key) => {
+    const el = fan.querySelector(`[data-card-key="${cssEscape(key)}"]`);
+    if (el) el.style.opacity = "0";
+  });
+}
+
+// Fly one card from `srcRect` into its own resting slot, spinning on the way.
+function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0, onDone } = {}) {
   const dst = el.getBoundingClientRect();
-  if (!dst.width) return;
+  if (!srcRect || !dst.width) {
+    el.style.opacity = ""; // can't measure a source - just reveal it in place
+    if (onDone) onDone();
+    return;
+  }
   const dx = srcRect.left + srcRect.width / 2 - (dst.left + dst.width / 2);
   const dy = srcRect.top + srcRect.height / 2 - (dst.top + dst.height / 2);
   const sc = Math.min(1, (srcRect.width || dst.width) / dst.width);
-  el.style.willChange = "transform";
+  el.style.willChange = "transform, opacity";
+  el.style.opacity = "1";
   const anim = el.animate(
     [
       {
         transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(${sc})`,
-        opacity: 0.4,
+        opacity: 0.35,
         offset: 0,
       },
-      { opacity: 1, offset: 0.2 },
+      { opacity: 1, offset: 0.22 },
       {
         transform: `translate(${dx * -0.05}px, ${dy * -0.05}px) rotate(-9deg) scale(1.07)`,
         opacity: 1,
-        offset: 0.8,
+        offset: 0.82,
       },
       { transform: "translate(0, 0) rotate(0deg) scale(1)", opacity: 1, offset: 1 },
     ],
@@ -92,44 +149,46 @@ function pitchEl(el, srcRect, { spin = 700, dur = 300, delay = 0 } = {}) {
   );
   anim.onfinish = () => {
     el.style.willChange = "";
+    el.style.opacity = "";
+    if (onDone) onDone();
   };
 }
-// Decide what to pitch this render: a full opening deal, a single pickup, or
-// the optimistic face-down placeholder for a stock draw.
-function runHandPitch(root, state, stockCardEl, discardEl) {
-  if (prefersReducedMotion()) return;
+
+// Re-armed on every render; fires once the re-render burst settles and flies
+// everything still queued in flyPlan.
+function scheduleHandPitch(root) {
+  if (prefersReducedMotion() || !flyPlan.size) return;
+  clearTimeout(pitchTimer);
+  pitchTimer = setTimeout(() => runHandPitch(root), 110);
+}
+function runHandPitch(root) {
   const fan = root.querySelector(".hand-fan");
   if (!fan) return;
-  const stockRect = stockCardEl ? stockCardEl.getBoundingClientRect() : null;
-  const discardRect = discardEl ? discardEl.getBoundingClientRect() : null;
-
-  // Optimistic face-down placeholder for a stock draw: pitch it once, on the
-  // render where the draw first shows; afterwards keep it still.
-  const pendingEl = fan.querySelector(".card-pending");
-  if (pendingEl && stockRect) {
-    pendingEl.style.animation = "none";
-    if (!prevPendingDraw) pitchEl(pendingEl, stockRect, { spin: 680, dur: 300 });
-  }
-
-  const freshEls = [...fan.querySelectorAll("[data-fresh]")];
-  if (!freshEls.length) return;
-
-  const handId = state.hand?.id;
-  const total = state.myCards.length;
-  const isFullDeal = freshEls.length === total && total > 1;
-  const isReveal = prevPendingDraw && !state.pendingDraw;
-
-  if (isFullDeal) {
-    if (!dealtHands().has(handId)) {
-      freshEls.forEach((el, i) => pitchEl(el, stockRect, { spin: 720, dur: 300, delay: i * 34 }));
-      markHandDealt(handId);
+  const stockRect = rectOf(root.querySelector(".stock-pile .card-back"));
+  const discardRect = rectOf(root.querySelector(".discard-pile"));
+  const entries = [...flyPlan.entries()];
+  const isDeal = entries.length > 1;
+  let i = 0;
+  for (const [key, srcName] of entries) {
+    const el = fan.querySelector(`[data-card-key="${cssEscape(key)}"]`);
+    if (!el) {
+      // Card left the hand (melded/discarded) before it could fly - drop it.
+      flyPlan.delete(key);
+      flownKeys.add(key);
+      continue;
     }
-    return;
+    const src = srcName === "discard" ? discardRect : stockRect;
+    pitchEl(el, src, {
+      spin: isDeal ? 720 : 640,
+      dur: isDeal ? 300 : 320,
+      delay: isDeal ? i * 34 : 0,
+      onDone: () => {
+        flyPlan.delete(key);
+        flownKeys.add(key);
+      },
+    });
+    i += 1;
   }
-  if (isReveal) return; // the real card already flew in as the placeholder
-
-  const src = state.drawnSource === "discard" ? discardRect : stockRect;
-  freshEls.forEach((el) => pitchEl(el, src, { spin: 640, dur: 320 }));
 }
 
 // Inline nav icons (currentColor). Music = note, SFX = speaker; the "off"
@@ -1019,9 +1078,6 @@ function renderControls(root, state) {
 export function renderTable(root) {
   const state = getState();
   root.innerHTML = "";
-  // Captured while building the piles, used by the dealer-pitch pass below.
-  let stockCardEl = null;
-  let discardEl = null;
 
   const wrap = document.createElement("div");
   wrap.className = "table-screen";
@@ -1203,13 +1259,14 @@ export function renderTable(root) {
       const stockCol = makePile("Stock");
       const stockStack = document.createElement("div");
       stockStack.className = "stock-pile stock-pile--single";
-      stockCardEl = renderCardBack({
-        interactive: true,
-        disabled: !canDraw,
-        ariaLabel: "Draw from stock",
-        onClick: () => drawStockAction(state),
-      });
-      stockStack.appendChild(stockCardEl);
+      stockStack.appendChild(
+        renderCardBack({
+          interactive: true,
+          disabled: !canDraw,
+          ariaLabel: "Draw from stock",
+          onClick: () => drawStockAction(state),
+        }),
+      );
       stockCol.appendChild(stockStack);
       centerRow.appendChild(stockCol);
 
@@ -1217,7 +1274,6 @@ export function renderTable(root) {
       const discardCol = makePile("Discard");
       const discardPileEl = document.createElement("div");
       discardPileEl.className = "discard-pile";
-      discardEl = discardPileEl;
       const topTwo = state.hand.discardPile.slice(0, 2).reverse();
       topTwo.forEach((card, i) => {
         const isTop = i === topTwo.length - 1;
@@ -1310,6 +1366,9 @@ export function renderTable(root) {
     const curKeys = state.myCards.map((c) => cardKey(c));
     const newKeys = new Set(curKeys.filter((k) => !prevHandKeys.has(k)));
     prevHandKeys = new Set(curKeys);
+    // Plan the dealer-pitch flight for any new cards (deal or pickup) before we
+    // build the fan, so queued cards can be hidden until they actually fly.
+    planHandPitch(state, newKeys);
     const fan = renderCardFan(state.myCards, {
       selectedKeys: state.selectedCardKeys,
       wildRank: state.hand?.wildRank,
@@ -1323,15 +1382,9 @@ export function renderTable(root) {
       // commit when we still have exactly the same set of cards, reordered.
       if (reordered.length === state.myCards.length) setOrder(reordered);
     });
-    // Optimistic stock-draw placeholder: an inert face-down card that lands
-    // the instant you draw (the real card is unknown until the server replies,
-    // then swaps in). Not in myCards, has no data-cardKey, and is
-    // pointer-events:none, so it stays out of selection/drag/reorder.
-    if (state.pendingDraw) {
-      const pending = renderCardBack({ ariaLabel: "Drawing a card" });
-      pending.classList.add("card-pending");
-      fan.appendChild(pending);
-    }
+    // Keep queued-to-fly cards invisible until their flight starts (survives the
+    // re-render burst that a deal/draw kicks off).
+    hideQueuedCards(fan);
     dock.appendChild(fan);
   }
 
@@ -1341,10 +1394,9 @@ export function renderTable(root) {
   wrap.appendChild(dock);
   root.appendChild(wrap);
 
-  // Deal/draw motion: fly new cards out of the stock/discard pile into the
-  // hand. Runs after the tree is in the DOM so positions are measurable.
-  runHandPitch(root, state, stockCardEl, discardEl);
-  prevPendingDraw = state.pendingDraw;
+  // Deal/draw motion: once this render (and the burst it belongs to) settles,
+  // fly any queued cards out of the stock/discard pile into the hand.
+  scheduleHandPitch(root);
 
   renderStandingsModal(root, state);
   renderWildPickerModal(root, state);
