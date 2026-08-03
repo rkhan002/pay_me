@@ -49,15 +49,15 @@ function nextIndex(state: HandState): number {
   return (state.currentPlayerIndex + 1) % state.playerOrder.length;
 }
 
-/** Advances turn order, auto-skipping disconnected players' turns. */
+/**
+ * Advances to the very next player in seat order. Disconnected players are no
+ * longer auto-skipped - a turn simply waits for whoever is up (games that go a
+ * full week with no action are ended by the server-side inactivity sweep
+ * instead). This keeps "don't time players out" consistent: there's neither a
+ * manual skip nor an automatic one, so no one ever gets two turns in a row.
+ */
 function advanceTurn(state: HandState): HandState {
-  let idx = nextIndex(state);
-  let guard = 0;
-  while (!state.connectedPlayers.has(state.playerOrder[idx]) && guard < state.playerOrder.length) {
-    idx = (idx + 1) % state.playerOrder.length;
-    guard++;
-  }
-  return { ...state, currentPlayerIndex: idx, hasDrawnThisTurn: false };
+  return { ...state, currentPlayerIndex: nextIndex(state), hasDrawnThisTurn: false };
 }
 
 /**

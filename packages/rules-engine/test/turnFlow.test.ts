@@ -250,14 +250,14 @@ describe("post-Pay-Me order starts from the seat after the caller", () => {
   });
 });
 
-describe("disconnected players are skipped in turn order", () => {
-  it("advances past a disconnected player to the next connected one", () => {
+describe("turn order waits for disconnected players (no auto-skip)", () => {
+  it("advances to the very next player even if they're disconnected", () => {
     const state = baseState({
       hasDrawnThisTurn: true,
-      connectedPlayers: new Set(["p1", "p3"]), // p2 disconnected
+      connectedPlayers: new Set(["p1", "p3"]), // p2 disconnected - no longer skipped
     });
     const afterDiscard = unwrap(discard(state, "p1", card("5", "S")));
-    expect(afterDiscard.playerOrder[afterDiscard.currentPlayerIndex]).toBe("p3");
+    expect(afterDiscard.playerOrder[afterDiscard.currentPlayerIndex]).toBe("p2");
   });
 });
 
