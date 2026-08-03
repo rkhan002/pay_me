@@ -2587,7 +2587,7 @@ body::before {
   max-width: 780px;
   margin: 0.25rem auto 0;
   aspect-ratio: 1536 / 1024;
-  background: url("/assets/table-bg.jpg") center center / contain no-repeat;
+  background: none;
   overflow: visible;
 }
 
@@ -2941,5 +2941,179 @@ body::before {
   100% {
     transform: scale(2);
     opacity: 0;
+  }
+}
+
+/* =====================================================================
+   TABLE ENVIRONMENT (drawn) - replaces the image with a custom
+   futuristic card-table environment. Players seated around a true
+   ellipse; centre is the focus; names only under each seat.
+   ===================================================================== */
+body {
+  background:
+    radial-gradient(130% 95% at 12% 8%, rgba(255, 45, 150, 0.16) 0%, transparent 50%),
+    radial-gradient(130% 95% at 90% 92%, rgba(60, 200, 255, 0.15) 0%, transparent 50%),
+    repeating-linear-gradient(122deg, rgba(255, 255, 255, 0.014) 0 2px, transparent 2px 34px),
+    radial-gradient(120% 90% at 50% 46%, #131832 0%, #090c1a 66%, #04050c 100%);
+  background-attachment: fixed;
+  background-size: auto;
+}
+body::before {
+  content: none;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(rgba(120, 150, 255, 0.05) 1px, transparent 1.6px);
+  background-size: 34px 34px;
+  opacity: 0.5;
+}
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+/* The drawn oval table: spotlit felt with a fine weave, a dark rim, and a
+   pink -> gold -> cyan neon halo. */
+.felt {
+  background:
+    radial-gradient(26% 32% at 50% 47%, rgba(130, 150, 230, 0.13) 0%, transparent 68%),
+    radial-gradient(
+      60% 80% at 50% 44%,
+      rgba(48, 62, 116, 0.5) 0%,
+      rgba(20, 26, 54, 0.86) 58%,
+      rgba(11, 15, 32, 0.97) 100%
+    ),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 5px);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 90px rgba(0, 0, 0, 0.65),
+    inset 0 3px 0 rgba(255, 255, 255, 0.045),
+    0 0 0 6px rgba(9, 12, 24, 0.96),
+    0 0 0 7px rgba(255, 255, 255, 0.03),
+    0 30px 70px rgba(0, 0, 0, 0.66);
+  overflow: visible;
+}
+.felt::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(115deg, #ff2d96 0%, #d8a23a 50%, #3cc8ff 100%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 7px rgba(255, 45, 150, 0.4)) drop-shadow(0 0 7px rgba(60, 200, 255, 0.4));
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Seats: a small avatar in a drawn gold socket, name only below. */
+.felt .seat {
+  width: 6.2%;
+}
+.felt .seat .avatar-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.felt .seat .avatar-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 18, 40, 0.9), rgba(7, 9, 18, 0.95));
+  border: 2px solid rgba(216, 162, 58, 0.5);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    inset 0 0 8px rgba(0, 0, 0, 0.7);
+  z-index: -1;
+}
+.felt .seat .avatar,
+.felt .seat .avatar--img {
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
+}
+.felt .seat .seat-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 7px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  white-space: nowrap;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 1),
+    0 0 6px rgba(0, 0, 0, 0.9);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Premium active-turn cue: a glowing socket + a rotating cyan scan-arc.
+   Rendered only on .seat--active, so it clears the moment the turn passes. */
+.felt .seat--active .avatar-wrap::before {
+  border-color: rgba(77, 227, 255, 0.85);
+  box-shadow:
+    0 0 16px rgba(77, 227, 255, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    inset 0 0 8px rgba(0, 0, 0, 0.7);
+}
+.felt .seat--active .avatar-wrap::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(77, 227, 255, 0) 0 235deg,
+    #4de3ff 305deg,
+    #eaffff 345deg,
+    rgba(77, 227, 255, 0) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 calc(100% - 3px));
+  filter: drop-shadow(0 0 6px #4de3ff);
+  animation: fx-scan 1.9s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+@keyframes fx-scan {
+  to {
+    transform: rotate(1turn);
+  }
+}
+/* Pay-Me caller keeps an amber socket ring. */
+.felt .seat--pay-me .avatar-wrap::before {
+  border-color: rgba(255, 170, 0, 0.7);
+  box-shadow:
+    0 0 14px rgba(255, 170, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .felt .seat--active .avatar-wrap::after {
+    animation: none;
+  }
+}
+@media (max-width: 640px) {
+  .felt .seat .seat-name {
+    font-size: 0.58rem;
+    max-width: 76px;
+    margin-top: 5px;
   }
 }

@@ -351,12 +351,12 @@ function drawDiscardAction(state) {
 // The six fixed seats defined by the table image (circle-plaque markers).
 // Coordinates are the avatar-circle centres as a % of the felt.
 const SEAT_POS = {
-  TOP: { x: 50, y: 9 },
-  BOTTOM: { x: 50, y: 85 },
-  LU: { x: 9.5, y: 35 },
-  LL: { x: 9.5, y: 60.5 },
-  RU: { x: 90.5, y: 35 },
-  RL: { x: 90.5, y: 60.5 },
+  TOP: { x: 50, y: 8 },
+  BOTTOM: { x: 50, y: 86 },
+  LU: { x: 10, y: 27 },
+  LL: { x: 10, y: 73 },
+  RU: { x: 90, y: 27 },
+  RL: { x: 90, y: 73 },
 };
 // Ring order going around the table from the bottom (self), counter-clockwise.
 const SEAT_RING = ["BOTTOM", "LL", "LU", "TOP", "RU", "RL"];
@@ -387,7 +387,6 @@ function renderSeats(felt, state) {
   const subset = SEAT_SUBSET[n] || SEAT_SUBSET[6];
 
   ordered.forEach((player, i) => {
-    const info = state.publicHandInfo.find((p) => p.playerId === player.id);
     const pos = SEAT_POS[SEAT_RING[subset[i]]];
 
     const seat = document.createElement("div");
@@ -412,36 +411,18 @@ function renderSeats(felt, state) {
     }
     if (!player.connected) avatar.classList.add("avatar--disconnected");
 
-    // Wrap the avatar so the turn indicator can anchor to its corner.
     const avatarWrap = document.createElement("div");
     avatarWrap.className = "avatar-wrap";
     avatarWrap.appendChild(avatar);
-    // Animated turn indicator (blinking dot + ping) next to the active player.
-    // Only rendered on the active seat, so it disappears the instant the turn
-    // passes to the next player.
-    if (state.hand?.turnPlayerId === player.id) {
-      const ind = document.createElement("div");
-      ind.className = "turn-indicator";
-      ind.setAttribute("aria-label", "Active turn");
-      avatarWrap.appendChild(ind);
-    }
     seat.appendChild(avatarWrap);
 
-    // Name + card count sit in the seat's plaque, just below the avatar.
-    const label = document.createElement("div");
-    label.className = "seat-label";
+    // Only the player's name is shown below the seat now (the card-count tag
+    // was removed - it wasn't meaningful info). Whose turn it is is shown by
+    // the rotating scan-arc drawn on .seat--active in CSS.
     const name = document.createElement("div");
     name.className = "seat-name";
     name.textContent = player.displayName;
-    label.appendChild(name);
-    if (info) {
-      const nc = player.id === state.myPlayerId ? state.myCards.length : info.cardCount;
-      const count = document.createElement("div");
-      count.className = "seat-count";
-      count.textContent = `${nc} card${nc === 1 ? "" : "s"}`;
-      label.appendChild(count);
-    }
-    seat.appendChild(label);
+    seat.appendChild(name);
 
     felt.appendChild(seat);
   });
