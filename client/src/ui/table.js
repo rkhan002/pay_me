@@ -1093,13 +1093,12 @@ export function renderTable(root) {
       const canDraw =
         isMyTurn(state) && !state.hand.hasDrawnThisTurn && state.hand.phase !== "layoff";
 
-      // Stock pile: a face-down "Pay Me" deck. A couple of static backs behind
-      // the top one give it visible depth; the top back is the draw target.
+      // Stock pile: a single face-down "Pay Me" card (the draw target). It used
+      // to show a couple of static backs behind it for depth; now it's a clean
+      // single layer.
       const stockCol = makePile("Stock");
       const stockStack = document.createElement("div");
-      stockStack.className = "stock-pile";
-      stockStack.appendChild(renderCardBack({ className: "card-back--under2" }));
-      stockStack.appendChild(renderCardBack({ className: "card-back--under1" }));
+      stockStack.className = "stock-pile stock-pile--single";
       stockStack.appendChild(
         renderCardBack({
           interactive: true,
