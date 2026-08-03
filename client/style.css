@@ -3362,14 +3362,18 @@ body::after {
 @media (max-width: 640px) {
   .player-grid {
     margin: 0.8rem 0 1rem;
+    /* Inset the columns so an edge avatar's ring/glow (a ~24px box-shadow)
+       never reaches the screen edge and gets clipped. */
+    padding: 0 26px;
+    gap: 0.5rem;
   }
   .player-col {
     gap: 1rem;
   }
   .player-card .avatar,
   .player-card .avatar--img {
-    width: clamp(84px, 27vw, 116px);
-    height: clamp(84px, 27vw, 116px);
+    width: clamp(76px, 24vw, 112px);
+    height: clamp(76px, 24vw, 112px);
   }
   .player-card .seat-name {
     font-size: 0.8rem;

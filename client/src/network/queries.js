@@ -44,26 +44,36 @@ export async function loadRoom(roomId) {
     import("../ui/winnerCelebration.js").then((m) => m.showWinnerCelebration(roomId));
   }
 
-  setState({
-    room: room
-      ? {
-          id: room.id,
-          code: room.code,
-          status: room.status,
-          maxPlayers: room.max_players,
-          currentHandNumber: room.current_hand_number,
-          totalHands: room.total_hands ?? 11,
-        }
-      : null,
-    players: (players ?? []).map((p) => ({
-      id: p.id,
-      seatIndex: p.seat_index,
-      displayName: p.display_name,
-      connected: isConnected(p.last_seen_at),
-      userId: p.user_id,
-      avatar: p.avatar ?? null,
-    })),
-  });
+  // Build the next room/players snapshot, then only commit it if something a
+  // player can actually see changed. Realtime fires this on every heartbeat
+  // (a last_seen_at bump), but that leaves the rendered fields identical - so
+  // without this gate the whole board would tear down and rebuild every few
+  // seconds, which is exactly the flicker players were seeing.
+  const nextRoom = room
+    ? {
+        id: room.id,
+        code: room.code,
+        status: room.status,
+        maxPlayers: room.max_players,
+        currentHandNumber: room.current_hand_number,
+        totalHands: room.total_hands ?? 11,
+      }
+    : null;
+  const nextPlayers = (players ?? []).map((p) => ({
+    id: p.id,
+    seatIndex: p.seat_index,
+    displayName: p.display_name,
+    connected: isConnected(p.last_seen_at),
+    userId: p.user_id,
+    avatar: p.avatar ?? null,
+  }));
+  const cur = getState();
+  if (
+    JSON.stringify(cur.room) !== JSON.stringify(nextRoom) ||
+    JSON.stringify(cur.players) !== JSON.stringify(nextPlayers)
+  ) {
+    setState({ room: nextRoom, players: nextPlayers });
+  }
 
   if (room && room.current_hand_number > 0) {
     const { data: hand } = await supabase
@@ -255,17 +265,31 @@ export async function loadHand(handId) {
       })),
   }));
 
+  const nextPublicInfo = (publicInfo ?? []).map((p) => ({
+    playerId: p.player_id,
+    cardCount: p.card_count,
+    score: p.score,
+    hasTakenFinalTurn: p.has_taken_final_turn,
+  }));
+
+  // Realtime also refetches the hand on unrelated events (and loadRoom always
+  // calls us). If nothing we render changed, skip both the sound cues and the
+  // re-render, so a heartbeat can't flicker the board or replay a sfx.
+  const { publicHandInfo: prevPublicInfo, pendingDraw: prevPendingDraw } = getState();
+  const unchanged =
+    !prevPendingDraw &&
+    JSON.stringify(prevHand) === JSON.stringify(nextHand) &&
+    JSON.stringify(prevMyCards) === JSON.stringify(nextMyCards) &&
+    JSON.stringify(prevMelds) === JSON.stringify(nextMelds) &&
+    JSON.stringify(prevPublicInfo) === JSON.stringify(nextPublicInfo);
+  if (unchanged) return;
+
   fireHandSfx(prevHand, prevMyCards, prevMelds, nextHand, nextMyCards, nextMelds, myPlayerId);
 
   setState({
     hand: nextHand,
     myCards: nextMyCards,
-    publicHandInfo: (publicInfo ?? []).map((p) => ({
-      playerId: p.player_id,
-      cardCount: p.card_count,
-      score: p.score,
-      hasTakenFinalTurn: p.has_taken_final_turn,
-    })),
+    publicHandInfo: nextPublicInfo,
     melds: nextMelds,
     // The authoritative hand is now in state (real drawn card included), so
     // drop the optimistic stock-draw placeholder in the same paint - no flash.

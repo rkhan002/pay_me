@@ -3,6 +3,7 @@ import { subscribe, getState, setState } from "./state/store.js";
 import { render, wireErrorDismiss } from "./ui/render.js";
 import { initAudio, unlockOnFirstGesture } from "./audio/audioManager.js";
 import { attemptReconnect } from "./network/reconnect.js";
+import { preloadAvatars } from "./ui/avatars.js";
 
 async function boot() {
   // Brief splash so the reconnect check below isn't a blank screen.
@@ -12,6 +13,7 @@ async function boot() {
       '<div class="lobby"><div class="lobby-card"><div class="logo"><h1>PAY ME</h1></div>' +
       '<p class="boot-splash">Loading\u2026</p></div></div>';
 
+  preloadAvatars(); // warm avatar images so re-renders don't flash them
   await ensureSession();
   const userId = await currentUserId();
   setState({ userId });

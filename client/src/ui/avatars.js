@@ -18,3 +18,17 @@ export function avatarSrc(id) {
   const found = AVATARS.find((a) => a.id === id);
   return found ? found.src : null;
 }
+
+/**
+ * Warm the browser cache with every avatar image up front. The table rebuilds
+ * its DOM on each state change, so an avatar <img> gets recreated often;
+ * preloading means those recreations paint from cache instantly instead of
+ * flashing while the image re-decodes.
+ */
+export function preloadAvatars() {
+  for (const a of AVATARS) {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = a.src;
+  }
+}
