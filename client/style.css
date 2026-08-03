@@ -2920,3 +2920,26 @@ body::before {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Fit the avatar INSIDE each socket's ring (the socket circle is ~8.7% of the
+   felt, so the avatar must be smaller than that to sit within the gold ring). */
+.felt .seat {
+  width: 7.4%;
+}
+.turn-indicator {
+  width: 12px;
+  height: 12px;
+}
+.turn-indicator::after {
+  animation-name: fx-turn-ping-sm;
+}
+@keyframes fx-turn-ping-sm {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
